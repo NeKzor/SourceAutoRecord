@@ -10,6 +10,7 @@
 #include "Features/ReplaySystem/ReplayProvider.hpp"
 #include "Features/ReplaySystem/ReplayRecorder.hpp"
 #include "Features/Session.hpp"
+#include "Features/Tas/AutoStrafer.hpp"
 #include "Features/Tas/CommandQueuer.hpp"
 
 #include "Console.hpp"
@@ -32,6 +33,8 @@ REDECL(Client::CreateMove2);
 REDECL(Client::GetName);
 REDECL(Client::DecodeUserCmdFromBuffer);
 REDECL(Client::DecodeUserCmdFromBuffer2);
+REDECL(Client::CInput_CreateMove);
+REDECL(Client::GetButtonBits);
 
 void* Client::GetPlayer()
 {
@@ -56,6 +59,22 @@ Vector Client::GetViewOffset()
 {
     auto player = this->GetPlayer();
     return (player) ? *(Vector*)((uintptr_t)player + Offsets::C_m_vecViewOffset) : Vector();
+}
+void Client::CalcButtonBits(int nSlot, int& bits, int in_button, int in_ignore, kbutton_t* button, bool reset)
+{
+    auto pButtonState = &button->GetPerUser(nSlot);
+    if (pButtonState->state & 3) {
+        bits |= in_button;
+    }
+
+    int clearmask = ~2;
+    if (in_ignore & in_button) {
+        clearmask = ~3;
+    }
+
+    if (reset) {
+        pButtonState->state &= clearmask;
+    }
 }
 
 // CHLClient::HudUpdate
@@ -144,6 +163,7 @@ DETOUR_T(const char*, Client::GetName)
     return Client::GetName(thisptr);
 }
 
+// CInput::DecodeUserCmdFromBuffer
 DETOUR(Client::DecodeUserCmdFromBuffer, int nSlot, int buf, signed int sequence_number)
 {
     auto result = Client::DecodeUserCmdFromBuffer(thisptr, nSlot, buf, sequence_number);
@@ -169,6 +189,34 @@ DETOUR(Client::DecodeUserCmdFromBuffer2, int buf, signed int sequence_number)
     inputHud->SetButtonBits(cmd->buttons);
 
     return result;
+}
+
+// CInput::CreateMove
+DETOUR(Client::CInput_CreateMove, int sequence_number, float input_sample_frametime, bool active)
+{
+    auto originalValue = 0;
+    if (sar_tas_ss_forceuser.GetBool()) {
+        originalValue = in_forceuser.GetInt();
+        in_forceuser.SetValue(GET_ACTIVE_SPLITSCREEN_SLOT());
+    }
+
+    auto result = Client::CInput_CreateMove(thisptr, sequence_number, input_sample_frametime, active);
+
+    if (sar_tas_ss_forceuser.GetBool()) {
+        in_forceuser.SetValue(originalValue);
+    }
+
+    return result;
+}
+
+// CInput::GetButtonBits
+DETOUR(Client::GetButtonBits, bool bResetState)
+{
+    auto bits = Client::GetButtonBits(thisptr, bResetState);
+
+    client->CalcButtonBits(GET_ACTIVE_SPLITSCREEN_SLOT(), bits, IN_AUTOSTRAFE, 0, &autoStrafer->in_autostrafe, bResetState);
+
+    return bits;
 }
 
 bool Client::Init()
@@ -226,6 +274,7 @@ bool Client::Init()
 #endif
                 if (sar.game->version & SourceGame_Portal2Game) {
                     g_Input->Hook(Client::DecodeUserCmdFromBuffer_Hook, Client::DecodeUserCmdFromBuffer, Offsets::DecodeUserCmdFromBuffer);
+                    g_Input->Hook(Client::GetButtonBits_Hook, Client::GetButtonBits, Offsets::GetButtonBits);
 
                     auto JoyStickApplyMovement = g_Input->Original(Offsets::JoyStickApplyMovement, readJmp);
                     Memory::Read(JoyStickApplyMovement + Offsets::KeyDown, &this->KeyDown);
@@ -247,6 +296,9 @@ bool Client::Init()
                 clientMode2 = Memory::Deref<void*>(g_pClientMode + sizeof(void*));
 
                 in_forceuser = Variable("in_forceuser");
+                if (!!in_forceuser && this->g_Input) {
+                    this->g_Input->Hook(CInput_CreateMove_Hook, CInput_CreateMove, Offsets::GetButtonBits + 1);
+                }
             } else {
                 typedef void* (*_GetClientMode)();
                 auto GetClientMode = Memory::Read<_GetClientMode>(HudProcessInput + Offsets::GetClientMode);
@@ -271,7 +323,6 @@ bool Client::Init()
 
     offsetFinder->ClientSide("CBasePlayer", "m_vecVelocity[0]", &Offsets::C_m_vecVelocity);
     offsetFinder->ClientSide("CBasePlayer", "m_vecViewOffset[0]", &Offsets::C_m_vecViewOffset);
-    offsetFinder->ClientSide("CBasePlayer", "m_flFriction", &Offsets::m_flFriction);
 
     return this->hasLoaded = this->g_ClientDLL && this->s_EntityList;
 }
