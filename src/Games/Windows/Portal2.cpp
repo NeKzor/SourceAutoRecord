@@ -26,6 +26,8 @@ void Portal2::LoadOffsets()
     GetLocalPlayer = 12; // CEngineClient
     GetViewAngles = 18; // CEngineClient
     SetViewAngles = 19; // CEngineClient
+    GetLocalClient = 128; // CEngineClient::SetViewAngles
+    viewangles = 19040; // CEngineClient::SetViewAngles
     GetMaxClients = 20; // CEngineClient
     GetGameDirectory = 35; // CEngineClient
     GetActiveSplitScreenPlayerSlot = 127; // CEngineClient
@@ -92,6 +94,7 @@ void Portal2::LoadOffsets()
     m_nOldButtons = 40; // CPortalGameMovement::CheckJumpButton
     GameFrame = 4; // CServerGameDLL
     GetAllServerClasses = 10; // CServerGameDLL
+    IsRestoring = 24; // CServerGameDLL
     Think = 31; // CServerGameDLL
     UTIL_PlayerByIndex = 39; // CServerGameDLL::Think
     gpGlobals = 14; // UTIL_PlayerByIndex
