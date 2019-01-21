@@ -11,7 +11,7 @@
 
 #include "Utils.hpp"
 
-Variable sar_tas_strafe_vectorial("sar_tas_strafe_vectorial", "1",
+Variable sar_tas_strafe_vectorial("sar_tas_strafe_vectorial", "1", 0, 2,
     "1 = Auto-strafer calculates perfect forward-side movement,\n"
     "0 = Auto-strafer calculates perfect viewangle.\n");
 
@@ -38,14 +38,24 @@ void AutoStrafer::Strafe(void* pPlayer, CMoveData* pMove)
         return;
     }
 
-    float angle = tasTools->GetVelocityAngles(pPlayer).x + this->GetStrafeAngle(strafe, pPlayer, pMove);
+    float velAngle = tasTools->GetVelocityAngles(pPlayer).x;
+    float angle = velAngle + this->GetStrafeAngle(strafe, pPlayer, pMove);
 
     // whishdir set based on current angle ("controller" inputs)
     if (sar_tas_strafe_vectorial.GetBool()) {
-        angle = DEG2RAD(angle - pMove->m_vecAbsViewAngles.y);
+		//make vectorial strafing look like AD strafing
+		if (sar_tas_strafe_vectorial.GetInt() == 2) {
+			QAngle newAngle = { 0, velAngle, 0 };
+			pMove->m_vecViewAngles = newAngle;
+			pMove->m_vecAbsViewAngles = newAngle;
 
-        pMove->m_flForwardMove = cosf(angle) * cl_forwardspeed.GetFloat();
-        pMove->m_flSideMove = -sinf(angle) * cl_sidespeed.GetFloat();
+			engine->SetAngles(slot, newAngle);
+			//engine->SetAngles(newAngle);
+		}
+
+		angle = DEG2RAD(angle - pMove->m_vecAbsViewAngles.y);
+		pMove->m_flForwardMove = cosf(angle) * cl_forwardspeed.GetFloat();
+		pMove->m_flSideMove = -sinf(angle) * cl_sidespeed.GetFloat();
     } else {
         // Angle set based on current wishdir
         float lookangle = RAD2DEG(atan2f(pMove->m_flSideMove, pMove->m_flForwardMove));
