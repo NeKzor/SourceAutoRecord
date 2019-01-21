@@ -14,7 +14,6 @@
 #include "Features/Timer/PauseTimer.hpp"
 #include "Features/Timer/Timer.hpp"
 
-#include "Client.hpp"
 #include "Engine.hpp"
 
 #include "Game.hpp"
@@ -122,6 +121,8 @@ int Server::GetSplitScreenPlayerSlot(void* entity)
 // CGameMovement::CheckJumpButton
 DETOUR_T(bool, Server::CheckJumpButton)
 {
+    auto player = *reinterpret_cast<void**>((uintptr_t)thisptr + Offsets::player);
+
     auto mv = *reinterpret_cast<void**>((uintptr_t)thisptr + Offsets::mv);
     auto m_nOldButtons = reinterpret_cast<int*>((uintptr_t)mv + Offsets::m_nOldButtons);
 
@@ -152,9 +153,11 @@ DETOUR_T(bool, Server::CheckJumpButton)
 
     if (result) {
         server->jumpedLastTime = true;
-        ++stats->jumps->total;
-        ++stats->steps->total;
-        stats->jumps->StartTrace(client->GetAbsOrigin());
+
+        auto stat = stats->Get(server->GetSplitScreenPlayerSlot(player));        
+        ++stat->jumps->total;
+        ++stat->steps->total;
+        stat->jumps->StartTrace(server->GetAbsOrigin(player));
     }
 
     return result;
@@ -172,11 +175,13 @@ DETOUR(Server::PlayerMove)
 
     auto m_vecVelocity = *reinterpret_cast<Vector*>((uintptr_t)mv + Offsets::mv_m_vecVelocity);
 
+    auto stat = stats->Get(server->GetSplitScreenPlayerSlot(player));
+
     // Landed after a jump
-    if (stats->jumps->isTracing
+    if (stat->jumps->isTracing
         && m_fFlags & FL_ONGROUND
         && m_MoveType != MOVETYPE_NOCLIP) {
-        stats->jumps->EndTrace(client->GetAbsOrigin(), sar_stats_jumps_xy.GetBool());
+        stat->jumps->EndTrace(server->GetAbsOrigin(player), sar_stats_jumps_xy.GetBool());
     }
 
     stepCounter->ReduceTimer(server->gpGlobals->frametime);
@@ -186,12 +191,12 @@ DETOUR(Server::PlayerMove)
         && m_MoveType != MOVETYPE_NOCLIP
         && sv_footsteps.GetFloat()
         && !(m_fFlags & (FL_FROZEN | FL_ATCONTROLS))
-        && ((m_fFlags & FL_ONGROUND && m_vecVelocity.Length2D() > 0.0001f)
-               || m_MoveType == MOVETYPE_LADDER)) {
+        && ((m_fFlags & FL_ONGROUND && m_vecVelocity.Length2D() > 0.0001f) || m_MoveType == MOVETYPE_LADDER)) {
         stepCounter->Increment(m_fFlags, m_MoveType, m_vecVelocity, m_nWaterLevel);
+        ++stat->steps->total;
     }
 
-    stats->velocity->Save(client->GetLocalVelocity(), sar_stats_velocity_peak_xy.GetBool());
+    stat->velocity->Save(server->GetLocalVelocity(player), sar_stats_velocity_peak_xy.GetBool());
     inspector->Record();
 
     return Server::PlayerMove(thisptr);
@@ -279,15 +284,9 @@ DETOUR_MID_MH(Server::AirMove_Mid)
 // CServerGameDLL::GameFrame
 #ifdef _WIN32
 DETOUR_STD(void, Server::GameFrame, bool simulating)
-{
-    Server::GameFrame(simulating);
-
-    if (session->isRunning && sar_speedrun_standard.GetBool()) {
-        speedrun->CheckRules(engine->tickcount);
-    }
-}
 #else
 DETOUR(Server::GameFrame, bool simulating)
+#endif
 {
     if (!server->IsRestoring()) {
         if (!simulating && !pauseTimer->IsActive()) {
@@ -298,7 +297,11 @@ DETOUR(Server::GameFrame, bool simulating)
         }
     }
 
+#ifdef _WIN32
+    Server::GameFrame(simulating);
+#else
     auto result = Server::GameFrame(thisptr, simulating);
+#endif
 
     if (session->isRunning && pauseTimer->IsActive()) {
         pauseTimer->Increment();
@@ -316,9 +319,10 @@ DETOUR(Server::GameFrame, bool simulating)
         speedrun->CheckRules(engine->tickcount);
     }
 
+#ifndef _WIN32
     return result;
-}
 #endif
+}
 
 bool Server::Init()
 {
@@ -328,9 +332,9 @@ bool Server::Init()
     if (this->g_GameMovement) {
         this->g_GameMovement->Hook(Server::CheckJumpButton_Hook, Server::CheckJumpButton, Offsets::CheckJumpButton);
         this->g_GameMovement->Hook(Server::PlayerMove_Hook, Server::PlayerMove, Offsets::PlayerMove);
-        this->g_GameMovement->Hook(Server::ProcessMovement_Hook, Server::ProcessMovement, Offsets::ProcessMovement);
 
         if (sar.game->version & SourceGame_Portal2Engine) {
+            this->g_GameMovement->Hook(Server::ProcessMovement_Hook, Server::ProcessMovement, Offsets::ProcessMovement);
             this->g_GameMovement->Hook(Server::FinishGravity_Hook, Server::FinishGravity, Offsets::FinishGravity);
             this->g_GameMovement->Hook(Server::AirMove_Hook, Server::AirMove, Offsets::AirMove);
 
@@ -366,10 +370,7 @@ bool Server::Init()
         Memory::DerefDeref<CGlobalVars*>((uintptr_t)this->UTIL_PlayerByIndex + Offsets::gpGlobals, &this->gpGlobals);
 
         this->GetAllServerClasses = this->g_ServerGameDLL->Original<_GetAllServerClasses>(Offsets::GetAllServerClasses);
-
-        if (sar.game->version & SourceGame_Portal2Engine) {
-            this->IsRestoring = this->g_ServerGameDLL->Original<_IsRestoring>(Offsets::IsRestoring);
-        }
+        this->IsRestoring = this->g_ServerGameDLL->Original<_IsRestoring>(Offsets::IsRestoring);
 
         if (sar.game->version & (SourceGame_Portal2Game | SourceGame_Portal)) {
             this->g_ServerGameDLL->Hook(Server::GameFrame_Hook, Server::GameFrame, Offsets::GameFrame);

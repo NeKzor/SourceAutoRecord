@@ -10,9 +10,10 @@
 
 #include "Utils/SDK.hpp"
 
+#include "Command.hpp"
 #include "Variable.hpp"
 
-Variable sar_debug_game_events("sar_debug_game_events", "0", "Prints game event data, similar to net_showevents.\n");
+Variable sar_debug_listener("sar_debug_listener", "0", "Prints event data of registered listener.\n");
 
 Listener* listener;
 
@@ -25,8 +26,7 @@ void Listener::Init()
 {
     if (engine->hasLoaded && engine->AddListener && !this->m_bRegisteredForEvents) {
         for (const auto& event : EVENTS) {
-            this->m_bRegisteredForEvents = engine->AddListener(engine->s_GameEventManager->ThisPtr(),
-                this, event, true);
+            this->m_bRegisteredForEvents = engine->AddListener(engine->s_GameEventManager->ThisPtr(), this, event, true);
 
             if (this->m_bRegisteredForEvents) {
                 //console->DevMsg("SAR: Added event listener for %s!\n", event);
@@ -53,7 +53,7 @@ void Listener::FireGameEvent(IGameEvent* ev)
     if (!ev)
         return;
 
-    if (sar_debug_game_events.GetBool()) {
+    if (sar_debug_listener.GetBool()) {
         console->Print("[%i] Event fired: %s\n", engine->GetSessionTick(), ev->GetName());
         if (engine->ConPrintEvent) {
 #ifdef _WIN32
@@ -76,7 +76,10 @@ int Listener::GetEventDebugID()
 {
     return 42;
 }
-void Listener::DumpGameEvents()
+
+// Commands
+
+CON_COMMAND(sar_dump_events, "Dumps all registered game events of the game event manager.\n")
 {
     if (!engine->s_GameEventManager) {
         return;
@@ -88,7 +91,7 @@ void Listener::DumpGameEvents()
     if (m_Size > 0) {
         auto m_GameEvents = *(uintptr_t*)(s_GameEventManager + CGameEventManager_m_GameEvents);
         for (auto i = 0; i < m_Size; ++i) {
-            auto name = *(char**)(m_GameEvents + CGameEventDescriptor_Size * i + CGameEventManager_m_GameEvents);
+            auto name = *(char**)(m_GameEvents + CGameEventDescriptor_Size * i + CGameEventManager_m_GameEvents_name);
             console->Print("%s\n", name);
         }
     }

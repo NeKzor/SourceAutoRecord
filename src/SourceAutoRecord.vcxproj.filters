@@ -271,8 +271,14 @@
     <ClCompile Include="Features\Tas\TasTools.cpp">
       <Filter>SourceAutoRecord\Features\Tas</Filter>
     </ClCompile>
+    <ClCompile Include="Features\Timer\PauseTimer.cpp">
+      <Filter>SourceAutoRecord\Features\Timer</Filter>
+    </ClCompile>
     <ClCompile Include="Features\Tas\AutoStrafer.cpp">
       <Filter>SourceAutoRecord\Features\Tas</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Math.cpp">
+      <Filter>SourceAutoRecord\Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -572,6 +578,9 @@
     </ClInclude>
     <ClInclude Include="Features\Tas\AutoStrafer.hpp">
       <Filter>SourceAutoRecord\Features\Tas</Filter>
+    </ClInclude>
+    <ClInclude Include="Features\Timer\PauseTimer.hpp">
+      <Filter>SourceAutoRecord\Features\Timer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

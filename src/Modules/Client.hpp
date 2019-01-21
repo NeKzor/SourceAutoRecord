@@ -27,19 +27,14 @@ public:
     _KeyUp KeyUp = nullptr;
     _GetAllClasses GetAllClasses = nullptr;
 
-#ifndef _WIN32
-    using _GetPerUser = int(__cdecl*)(void* thisptr, int nSlot);
-    _GetPerUser GetPerUser = nullptr;
-#endif
-
     void* in_jump = nullptr;
 
 public:
-    void* GetPlayer();
-    Vector GetAbsOrigin();
-    QAngle GetAbsAngles();
-    Vector GetLocalVelocity();
-    Vector GetViewOffset();
+    void* GetPlayer(int index = -1);
+    Vector GetAbsOrigin(void* entity);
+    QAngle GetAbsAngles(void* entity);
+    Vector GetLocalVelocity(void* entity);
+    Vector GetViewOffset(void* entity);
     void CalcButtonBits(int nSlot, int& bits, int in_button, int in_ignore, kbutton_t* button, bool reset);
 
 public:

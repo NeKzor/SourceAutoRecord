@@ -36,29 +36,26 @@ REDECL(Client::DecodeUserCmdFromBuffer2);
 REDECL(Client::CInput_CreateMove);
 REDECL(Client::GetButtonBits);
 
-void* Client::GetPlayer()
+void* Client::GetPlayer(int index)
 {
-    return this->GetClientEntity(this->s_EntityList->ThisPtr(), engine->GetLocalPlayerIndex());
+    index = (index == -1) ? engine->GetLocalPlayerIndex() : index;
+    return this->GetClientEntity(this->s_EntityList->ThisPtr(), index);
 }
-Vector Client::GetAbsOrigin()
+Vector Client::GetAbsOrigin(void* entity)
 {
-    auto player = this->GetPlayer();
-    return (player) ? *(Vector*)((uintptr_t)player + Offsets::C_m_vecAbsOrigin) : Vector();
+    return *reinterpret_cast<Vector*>((uintptr_t)entity + Offsets::C_m_vecAbsOrigin);
 }
-QAngle Client::GetAbsAngles()
+QAngle Client::GetAbsAngles(void* entity)
 {
-    auto player = this->GetPlayer();
-    return (player) ? *(QAngle*)((uintptr_t)player + Offsets::C_m_angAbsRotation) : QAngle();
+    return *reinterpret_cast<QAngle*>((uintptr_t)entity + Offsets::C_m_angAbsRotation);
 }
-Vector Client::GetLocalVelocity()
+Vector Client::GetLocalVelocity(void* entity)
 {
-    auto player = this->GetPlayer();
-    return (player) ? *(Vector*)((uintptr_t)player + Offsets::C_m_vecVelocity) : Vector();
+    return *reinterpret_cast<Vector*>((uintptr_t)entity + Offsets::C_m_vecVelocity);
 }
-Vector Client::GetViewOffset()
+Vector Client::GetViewOffset(void* entity)
 {
-    auto player = this->GetPlayer();
-    return (player) ? *(Vector*)((uintptr_t)player + Offsets::C_m_vecViewOffset) : Vector();
+    return *reinterpret_cast<Vector*>((uintptr_t)entity + Offsets::C_m_vecViewOffset);
 }
 void Client::CalcButtonBits(int nSlot, int& bits, int in_button, int in_ignore, kbutton_t* button, bool reset)
 {
@@ -126,7 +123,7 @@ DETOUR(Client::CreateMove, float flInputSampleTime, CUserCmd* cmd)
         imitator->Save(cmd);
     }
 
-    if (!in_forceuser.isReference || (in_forceuser.isReference && in_forceuser.GetInt() != 1)) {
+    if (!in_forceuser.isReference || (in_forceuser.isReference && !in_forceuser.GetBool())) {
         inputHud->SetButtonBits(cmd->buttons);
     }
 
@@ -142,12 +139,12 @@ DETOUR(Client::CreateMove2, float flInputSampleTime, CUserCmd* cmd)
         }
     }
 
-    if (sar_mimic.isRegistered && sar_mimic.GetBool()) {
+    if (sar_mimic.GetBool()) {
         imitator->Modify(cmd);
     }
 
-    if (in_forceuser.isReference && in_forceuser.GetInt() == 1) {
-        inputHud->SetButtonBits(cmd->buttons);
+    if (in_forceuser.GetBool()) {
+        inputHud2->SetButtonBits(cmd->buttons);
     }
 
     return Client::CreateMove2(thisptr, flInputSampleTime, cmd);
@@ -168,11 +165,7 @@ DETOUR(Client::DecodeUserCmdFromBuffer, int nSlot, int buf, signed int sequence_
 {
     auto result = Client::DecodeUserCmdFromBuffer(thisptr, nSlot, buf, sequence_number);
 
-#ifdef _WIN32
     auto m_pCommands = *reinterpret_cast<uintptr_t*>((uintptr_t)thisptr + nSlot * Offsets::PerUserInput_tSize + Offsets::m_pCommands);
-#else
-    auto m_pCommands = *reinterpret_cast<uintptr_t*>((uintptr_t)client->GetPerUser(thisptr, nSlot) + Offsets::m_pCommands);
-#endif
     auto cmd = reinterpret_cast<CUserCmd*>(m_pCommands + Offsets::CUserCmdSize * (sequence_number % Offsets::MULTIPLAYER_BACKUP));
 
     inputHud->SetButtonBits(cmd->buttons);
@@ -197,7 +190,7 @@ DETOUR(Client::CInput_CreateMove, int sequence_number, float input_sample_framet
     auto originalValue = 0;
     if (sar_tas_ss_forceuser.GetBool()) {
         originalValue = in_forceuser.GetInt();
-        in_forceuser.SetValue(GET_ACTIVE_SPLITSCREEN_SLOT());
+        in_forceuser.SetValue(GET_SLOT());
     }
 
     auto result = Client::CInput_CreateMove(thisptr, sequence_number, input_sample_frametime, active);
@@ -214,7 +207,7 @@ DETOUR(Client::GetButtonBits, bool bResetState)
 {
     auto bits = Client::GetButtonBits(thisptr, bResetState);
 
-    client->CalcButtonBits(GET_ACTIVE_SPLITSCREEN_SLOT(), bits, IN_AUTOSTRAFE, 0, &autoStrafer->in_autostrafe, bResetState);
+    client->CalcButtonBits(GET_SLOT(), bits, IN_AUTOSTRAFE, 0, &autoStrafer->in_autostrafe, bResetState);
 
     return bits;
 }
@@ -251,37 +244,29 @@ bool Client::Init()
             }
         }
 
-        if (sar.game->version & SourceGame_TheStanleyParable) {
-            auto IN_ActivateMouse = this->g_ClientDLL->Original(Offsets::IN_ActivateMouse, readJmp);
-            auto g_InputAddr = Memory::DerefDeref<void*>(IN_ActivateMouse + Offsets::g_Input);
+        auto IN_ActivateMouse = this->g_ClientDLL->Original(Offsets::IN_ActivateMouse, readJmp);
+        auto g_InputAddr = Memory::DerefDeref<void*>(IN_ActivateMouse + Offsets::g_Input);
 
-            if (auto input = Interface::Create(g_InputAddr, false)) {
-                auto GetButtonBits = input->Original(Offsets::GetButtonBits, readJmp);
-                Memory::Deref(GetButtonBits + Offsets::in_jump, &this->in_jump);
+        if (g_Input = Interface::Create(g_InputAddr)) {
+            if (sar.game->version & SourceGame_Portal2Engine) {
+                g_Input->Hook(Client::DecodeUserCmdFromBuffer_Hook, Client::DecodeUserCmdFromBuffer, Offsets::DecodeUserCmdFromBuffer);
+                g_Input->Hook(Client::GetButtonBits_Hook, Client::GetButtonBits, Offsets::GetButtonBits);
 
-                auto JoyStickApplyMovement = input->Original(Offsets::JoyStickApplyMovement, readJmp);
+                auto JoyStickApplyMovement = g_Input->Original(Offsets::JoyStickApplyMovement, readJmp);
                 Memory::Read(JoyStickApplyMovement + Offsets::KeyDown, &this->KeyDown);
                 Memory::Read(JoyStickApplyMovement + Offsets::KeyUp, &this->KeyUp);
-            }
-        } else if (sar.game->version & (SourceGame_Portal2Game | SourceGame_HalfLife2Engine)) {
-            auto IN_ActivateMouse = this->g_ClientDLL->Original(Offsets::IN_ActivateMouse, readJmp);
-            auto g_InputAddr = Memory::DerefDeref<void*>(IN_ActivateMouse + Offsets::g_Input);
 
-            if (g_Input = Interface::Create(g_InputAddr)) {
-#ifndef _WIN32
-                auto DecodeUserCmdFromBufferAddr = g_Input->Original(Offsets::DecodeUserCmdFromBuffer, readJmp);
-                Memory::Read(DecodeUserCmdFromBufferAddr + Offsets::GetPerUser, &this->GetPerUser);
-#endif
-                if (sar.game->version & SourceGame_Portal2Game) {
-                    g_Input->Hook(Client::DecodeUserCmdFromBuffer_Hook, Client::DecodeUserCmdFromBuffer, Offsets::DecodeUserCmdFromBuffer);
-                    g_Input->Hook(Client::GetButtonBits_Hook, Client::GetButtonBits, Offsets::GetButtonBits);
-
-                    auto JoyStickApplyMovement = g_Input->Original(Offsets::JoyStickApplyMovement, readJmp);
-                    Memory::Read(JoyStickApplyMovement + Offsets::KeyDown, &this->KeyDown);
-                    Memory::Read(JoyStickApplyMovement + Offsets::KeyUp, &this->KeyUp);
-                } else {
-                    g_Input->Hook(Client::DecodeUserCmdFromBuffer2_Hook, Client::DecodeUserCmdFromBuffer2, Offsets::DecodeUserCmdFromBuffer);
+                if (sar.game->version & SourceGame_TheStanleyParable) {
+                    auto GetButtonBits = g_Input->Original(Offsets::GetButtonBits, readJmp);
+                    Memory::Deref(GetButtonBits + Offsets::in_jump, &this->in_jump);
+                } else if (sar.game->version & (SourceGame_Portal2 | SourceGame_ApertureTag)) {
+                    in_forceuser = Variable("in_forceuser");
+                    if (!!in_forceuser && this->g_Input) {
+                        this->g_Input->Hook(CInput_CreateMove_Hook, CInput_CreateMove, Offsets::GetButtonBits + 1);
+                    }
                 }
+            } else {
+                g_Input->Hook(Client::DecodeUserCmdFromBuffer2_Hook, Client::DecodeUserCmdFromBuffer2, Offsets::DecodeUserCmdFromBuffer);
             }
         }
 
@@ -294,11 +279,6 @@ bool Client::Init()
                 auto g_pClientMode = Memory::Deref<uintptr_t>(GetClientMode + Offsets::g_pClientMode);
                 clientMode = Memory::Deref<void*>(g_pClientMode);
                 clientMode2 = Memory::Deref<void*>(g_pClientMode + sizeof(void*));
-
-                in_forceuser = Variable("in_forceuser");
-                if (!!in_forceuser && this->g_Input) {
-                    this->g_Input->Hook(CInput_CreateMove_Hook, CInput_CreateMove, Offsets::GetButtonBits + 1);
-                }
             } else {
                 typedef void* (*_GetClientMode)();
                 auto GetClientMode = Memory::Read<_GetClientMode>(HudProcessInput + Offsets::GetClientMode);

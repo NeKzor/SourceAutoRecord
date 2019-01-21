@@ -36,6 +36,8 @@ DETOUR(VGui::Paint, int mode)
 {
     surface->StartDrawing(surface->matsurface->ThisPtr());
 
+    auto slot = GET_SLOT();
+
     auto elements = 0;
     auto xPadding = sar_hud_default_padding_x.GetInt();
     auto yPadding = sar_hud_default_padding_y.GetInt();
@@ -74,28 +76,37 @@ DETOUR(VGui::Paint, int mode)
         DrawElement((char*)sar_hud_text.GetString());
     }
     if (sar_hud_position.GetBool()) {
-        auto abs = client->GetAbsOrigin();
-        DrawElement("pos: %.3f %.3f %.3f", abs.x, abs.y, abs.z);
+        auto player = server->GetPlayer();
+        if (player) {
+            auto pos = server->GetAbsOrigin(player);
+            DrawElement("pos: %.3f %.3f %.3f", pos.x, pos.y, pos.z);
+        } else {
+            DrawElement("pos: -");
+        }
     }
     if (sar_hud_angles.GetBool()) {
-        auto va = engine->GetAngles();
+        auto ang = engine->GetAngles();
         if (sar_hud_angles.GetInt() == 1) {
-            DrawElement("ang: %.3f %.3f", va.x, va.y);
+            DrawElement("ang: %.3f %.3f", ang.x, ang.y);
         } else {
-            DrawElement("ang: %.3f %.3f %.3f", va.x, va.y, va.z);
+            DrawElement("ang: %.3f %.3f %.3f", ang.x, ang.y, ang.z);
         }
     }
     if (sar_hud_velocity.GetBool()) {
-        auto vel = (sar_hud_velocity.GetInt() == 1)
-            ? client->GetLocalVelocity().Length()
-            : client->GetLocalVelocity().Length2D();
-        DrawElement("vel: %.3f", vel);
+        auto player = server->GetPlayer();
+        if (player) {
+            auto vel = (sar_hud_velocity.GetInt() == 1)
+                ? server->GetLocalVelocity(player).Length()
+                : server->GetLocalVelocity(player).Length2D();
+            DrawElement("vel: %.3f", vel);
+        } else {
+            DrawElement("vel: -");
+        }
     }
     // Session
     if (sar_hud_session.GetBool()) {
         auto tick = (session->isRunning) ? engine->GetSessionTick() : 0;
-        auto time = engine->ToTime(tick);
-        DrawElement("session: %i (%.3f)", tick, time);
+        DrawElement("session: %i (%.3f)", tick, engine->ToTime(tick));
     }
     if (sar_hud_last_session.GetBool()) {
         DrawElement("last session: %i (%.3f)", session->lastSession, engine->ToTime(session->lastSession));
@@ -142,7 +153,8 @@ DETOUR(VGui::Paint, int mode)
     }
     // Stats
     if (sar_hud_jumps.GetBool()) {
-        DrawElement("jumps: %i", stats->jumps->total);
+        auto stat = stats->Get(slot);
+        DrawElement("jumps: %i", stat->jumps->total);
     }
     if (sar_hud_portals.isRegistered && sar_hud_portals.GetBool()) {
         auto player = server->GetPlayer();
@@ -151,26 +163,32 @@ DETOUR(VGui::Paint, int mode)
         } else {
             DrawElement("portals: -");
         }
+        DrawElement("aaa: %i", slot);
     }
     if (sar_hud_steps.GetBool()) {
-        DrawElement("steps: %i", stats->steps->total);
+        auto stat = stats->Get(slot);
+        DrawElement("steps: %i", stat->steps->total);
     }
     if (sar_hud_jump.GetBool()) {
-        DrawElement("jump: %.3f", stats->jumps->distance);
+        auto stat = stats->Get(slot);
+        DrawElement("jump: %.3f", stat->jumps->distance);
     }
     if (sar_hud_jump_peak.GetBool()) {
-        DrawElement("jump peak: %.3f", stats->jumps->distance);
+        auto stat = stats->Get(slot);
+        DrawElement("jump peak: %.3f", stat->jumps->distance);
     }
     if (sar_hud_velocity_peak.GetBool()) {
-        DrawElement("vel peak: %.3f", stats->velocity->peak);
+        auto stat = stats->Get(slot);
+        DrawElement("vel peak: %.3f", stat->velocity->peak);
     }
     // Routing
     if (sar_hud_trace.GetBool()) {
-        auto xyz = tracer->GetDifferences();
-        auto result = (sar_hud_trace.GetInt() == 1)
-            ? tracer->GetResult(TracerResultType::VEC3)
-            : tracer->GetResult(TracerResultType::VEC2);
-        DrawElement("trace: %.3f (%.3f/%.3f/%.3f)", result, std::get<0>(xyz), std::get<1>(xyz), std::get<2>(xyz));
+        auto result = tracer->GetTraceResult(slot);
+        auto xyz = tracer->CalculateDifferences(result);
+        auto length = (sar_hud_trace.GetInt() == 1)
+            ? tracer->CalculateLength(result, TracerLengthType::VEC3)
+            : tracer->CalculateLength(result, TracerLengthType::VEC2);
+        DrawElement("trace: %.3f (%.3f/%.3f/%.3f)", length, std::get<0>(xyz), std::get<1>(xyz), std::get<2>(xyz));
     }
     if (sar_hud_frame.GetBool()) {
         DrawElement("frame: %i", session->currentFrame);
@@ -250,8 +268,14 @@ DETOUR(VGui::Paint, int mode)
     surface->FinishDrawing();
 
     // Draw other HUDs
-    for (auto const& hud : vgui->huds) {
-        hud->Draw();
+    if (slot == 0) {
+        for (auto const& hud : vgui->huds) {
+            hud->Draw();
+        }
+    } else if (slot == 1) {
+        for (auto const& hud : vgui->huds2) {
+            hud->Draw();
+        }
     }
 
     return VGui::Paint(thisptr, mode);
@@ -265,6 +289,7 @@ bool VGui::Init()
     }
 
     this->huds.push_back(inputHud = new InputHud());
+    this->huds2.push_back(inputHud2 = new InputHud());
     this->huds.push_back(inspectionHud = new InspectionHud());
 
     if (sar.game->version & (SourceGame_Portal2Game | SourceGame_Portal)) {
