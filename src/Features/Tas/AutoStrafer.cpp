@@ -141,7 +141,7 @@ Command startautostrafe("+autostrafe", IN_AutoStrafeDown, "Auto-strafe button.\n
 Command endautostrafe("-autostrafe", IN_AutoStrafeUp, "Auto-strafe button.\n");
 
 CON_COMMAND(sar_tas_strafe, "sar_tas_strafe <type> <direction> : Automatic strafing.\n"
-                            "Type: 0 = off, 1 = straight, 2 = turning.\n"
+                            "Type: 0 = off, 1 = straight, 2 = turning and keeping velocity, 3 = turning with velocity gain.\n"
                             "Direction: -1 = left, 1 = right.\n")
 {
     auto type = StrafingType::Straight;
@@ -154,7 +154,7 @@ CON_COMMAND(sar_tas_strafe, "sar_tas_strafe <type> <direction> : Automatic straf
         direction = std::atoi(args[2]);
     } else {
         return console->Print("sar_tas_strafe <type> <direction> : Automatic strafing.\n"
-                              "Type: 0 = off, 1 = straight, 2 = turning.\n"
+                              "Type: 0 = off, 1 = straight, 2 = turning and keeping velocity, 3 = turning with velocity gain.\n"
                               "Direction: -1 = left, 1 = right.\n");
     }
 
