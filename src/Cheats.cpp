@@ -117,7 +117,7 @@ void Cheats::Init()
     sar_aircontrol.UniqueFor(SourceGame_Portal2Engine);
     sar_hud_portals.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
     sar_disable_challenge_stats_hud.UniqueFor(SourceGame_Portal2);
-    sar_debug_game_events.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
+    sar_debug_listener.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_sr_hud.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
     sar_sr_hud_x.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
     sar_sr_hud_y.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
@@ -130,6 +130,7 @@ void Cheats::Init()
     sar_replay_viewmode.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_mimic.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_tas_strafe_vectorial.UniqueFor(SourceGame_Portal2Engine);
+    sar_tas_ss_forceuser.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_hud_pause_timer.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
     sar_speedrun_time_pauses.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
     sar_timer_time_pauses.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
@@ -159,6 +160,7 @@ void Cheats::Init()
     sar_tas_strafe.UniqueFor(SourceGame_Portal2Engine);
     startautostrafe.UniqueFor(SourceGame_Portal2Engine);
     endautostrafe.UniqueFor(SourceGame_Portal2Engine);
+    sar_dump_events.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
 
     cvars->Unlock();
 
