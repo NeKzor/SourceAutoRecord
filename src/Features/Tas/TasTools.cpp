@@ -19,6 +19,7 @@ TasTools::TasTools()
     , acceleration({ 0, 0, 0 })
     , prevVelocity({ 0, 0, 0 })
     , prevTick(0)
+    , data()
 {
     if (sar.game->version & (SourceGame_Portal | SourceGame_Portal2Engine)) {
         std::strncpy(this->className, "CPortal_Player", sizeof(this->className));
@@ -87,6 +88,42 @@ Vector TasTools::GetAcceleration(void* player)
     }
 
     return this->acceleration;
+}
+void TasTools::SetAngle(void *pPlayer)
+{
+    auto slot = server->GetSplitScreenPlayerSlot(pPlayer);
+    auto slotData = &this->data[slot];
+
+	if (slotData->speedInterpolation == 0)
+        return;
+
+    QAngle a1 = { slotData->targetAngle.x, slotData->targetAngle.y, 0 };
+    QAngle a0 = { engine->GetAngles().x, engine->GetAngles().y, 0 };
+    QAngle m;
+    m.x = a0.x + slotData->speedInterpolation * (a0.x < a1.x ? 1 : -1);
+    m.y = a0.y + slotData->speedInterpolation * (a0.y < a1.y ? 1 : -1);
+    m.z = 0;
+
+    if (abs(a1.x - m.x) < abs(a1.x + 360 - m.x))
+        a1.x = a1.x + 360;
+    if (abs(a1.x - m.x) < abs(a1.x - 360 - m.x))
+        a1.x = a1.x - 360;
+
+    if (abs(m.x) > abs(a1.x)) {
+        if (abs(m.x - a1.x) <= slotData->speedInterpolation && abs(m.y - a1.y) <= slotData->speedInterpolation) {
+			engine->SetAngles(slot, a1);
+            slotData->speedInterpolation = 0;
+            return;
+		}
+    } else if(abs(m.x) < abs(a1.x)){
+        if (abs(a1.x - m.x) <= slotData->speedInterpolation && abs(a1.y - m.y) <= slotData->speedInterpolation) {
+            engine->SetAngles(slot, a1);
+            slotData->speedInterpolation = 0;
+            return;
+        }
+	}
+
+    engine->SetAngles(slot, m);
 }
 
 // Commands
@@ -160,20 +197,39 @@ CON_COMMAND(sar_tas_addang, "sar_tas_addang <x> <y> [z] : Adds {x, y, z} degrees
 
     engine->SetAngles(angles);
 }
-CON_COMMAND(sar_tas_setang, "sar_tas_setang <x> <y> [z] : Sets {x, y, z} degrees to view axis.\n")
+CON_COMMAND(sar_tas_setang, "sar_tas_setang <x> <y> [z] [speed] : Sets {x, y, z} degrees to view axis.\n"
+                            "Setting the [speed] parameter will make an time interpolation between current player angles and the targeted angles.\n")
 {
     if (!sv_cheats.GetBool()) {
         return console->Print("Cannot use sar_tas_setang without sv_cheats set to 1.\n");
     }
 
     if (args.ArgC() < 3) {
-        return console->Print("Missing arguments : sar_tas_setang <x> <y> [z].\n");
+        return console->Print("Missing arguments : sar_tas_setang <x> <y> [z] [speed].\n");
     }
 
-    // Fix the bug when z is not set
+    /*// Fix the bug when z is not set
     if (args.ArgC() == 3) {
         engine->SetAngles(QAngle{ static_cast<float>(std::atof(args[1])), static_cast<float>(std::atof(args[2])), 0.0f });
     } else {
         engine->SetAngles(QAngle{ static_cast<float>(std::atof(args[1])), static_cast<float>(std::atof(args[2])), static_cast<float>(std::atof(args[3])) });
+    }*/
+
+    // Fix the bug when z is not set
+    /*if (args.ArgC() == 3) {
+        tasTools->targetAngle = QAngle{ static_cast<float>(std::atof(args[1])), static_cast<float>(std::atof(args[2])), 0.0f };
+    } else {
+        tasTools->targetAngle = QAngle{ static_cast<float>(std::atof(args[1])), static_cast<float>(std::atof(args[2])), static_cast<float>(std::atof(args[3])) };
+    }*/
+
+	auto nSlot = GET_SLOT();
+
+    if (args.ArgC() < 5 || args[4] == 0) {
+        tasTools->data[nSlot].speedInterpolation = 0;
+        engine->SetAngles(QAngle{ static_cast<float>(std::atof(args[1])), static_cast<float>(std::atof(args[2])), static_cast<float>(std::atof(args[3])) });
+    } else {
+        tasTools->data[nSlot].speedInterpolation = static_cast<float>(std::atof(args[4]));
+        tasTools->data[nSlot].currentAngle = { engine->GetAngles().x, engine->GetAngles().y, 0 };
+        tasTools->data[nSlot].targetAngle = { static_cast<float>(std::atof(args[1])), static_cast<float>(std::atof(args[2])), static_cast<float>(std::atof(args[3])) };
     }
 }

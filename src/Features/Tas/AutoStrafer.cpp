@@ -11,10 +11,6 @@
 
 #include "Utils.hpp"
 
-Variable sar_tas_strafe_vectorial("sar_tas_strafe_vectorial", "1", 0, 2,
-    "1 = Auto-strafer calculates perfect forward-side movement,\n"
-    "0 = Auto-strafer calculates perfect viewangle.\n");
-
 AutoStrafer* autoStrafer;
 
 AutoStrafer::AutoStrafer()
@@ -42,9 +38,9 @@ void AutoStrafer::Strafe(void* pPlayer, CMoveData* pMove)
     float angle = velAngle + this->GetStrafeAngle(strafe, pPlayer, pMove);
 
     // whishdir set based on current angle ("controller" inputs)
-    if (sar_tas_strafe_vectorial.GetBool()) {
+    if (strafe->vecType == VecStrafeType::Normal || strafe->vecType == VecStrafeType::Visual) {
 		//make vectorial strafing look like AD strafing
-		if (sar_tas_strafe_vectorial.GetInt() == 2) {
+		if (strafe->vecType == VecStrafeType::Visual) {
 			QAngle newAngle = { 0, velAngle, 0 };
 			pMove->m_vecViewAngles = newAngle;
 			pMove->m_vecAbsViewAngles = newAngle;
@@ -161,4 +157,23 @@ CON_COMMAND(sar_tas_strafe, "sar_tas_strafe <type> <direction> : Automatic straf
     auto nSlot = GET_SLOT();
     autoStrafer->states[nSlot].type = type;
     autoStrafer->states[nSlot].direction = direction;
+}
+CON_COMMAND(sar_tas_strafe_vectorial, "sar_tas_strafe_vectorial <type>: Change type of vectorial strafing.\n"
+                                      "0 = Auto-strafer calculates perfect viewangle.\n"
+                                      "1 = Auto-strafer calculates perfect forward-side movement.\n"
+                                      "2 = Auto-strafer calculates perfect forward-side movement, while setting the viewangle toward current velocity, to make strafing visually visible.")
+{
+    auto type = VecStrafeType::Disabled;
+
+    if (args.ArgC() == 2) {
+        type = static_cast<VecStrafeType>(std::atoi(args[1]));
+    } else {
+        return console->Print("sar_tas_strafe_vectorial <type>: Change type of vectorial strafing.\n"
+                              "0 = Auto-strafer calculates perfect viewangle.\n"
+                              "1 = Auto-strafer calculates perfect forward-side movement.\n"
+                              "2 = Auto-strafer calculates perfect forward-side movement, while setting the viewangle toward current velocity, to make strafing visually visible.");
+    }
+
+    auto nSlot = GET_ACTIVE_SPLITSCREEN_SLOT();
+    autoStrafer->states[nSlot].vecType = type;
 }
