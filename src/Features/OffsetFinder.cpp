@@ -15,14 +15,15 @@ OffsetFinder::OffsetFinder()
 {
     this->hasLoaded = true;
 }
-void OffsetFinder::ServerSide(const char* className, const char* propName, int* offset)
+void OffsetFinder::ServerSide(const char* className, const char* propName, int* offset, bool debug)
 {
     if (server->GetAllServerClasses) {
         for (auto curClass = server->GetAllServerClasses(); curClass; curClass = curClass->m_pNext) {
             if (!std::strcmp(curClass->m_pNetworkName, className)) {
                 auto result = this->Find(curClass->m_pTable, propName);
                 if (result != 0) {
-                    console->DevMsg("Found %s::%s at %i (server-side)\n", className, propName, result);
+                    if (debug)
+                        console->DevMsg("Found %s::%s at %i (server-side)\n", className, propName, result);
                     if (offset)
                         *offset = result;
                 }
