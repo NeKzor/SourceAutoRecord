@@ -95,10 +95,18 @@ DETOUR(VGui::Paint, int mode)
     if (sar_hud_velocity.GetBool()) {
         auto player = server->GetPlayer();
         if (player) {
-            auto vel = (sar_hud_velocity.GetInt() == 1)
-                ? server->GetLocalVelocity(player).Length()
-                : server->GetLocalVelocity(player).Length2D();
-            DrawElement("vel: %.3f", vel);
+            if (sar_hud_velocity.GetInt() == 3) {
+                float vel[3];
+                vel[0] = server->GetLocalVelocity(player).x;
+                vel[1] = server->GetLocalVelocity(player).y;
+                vel[2] = server->GetLocalVelocity(player).z;
+                DrawElement("vel: x : %.3f y : %.3f z : %.3f", vel[0], vel[1], vel[2]);
+            } else {
+                auto vel = (sar_hud_velocity.GetInt() == 1)
+                    ? server->GetLocalVelocity(player).Length()
+                    : server->GetLocalVelocity(player).Length2D();
+                DrawElement("vel: %.3f", vel);
+            }
         } else {
             DrawElement("vel: -");
         }

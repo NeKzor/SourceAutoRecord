@@ -7,7 +7,7 @@
 class OffsetFinder : public Feature {
 public:
     OffsetFinder();
-    void ServerSide(const char* className, const char* propName, int* offset);
+    void ServerSide(const char* className, const char* propName, int* offset, bool debug = true);
     void ClientSide(const char* className, const char* propName, int* offset);
 
 private:
