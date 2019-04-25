@@ -15,14 +15,14 @@ enum class StrafingType {
 };
 
 enum class VecStrafeType {
-	Disabled,
-	Normal,
-	Visual
-};						   
+    Disabled,
+    Normal,
+    Visual
+};
 struct StrafeState {
     int direction = 1;
     StrafingType type = StrafingType::None;
-	VecStrafeType vecType = VecStrafeType::Visual;
+    VecStrafeType vecType = VecStrafeType::Visual;
 };
 
 class AutoStrafer : public Feature {
