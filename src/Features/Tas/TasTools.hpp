@@ -15,9 +15,9 @@ enum class PropType {
     Char
 };
 
-struct SetAngleData {
-    QAngle currentAngle = { 0, 0, 0 };
-    QAngle targetAngle = { 0, 0, 0 };
+struct SetAnglesData {
+    QAngle currentAngles = { 0, 0, 0 };
+    QAngle targetAngles = { 0, 0, 0 };
     float speedInterpolation = 0;
 };
 
@@ -27,7 +27,7 @@ public:
     char propName[32];
     int propOffset;
     PropType propType;
-    SetAngleData data[MAX_SPLITSCREEN_PLAYERS];
+    SetAnglesData data[MAX_SPLITSCREEN_PLAYERS];
 
 private:
     Vector acceleration;
@@ -36,11 +36,12 @@ private:
 
 public:
     TasTools();
-    void AimAtPoint(void* player, float x, float y, float z);
+    void AimAtPoint(void* player, float x, float y, float z, int doSlerp);
     Vector GetVelocityAngles(void* player);
     Vector GetAcceleration(void* player);
     void* GetPlayerInfo();
-    void SetAngle(void *pPlayer);
+    void SetAngles(void* pPlayer);
+    QAngle Slerp(QAngle a0, QAngle a1, float speedInterpolation);
 };
 
 extern TasTools* tasTools;

@@ -207,7 +207,7 @@ DETOUR(Server::ProcessMovement, void* pPlayer, CMoveData* pMove)
 {
     if (sv_cheats.GetBool()) {
         autoStrafer->Strafe(pPlayer, pMove);
-        tasTools->SetAngle(pPlayer);
+        tasTools->SetAngles(pPlayer);
     }
 
     return Server::ProcessMovement(thisptr, pPlayer, pMove);
