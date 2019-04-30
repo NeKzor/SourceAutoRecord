@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+
 #include "Features/Feature.hpp"
 
 #include "Utils/SDK.hpp"
@@ -15,10 +17,13 @@ enum class PropType {
     Char
 };
 
-struct SetAnglesData {
+struct TasPlayerData {
     QAngle currentAngles = { 0, 0, 0 };
     QAngle targetAngles = { 0, 0, 0 };
     float speedInterpolation = 0;
+    Vector acceleration = { 0, 0, 0 };
+    Vector prevVelocity = { 0, 0, 0 };
+    int prevTick = 0;
 };
 
 class TasTools : public Feature {
@@ -27,20 +32,17 @@ public:
     char propName[32];
     int propOffset;
     PropType propType;
-    SetAnglesData data[MAX_SPLITSCREEN_PLAYERS];
-
-private:
-    Vector acceleration;
-    Vector prevVelocity;
-    int prevTick;
+    std::vector<TasPlayerData*> data;
 
 public:
     TasTools();
+    ~TasTools();
+
     void AimAtPoint(void* player, float x, float y, float z, int doSlerp);
     Vector GetVelocityAngles(void* player);
     Vector GetAcceleration(void* player);
-    void* GetPlayerInfo();
-    void SetAngles(void* pPlayer);
+    void* GetPlayerInfo(void* player);
+    void SetAngles(void* player);
     QAngle Slerp(QAngle a0, QAngle a1, float speedInterpolation);
 };
 

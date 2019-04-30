@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(suppress : 26495)
 #include <cmath>
 
 #ifdef _WIN32
@@ -71,7 +72,7 @@ struct Color {
     inline int g() const { return _color[1]; }
     inline int b() const { return _color[2]; }
     inline int a() const { return _color[3]; }
-    unsigned char _color[4];
+    unsigned char _color[4] = { 0, 0, 0, 0 };
 };
 
 #define FCVAR_DEVELOPMENTONLY (1 << 1)
@@ -83,7 +84,7 @@ struct Color {
 #define COMMAND_COMPLETION_ITEM_LENGTH 64
 
 struct CCommand;
-class ConCommandBase;
+struct ConCommandBase;
 
 using _CommandCallback = void (*)(const CCommand& args);
 using _CommandCompletionCallback = int (*)(const char* partial, char commands[COMMAND_COMPLETION_MAXITEMS][COMMAND_COMPLETION_ITEM_LENGTH]);
@@ -95,8 +96,7 @@ using _UnregisterConCommand = void(__funcc*)(void* thisptr, ConCommandBase* pCom
 using _FindCommandBase = void*(__funcc*)(void* thisptr, const char* name);
 using _AutoCompletionFunc = int(__funcc*)(void* thisptr, char const* partial, char commands[COMMAND_COMPLETION_MAXITEMS][COMMAND_COMPLETION_ITEM_LENGTH]);
 
-class ConCommandBase {
-public:
+struct ConCommandBase {
     void* ConCommandBase_VTable; // 0
     ConCommandBase* m_pNext; // 4
     bool m_bRegistered; // 8
@@ -104,14 +104,13 @@ public:
     const char* m_pszHelpString; // 16
     int m_nFlags; // 20
 
-public:
-    ConCommandBase()
+    ConCommandBase(const char* name, int flags, const char* helpstr)
         : ConCommandBase_VTable(nullptr)
         , m_pNext(nullptr)
         , m_bRegistered(false)
-        , m_pszName(nullptr)
-        , m_pszHelpString(nullptr)
-        , m_nFlags(0)
+        , m_pszName(name)
+        , m_pszHelpString(helpstr)
+        , m_nFlags(flags)
     {
     }
 };
@@ -141,8 +140,7 @@ struct CCommand {
     }
 };
 
-class ConCommand : public ConCommandBase {
-public:
+struct ConCommand : ConCommandBase {
     union {
         void* m_fnCommandCallbackV1;
         _CommandCallback m_fnCommandCallback;
@@ -158,17 +156,20 @@ public:
     bool m_bUsingNewCommandCallback : 1;
     bool m_bUsingCommandCallbackInterface : 1;
 
-public:
-    ConCommand()
-        : ConCommandBase()
-        , m_fnCommandCallbackV1(nullptr)
-        , m_fnCompletionCallback(nullptr)
+    ConCommand(const char* pName, _CommandCallback callback, const char* pHelpString, int flags, _CommandCompletionCallback completionFunc)
+        : ConCommandBase(pName, flags, pHelpString)
+        , m_fnCommandCallback(callback)
+        , m_fnCompletionCallback(completionFunc)
+        , m_bHasCompletionCallback(completionFunc != nullptr)
+        , m_bUsingNewCommandCallback(true)
+        , m_bUsingCommandCallbackInterface(false)
     {
     }
 };
 
-class ConVar : public ConCommandBase {
-public:
+typedef void (*FnChangeCallback_t)(void* var, const char* pOldValue, float flOldValue);
+
+struct ConVar : ConCommandBase {
     void* ConVar_VTable; // 24
     ConVar* m_pParent; // 28
     const char* m_pszDefaultValue; // 32
@@ -180,64 +181,78 @@ public:
     float m_fMinVal; // 56
     bool m_bHasMax; // 60
     float m_fMaxVal; // 64
-    void* m_fnChangeCallback; // 68
+    FnChangeCallback_t m_fnChangeCallback; // 68
 
-public:
-    ConVar()
-        : ConCommandBase()
+    ConVar(const char* name, const char* value, int flags, const char* helpstr, bool hasmin, float min, bool hasmax, float max)
+        : ConCommandBase(name, flags, helpstr)
         , ConVar_VTable(nullptr)
         , m_pParent(nullptr)
-        , m_pszDefaultValue(nullptr)
+        , m_pszDefaultValue(value)
         , m_pszString(nullptr)
-        , m_StringLength(0)
-        , m_fValue(0)
+        , m_fValue(0.0f)
         , m_nValue(0)
-        , m_bHasMin(0)
-        , m_fMinVal(0)
-        , m_bHasMax(0)
-        , m_fMaxVal(0)
+        , m_bHasMin(hasmin)
+        , m_fMinVal(min)
+        , m_bHasMax(hasmax)
+        , m_fMaxVal(max)
         , m_fnChangeCallback(nullptr)
     {
     }
-    ~ConVar()
+};
+
+template <class T, class I = int>
+struct CUtlMemory {
+    T* m_pMemory;
+    int m_nAllocationCount;
+    int m_nGrowSize;
+};
+
+template <class T, class A = CUtlMemory<T>>
+struct CUtlVector {
+    A m_Memory;
+    int m_Size;
+    T* m_pElements;
+};
+
+struct ConVar2 : ConCommandBase {
+    void* ConVar_VTable; // 24
+    ConVar2* m_pParent; // 28
+    const char* m_pszDefaultValue; // 32
+    char* m_pszString; // 36
+    int m_StringLength; // 40
+    float m_fValue; // 44
+    int m_nValue; // 48
+    bool m_bHasMin; // 52
+    float m_fMinVal; // 56
+    bool m_bHasMax; // 60
+    float m_fMaxVal; // 64
+    CUtlVector<FnChangeCallback_t> m_fnChangeCallback; // 68
+
+    ConVar2(const char* name, const char* value, int flags, const char* helpstr, bool hasmin, float min, bool hasmax, float max)
+        : ConCommandBase(name, flags, helpstr)
+        , ConVar_VTable(nullptr)
+        , m_pParent(nullptr)
+        , m_pszDefaultValue(value)
+        , m_pszString(nullptr)
+        , m_fValue(0.0f)
+        , m_nValue(0)
+        , m_bHasMin(hasmin)
+        , m_fMinVal(min)
+        , m_bHasMax(hasmax)
+        , m_fMaxVal(max)
+        , m_fnChangeCallback()
     {
-        if (this->m_pszString) {
-            delete[] this->m_pszString;
-            this->m_pszString = nullptr;
-        }
     }
 };
 
-class ConVar2 : public ConVar {
-public:
-    // CUtlVector<FnChangeCallback_t> m_fnChangeCallback
-    // CUtlMemory<FnChangeCallback_t> m_Memory
-    int m_nAllocationCount; // 72
-    int m_nGrowSize; // 76
-    int m_Size; // 80
-    void* m_pElements; // 84
-
-public:
-    ConVar2()
-        : ConVar()
-        , m_nAllocationCount(0)
-        , m_nGrowSize(0)
-        , m_Size(0)
-        , m_pElements(nullptr)
-    {
-    }
-};
-
-enum SignonState {
-    None = 0,
-    Challenge = 1,
-    Connected = 2,
-    New = 3,
-    Prespawn = 4,
-    Spawn = 5,
-    Full = 6,
-    Changelevel = 7
-};
+#define SIGNONSTATE_NONE 0
+#define SIGNONSTATE_CHALLENGE 1
+#define SIGNONSTATE_CONNECTED 2
+#define SIGNONSTATE_NEW 3
+#define SIGNONSTATE_PRESPAWN 4
+#define SIGNONSTATE_SPAWN 5
+#define SIGNONSTATE_FULL 6
+#define SIGNONSTATE_CHANGELEVEL 7
 
 struct CUserCmd {
     void* VMT; // 0
@@ -257,8 +272,7 @@ struct CUserCmd {
     bool hasbeenpredicted; // 60
 };
 
-class CMoveData {
-public:
+struct CMoveData {
     bool m_bFirstRunOfFunctions : 1; // 0
     bool m_bGameCodeMovedPlayer : 1; // 2
     void* m_nPlayerHandle; // 4
@@ -282,11 +296,7 @@ public:
     float m_flConstraintRadius; // 140
     float m_flConstraintWidth; // 144
     float m_flConstraintSpeedFactor; // 148
-    void SetAbsOrigin(const Vector& vec);
-    const Vector& GetAbsOrigin() const;
-
-private:
-    Vector m_vecAbsOrigin;
+    Vector m_vecAbsOrigin; // 152
 };
 
 class CHLMoveData : public CMoveData {
@@ -314,8 +324,8 @@ public:
 #define WL_Feet 1
 #define WL_Waist 2
 
-#define MOVETYPE_LADDER 9
 #define MOVETYPE_NOCLIP 8
+#define MOVETYPE_LADDER 9
 
 typedef enum {
     HS_NEW_GAME = 0,
@@ -325,12 +335,23 @@ typedef enum {
     HS_RUN = 4,
     HS_GAME_SHUTDOWN = 5,
     HS_SHUTDOWN = 6,
-    HS_RESTART = 7
+    HS_RESTART = 7,
+
+    INFRA_HS_NEW_GAME = 0,
+    INFRA_HS_LOAD_GAME = 1,
+    INFRA_HS_LOAD_GAME_WITHOUT_RESTART = 2,
+    INFRA_HS_CHANGE_LEVEL_SP = 3,
+    INFRA_HS_CHANGE_LEVEL_MP = 4,
+    INFRA_HS_RUN = 5,
+    INFRA_HS_GAME_SHUTDOWN = 6,
+    INFRA_HS_SHUTDOWN = 7,
+    INFRA_HS_RESTART = 8,
+    INFRA_HS_RESTART_WITHOUT_RESTART = 9
 } HOSTSTATES;
 
 struct CHostState {
-    HOSTSTATES m_currentState; // 0
-    HOSTSTATES m_nextState; // 4
+    int m_currentState; // 0
+    int m_nextState; // 4
     Vector m_vecLocation; // 8, 12, 16
     QAngle m_angLocation; // 20, 24, 28
     char m_levelName[256]; // 32
@@ -389,7 +410,7 @@ public:
 };
 
 struct CPlugin {
-    char m_szName[128]; //0
+    char m_szName[128]; // 0
     bool m_bDisable; // 128
     IServerPluginCallbacks* m_pPlugin; // 132
     int m_iPluginInterfaceVersion; // 136
@@ -417,7 +438,7 @@ struct CEventAction {
     const char* m_iParameter; // 8
     float m_flDelay; // 12
     int m_nTimesToFire; // 16
-    int m_iIDStamp; //20
+    int m_iIDStamp; // 20
     CEventAction* m_pNext; // 24
 };
 
@@ -511,7 +532,7 @@ struct SendProp {
     SendProp* m_pArrayProp; // 24
     ArrayLengthSendProxyFn m_ArrayLengthProxy; // 28
     int m_nElements; // 32
-    int m_ElementStride; //36
+    int m_ElementStride; // 36
     char* m_pExcludeDTName; // 40
     char* m_pParentArrayPropName; // 44
     char* m_pVarName; // 48
@@ -578,6 +599,109 @@ struct ServerClass {
     int m_InstanceBaselineIndex;
 };
 
+typedef enum _fieldtypes {
+    FIELD_VOID = 0,
+    FIELD_FLOAT,
+    FIELD_STRING,
+    FIELD_VECTOR,
+    FIELD_QUATERNION,
+    FIELD_INTEGER,
+    FIELD_BOOLEAN,
+    FIELD_SHORT,
+    FIELD_CHARACTER,
+    FIELD_COLOR32,
+    FIELD_EMBEDDED,
+    FIELD_CUSTOM,
+    FIELD_CLASSPTR,
+    FIELD_EHANDLE,
+    FIELD_EDICT,
+    FIELD_POSITION_VECTOR,
+    FIELD_TIME,
+    FIELD_TICK,
+    FIELD_MODELNAME,
+    FIELD_SOUNDNAME,
+    FIELD_INPUT,
+    FIELD_FUNCTION,
+    FIELD_VMATRIX,
+    FIELD_VMATRIX_WORLDSPACE,
+    FIELD_MATRIX3X4_WORLDSPACE,
+    FIELD_INTERVAL,
+    FIELD_MODELINDEX,
+    FIELD_MATERIALINDEX,
+    FIELD_VECTOR2D,
+    FIELD_TYPECOUNT
+} fieldtype_t;
+
+enum {
+    TD_OFFSET_NORMAL = 0,
+    TD_OFFSET_PACKED,
+    TD_OFFSET_COUNT
+};
+
+struct inputdata_t;
+typedef void (*inputfunc_t)(inputdata_t& data);
+
+struct datamap_t;
+struct typedescription_t {
+    fieldtype_t fieldType; // 0
+    const char* fieldName; // 4
+    int fieldOffset[TD_OFFSET_COUNT]; // 8
+    unsigned short fieldSize; // 16
+    short flags; // 18
+    const char* externalName; // 20
+    void* pSaveRestoreOps; // 24
+#ifndef _WIN32
+    void* unk; // 28
+#endif
+    inputfunc_t inputFunc; // 28/32
+    datamap_t* td; // 32/36
+    int fieldSizeInBytes; // 36/40
+    struct typedescription_t* override_field; // 40/44
+    int override_count; // 44/48
+    float fieldTolerance; // 48/52
+};
+
+struct datamap_t2;
+struct typedescription_t2 {
+    fieldtype_t fieldType; // 0
+    const char* fieldName; // 4
+    int fieldOffset; // 8
+    unsigned short fieldSize; // 12
+    short flags; // 14
+    const char* externalName; // 16
+    void* pSaveRestoreOps; // 20
+#ifndef _WIN32
+    void* unk1; // 24
+#endif
+    inputfunc_t inputFunc; // 24/28
+    datamap_t2* td; // 28/32
+    int fieldSizeInBytes; // 32/36
+    struct typedescription_t2* override_field; // 36/40
+    int override_count; // 40/44
+    float fieldTolerance; // 44/48
+    int flatOffset[TD_OFFSET_COUNT]; // 48/52
+    unsigned short flatGroup; // 56/60
+};
+
+struct datamap_t {
+    typedescription_t* dataDesc; // 0
+    int dataNumFields; // 4
+    char const* dataClassName; // 8
+    datamap_t* baseMap; // 12
+    bool chains_validated; // 16
+    bool packed_offsets_computed; // 20
+    int packed_size; // 24
+};
+
+struct datamap_t2 {
+    typedescription_t2* dataDesc; // 0
+    int dataNumFields; // 4
+    char const* dataClassName; // 8
+    datamap_t2* baseMap; // 12
+    int m_nPackedSize; // 16
+    void* m_pOptimizedDataMap; // 20
+};
+
 enum MapLoadType_t {
     MapLoad_NewGame = 0,
     MapLoad_LoadGame = 1,
@@ -602,7 +726,7 @@ struct CBaseEdict {
 struct edict_t : CBaseEdict {
 };
 
-int ENTINDEX(edict_t *pEdict);
+int ENTINDEX(edict_t* pEdict);
 edict_t* INDEXENT(int iEdictNum);
 
 struct CGlobalVarsBase {
@@ -702,8 +826,6 @@ struct PerUserInput_t {
     int m_nCamCommand; // 188
 };
 
-#define MAX_SPLITSCREEN_PLAYERS 2
-
 struct kbutton_t {
     struct Split_t {
         int down[2];
@@ -711,7 +833,7 @@ struct kbutton_t {
     };
 
     Split_t& GetPerUser(int nSlot = -1);
-    Split_t m_PerUser[MAX_SPLITSCREEN_PLAYERS];
+    Split_t m_PerUser[2];
 };
 
 enum TOGGLE_STATE {

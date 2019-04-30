@@ -25,6 +25,7 @@ public:
     Interface* s_GameEventManager = nullptr;
     Interface* eng = nullptr;
     Interface* debugoverlay = nullptr;
+    Interface* s_ServerPlugin = nullptr;
 
     using _ClientCmd = int(__func*)(void* thisptr, const char* szCmdString);
     using _GetLocalPlayer = int(__func*)(void* thisptr);
@@ -78,7 +79,6 @@ public:
     void* s_CommandBuffer = nullptr;
     bool* m_bWaitEnabled = nullptr;
     bool* m_bWaitEnabled2 = nullptr;
-    cmdalias_t* cmd_alias = nullptr;
 
 public:
     void ExecuteCommand(const char* cmd);
@@ -86,9 +86,7 @@ public:
     float ToTime(int tick);
     int GetLocalPlayerIndex();
     edict_t* PEntityOfEntIndex(int iEntIndex);
-    QAngle GetAngles();
     QAngle GetAngles(int nSlot);
-    void SetAngles(QAngle va);
     void SetAngles(int nSlot, QAngle va);
     void SendToCommandBuffer(const char* text, int delay);
     int PointToScreen(const Vector& point, Vector& screen);
@@ -126,7 +124,7 @@ public:
     static uintptr_t ParseSmoothingInfo_Continue;
     DECL_DETOUR_MID_MH(ParseSmoothingInfo_Mid)
 
-    Memory::Patch* demoSmootherPatch;
+    Memory::Patch* demoSmootherPatch = nullptr;
 #endif
 
     bool Init() override;

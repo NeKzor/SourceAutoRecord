@@ -15,15 +15,14 @@ OffsetFinder::OffsetFinder()
 {
     this->hasLoaded = true;
 }
-void OffsetFinder::ServerSide(const char* className, const char* propName, int* offset, bool debug)
+void OffsetFinder::ServerSide(const char* className, const char* propName, int* offset)
 {
     if (server->GetAllServerClasses) {
         for (auto curClass = server->GetAllServerClasses(); curClass; curClass = curClass->m_pNext) {
             if (!std::strcmp(curClass->m_pNetworkName, className)) {
                 auto result = this->Find(curClass->m_pTable, propName);
                 if (result != 0) {
-                    if (debug)
-                        console->DevMsg("Found %s::%s at %i (server-side)\n", className, propName, result);
+                    console->DevMsg("Found %s::%s at %i (server-side)\n", className, propName, result);
                     if (offset)
                         *offset = result;
                 }
@@ -58,7 +57,7 @@ void OffsetFinder::ClientSide(const char* className, const char* propName, int* 
 }
 int16_t OffsetFinder::Find(SendTable* table, const char* propName)
 {
-    auto size = sar.game->version & SourceGame_Portal2Engine ? sizeof(SendProp2) : sizeof(SendProp);
+    auto size = sar.game->Is(SourceGame_Portal2Engine) ? sizeof(SendProp2) : sizeof(SendProp);
 
     for (auto i = 0; i < table->m_nProps; ++i) {
         auto prop = *reinterpret_cast<SendProp*>((uintptr_t)table->m_pProps + size * i);
@@ -68,7 +67,7 @@ int16_t OffsetFinder::Find(SendTable* table, const char* propName)
         auto type = prop.m_Type;
         auto nextTable = prop.m_pDataTable;
 
-        if (sar.game->version & SourceGame_Portal2Engine) {
+        if (sar.game->Is(SourceGame_Portal2Engine)) {
             auto temp = *reinterpret_cast<SendProp2*>(&prop);
             name = temp.m_pVarName;
             offset = temp.m_Offset;
@@ -119,22 +118,22 @@ int16_t OffsetFinder::Find(RecvTable* table, const char* propName)
 
 // Commands
 
-CON_COMMAND(sar_find_server_offset, "Finds prop offset in specified server class.\n")
+CON_COMMAND(sar_find_server_offset, "Finds prop offset in specified server class.\n"
+                                    "Usage: sar_find_server_offset <class_name> <prop_name>\n")
 {
     if (args.ArgC() != 3) {
-        return console->Print("sar_find_server_offset <class_name> <prop_name> : "
-                              "Finds prop offset in specified server class.\n");
+        return console->Print(sar_find_server_offset.ThisPtr()->m_pszHelpString);
     }
 
     auto offset = 0;
     offsetFinder->ServerSide(args[1], args[2], &offset);
     console->Print("%s::%s = %d\n", args[1], args[2], offset);
 }
-CON_COMMAND(sar_find_client_offset, "Finds prop offset in specified client class.\n")
+CON_COMMAND(sar_find_client_offset, "Finds prop offset in specified client class.\n"
+                                    "Usage: sar_find_client_offset <class_name> <prop_name>\n")
 {
     if (args.ArgC() != 3) {
-        return console->Print("sar_find_client_offset <class_name> <prop_name> : "
-                              "Finds prop offset in specified client class.\n");
+        return console->Print(sar_find_client_offset.ThisPtr()->m_pszHelpString);
     }
 
     auto offset = 0;

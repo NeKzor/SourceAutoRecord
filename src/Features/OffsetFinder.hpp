@@ -1,5 +1,5 @@
 #pragma once
-#include "Features/Feature.hpp"
+#include "Feature.hpp"
 
 #include "Command.hpp"
 #include "Utils.hpp"
@@ -7,7 +7,7 @@
 class OffsetFinder : public Feature {
 public:
     OffsetFinder();
-    void ServerSide(const char* className, const char* propName, int* offset, bool debug = true);
+    void ServerSide(const char* className, const char* propName, int* offset);
     void ClientSide(const char* className, const char* propName, int* offset);
 
 private:

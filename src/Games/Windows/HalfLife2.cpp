@@ -13,9 +13,11 @@ void HalfLife2::LoadOffsets()
 
     // engine.dll
 
+    Dtor = 0; // ConVar
     InternalSetValue = 10; // ConVar
     InternalSetFloatValue = 11; // ConVar
     InternalSetIntValue = 12; // ConVar
+    Create = 15; // ConVar
     GetScreenSize = 5; // CEngineClient
     ClientCmd = 7; // CEngineClient
     Cbuf_AddText = 58; // CEngineClient::ClientCmd
@@ -62,7 +64,7 @@ void HalfLife2::LoadOffsets()
     Frame = 5; // CEngine
     m_bLoadGame = 335; // CGameClient::ActivatePlayer/CBaseServer::m_szLevelName
     ScreenPosition = 10; // CIVDebugOverlay
-    cmd_alias = 37; // alias
+    MAX_SPLITSCREEN_PLAYERS = 1; // maxplayers
 
     // vstdlib.dll
 
