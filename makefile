@@ -22,7 +22,7 @@ OBJS=$(patsubst $(SDIR)%.cpp, $(ODIR)%.o, $(SRCS))
 CC=g++
 STFU=-Wno-unused-function -Wno-unused-variable -Wno-parentheses -Wno-unknown-pragmas
 CFLAGS=-std=c++17 -m32 -fPIC -static-libstdc++ -shared -Wall $(STFU) -I$(SDIR)
-#CFLAGS+=-D _DEBUG
+#CFLAGS+= -DDBG_RULE
 EXPORT=cp -fu
 PRINT=echo
 DELETE=rm -rf
@@ -66,7 +66,4 @@ post:
 #	@$(EXPORT) "$(BINARY)" "$(STEAM)Portal/$(BINARY)"
 
 get-deps:
-	sudo apt-get install -y g++-multilib
-
-cvars:
-	node cvars.js "$(STEAM)Portal 2"
+	sudo apt-get install -y gcc-multilib g++-multilib

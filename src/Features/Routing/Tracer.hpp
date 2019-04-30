@@ -1,12 +1,11 @@
 #pragma once
 #include <tuple>
-#include <vector>
 
 #include "Features/Feature.hpp"
 
 #include "Utils.hpp"
 
-enum class TracerLengthType {
+enum TracerLengthType {
     VEC2,
     VEC3
 };
@@ -17,13 +16,11 @@ struct TraceResult {
 };
 
 class Tracer : public Feature {
-private:
-    std::vector<TraceResult*> traces;
+public:
+    TraceResult traces[MAX_SPLITSCREEN_PLAYERS];
 
 public:
     Tracer();
-    ~Tracer();
-
     TraceResult* GetTraceResult(int nSlot);
 
     void Start(int nSlot, Vector source);

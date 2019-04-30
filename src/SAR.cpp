@@ -37,9 +37,7 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
             this->features->AddFeature<Config>(&config);
             this->features->AddFeature<Cvars>(&cvars);
             this->features->AddFeature<Rebinder>(&rebinder);
-            this->game->Is(SourceGame_INFRA)
-                ? this->features->AddFeature<InfraSession>(reinterpret_cast<InfraSession**>(&session))
-                : this->features->AddFeature<Session>(&session);
+            this->features->AddFeature<Session>(&session);
             this->features->AddFeature<StepCounter>(&stepCounter);
             this->features->AddFeature<Summary>(&summary);
             this->features->AddFeature<Teleporter>(&teleporter);
@@ -57,11 +55,9 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
             this->features->AddFeature<ClassDumper>(&classDumper);
             this->features->AddFeature<EntityList>(&entityList);
             this->features->AddFeature<OffsetFinder>(&offsetFinder);
+            this->features->AddFeature<Imitator>(&imitator);
             this->features->AddFeature<AutoStrafer>(&autoStrafer);
             this->features->AddFeature<PauseTimer>(&pauseTimer);
-            this->features->AddFeature<DataMapDumper>(&dataMapDumper);
-
-            this->cheats->Init();
 
             this->modules->AddModule<InputSystem>(&inputSystem);
             this->modules->AddModule<Scheme>(&scheme);
@@ -76,22 +72,23 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
                 engine->demoplayer->Init();
                 engine->demorecorder->Init();
 
-                if (auto mod = Game::CreateNewMod(engine->GetGameDirectory())) {
-                    delete this->game;
-                    this->game = mod;
-                }
-
                 this->features->AddFeature<TasTools>(&tasTools);
 
-                if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
+                if (this->game->version & (SourceGame_Portal2 | SourceGame_ApertureTag)) {
                     this->features->AddFeature<Listener>(&listener);
                     this->features->AddFeature<WorkshopList>(&workshop);
-                    this->features->AddFeature<Imitator>(&imitator);
                 }
 
                 if (listener) {
                     listener->Init();
                 }
+
+                if (auto mod = Game::CreateNewMod(engine->GetGameDirectory())) {
+                    delete this->game;
+                    this->game = mod;
+                }
+
+                this->cheats->Init();
 
                 speedrun->LoadRules(this->game);
 
@@ -119,16 +116,18 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
 // This is a race condition though
 bool SAR::GetPlugin()
 {
-    auto s_ServerPlugin = reinterpret_cast<uintptr_t>(engine->s_ServerPlugin->ThisPtr());
-    auto m_Size = *reinterpret_cast<int*>(s_ServerPlugin + CServerPlugin_m_Size);
-    if (m_Size > 0) {
-        auto m_Plugins = *reinterpret_cast<uintptr_t*>(s_ServerPlugin + CServerPlugin_m_Plugins);
-        for (auto i = 0; i < m_Size; ++i) {
-            auto ptr = *reinterpret_cast<CPlugin**>(m_Plugins + sizeof(uintptr_t) * i);
-            if (!std::strcmp(ptr->m_szName, SAR_PLUGIN_SIGNATURE)) {
-                this->plugin->ptr = ptr;
-                this->plugin->index = i;
-                return true;
+    static Interface* s_ServerPlugin = Interface::Create(MODULE("engine"), "ISERVERPLUGINHELPERS0", false);
+    if (s_ServerPlugin) {
+        auto m_Size = *reinterpret_cast<int*>((uintptr_t)s_ServerPlugin->ThisPtr() + CServerPlugin_m_Size);
+        if (m_Size > 0) {
+            auto m_Plugins = *reinterpret_cast<uintptr_t*>((uintptr_t)s_ServerPlugin->ThisPtr() + CServerPlugin_m_Plugins);
+            for (auto i = 0; i < m_Size; ++i) {
+                auto ptr = *reinterpret_cast<CPlugin**>(m_Plugins + sizeof(uintptr_t) * i);
+                if (!std::strcmp(ptr->m_szName, SAR_PLUGIN_SIGNATURE)) {
+                    this->plugin->ptr = ptr;
+                    this->plugin->index = i;
+                    return true;
+                }
             }
         }
     }
@@ -190,14 +189,6 @@ CON_COMMAND(sar_cvars_dump, "Dumps all cvars to a file.\n")
 
     console->Print("Dumped %i cvars to game.cvars!\n", result);
 }
-CON_COMMAND(sar_cvars_dump_doc, "Dumps all SAR cvars to a file.\n")
-{
-    std::ofstream file("sar.cvars", std::ios::out | std::ios::trunc | std::ios::binary);
-    auto result = cvars->DumpDoc(file);
-    file.close();
-
-    console->Print("Dumped %i cvars to sar.cvars!\n", result);
-}
 CON_COMMAND(sar_cvars_lock, "Restores default flags of unlocked cvars.\n")
 {
     cvars->Lock();
@@ -210,10 +201,10 @@ CON_COMMAND(sar_cvarlist, "Lists all SAR cvars and unlocked engine cvars.\n")
 {
     cvars->ListAll();
 }
-CON_COMMAND(sar_rename, "Changes your name. Usage: sar_rename <name>\n")
+CON_COMMAND(sar_rename, "Changes your name.\n")
 {
     if (args.ArgC() != 2) {
-        return console->Print(sar_rename.ThisPtr()->m_pszHelpString);
+        console->Print("Changes your name. Usage: sar_rename <name>\n");
     }
 
     auto name = Variable("name");
@@ -225,11 +216,14 @@ CON_COMMAND(sar_rename, "Changes your name. Usage: sar_rename <name>\n")
 }
 CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloads the module.\n")
 {
+    if (sar.features) {
+        sar.features->DeleteAll();
+    }
     if (sar.cheats) {
         sar.cheats->Shutdown();
     }
-    if (sar.features) {
-        sar.features->DeleteAll();
+    if (sar.modules) {
+        sar.modules->ShutdownAll();
     }
 
     if (sar.GetPlugin()) {
@@ -237,10 +231,6 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
         auto unload = std::string("plugin_unload ") + std::to_string(sar.plugin->index);
         engine->SendToCommandBuffer(unload.c_str(), SAFE_UNLOAD_TICK_DELAY);
     }
-
-    if (sar.modules) {
-        sar.modules->ShutdownAll();
-    }    
 
     SAFE_DELETE(sar.features)
     SAFE_DELETE(sar.cheats)

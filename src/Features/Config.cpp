@@ -15,9 +15,6 @@
 #include "SAR.hpp"
 #include "Utils.hpp"
 
-#define SAVE_CVAR(cvar, value) \
-    file << #cvar " \"" << cvar.Get##value() << "\"\n";
-
 Config* config;
 
 Config::Config()
@@ -55,7 +52,7 @@ bool Config::Save()
     SAVE_CVAR(sar_ei_hud_font_color2, String);
     SAVE_CVAR(sar_ei_hud_font_index, Int);
 
-    if (sar.game->Is(SourceGame_Portal2Game | SourceGame_Portal)) {
+    if (sar.game->version & (SourceGame_Portal2Game | SourceGame_Portal)) {
         SAVE_CVAR(sar_sr_hud_x, Int);
         SAVE_CVAR(sar_sr_hud_y, Int);
         SAVE_CVAR(sar_sr_hud_font_color, String);

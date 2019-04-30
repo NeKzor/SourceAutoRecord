@@ -6,7 +6,6 @@
 #include "Modules/Server.hpp"
 
 #include "Command.hpp"
-#include "Offsets.hpp"
 #include "Utils.hpp"
 
 Teleporter* teleporter;
@@ -14,30 +13,19 @@ Teleporter* teleporter;
 Teleporter::Teleporter()
     : locations()
 {
-    for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
-        this->locations.push_back(new TeleportLocation());
-    }
-
     this->hasLoaded = true;
-}
-Teleporter::~Teleporter()
-{
-    for (auto& location : this->locations) {
-        delete location;
-    }
-    this->locations.clear();
 }
 TeleportLocation* Teleporter::GetLocation(int nSlot)
 {
-    return this->locations[nSlot];
+    return &this->locations[nSlot];
 }
 void Teleporter::Save(int nSlot)
 {
-    auto player = server->GetPlayer(nSlot + 1);
+    auto player = server->GetPlayer(nSlot);
     if (player) {
         auto location = this->GetLocation(nSlot);
         location->origin = server->GetAbsOrigin(player);
-        location->angles = engine->GetAngles(nSlot);
+        location->angles = server->GetAbsAngles(player);
         location->isSet = true;
 
         console->Print("Saved location: %.3f %.3f %.3f\n", location->origin.x, location->origin.y, location->origin.z);
@@ -50,11 +38,9 @@ void Teleporter::Teleport(int nSlot)
     char setpos[64];
     std::snprintf(setpos, sizeof(setpos), "setpos %f %f %f", location->origin.x, location->origin.y, location->origin.z);
 
-    engine->SetAngles(nSlot, location->angles);
+    engine->SetAngles(location->angles);
     engine->ExecuteCommand(setpos);
 }
-
-// Commands
 
 CON_COMMAND(sar_teleport, "Teleports the player to the last saved location.\n")
 {

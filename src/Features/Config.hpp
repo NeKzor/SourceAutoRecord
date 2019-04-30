@@ -3,6 +3,9 @@
 
 #include "Feature.hpp"
 
+#define SAVE_CVAR(cvar, value) \
+    file << #cvar " " << cvar.Get##value() << "\n";
+
 class Config : public Feature {
 public:
     std::string filePath;

@@ -34,18 +34,9 @@ REDECL(VGui::Paint);
 // CEngineVGui::Paint
 DETOUR(VGui::Paint, int mode)
 {
-    auto slot = GET_SLOT();
-    if (slot == 0) {
-        for (auto const& hud : vgui->huds) {
-            hud->Draw();
-        }
-    } else if (slot == 1) {
-        for (auto const& hud : vgui->huds2) {
-            hud->Draw();
-        }
-    }
-
     surface->StartDrawing(surface->matsurface->ThisPtr());
+
+    auto slot = GET_SLOT();
 
     auto elements = 0;
     auto xPadding = sar_hud_default_padding_x.GetInt();
@@ -60,7 +51,8 @@ DETOUR(VGui::Paint, int mode)
     Color textColor(r, g, b, a);
 
     if (vgui->respectClShowPos && cl_showpos.GetBool()) {
-        yPadding += 5 * (surface->GetFontHeight(scheme->GetDefaultFont()) + spacing);
+        elements += 4;
+        yPadding += spacing;
     }
 
     auto DrawElement = [font, xPadding, yPadding, fontSize, spacing, textColor, &elements](const char* fmt, ...) {
@@ -84,19 +76,16 @@ DETOUR(VGui::Paint, int mode)
         DrawElement((char*)sar_hud_text.GetString());
     }
     if (sar_hud_position.GetBool()) {
-        auto player = client->GetPlayer(slot + 1);
+        auto player = server->GetPlayer();
         if (player) {
-            auto pos = client->GetAbsOrigin(player);
-            if (sar_hud_position.GetInt() >= 2) {
-                pos = pos + client->GetViewOffset(player);
-            }
+            auto pos = server->GetAbsOrigin(player);
             DrawElement("pos: %.3f %.3f %.3f", pos.x, pos.y, pos.z);
         } else {
             DrawElement("pos: -");
         }
     }
     if (sar_hud_angles.GetBool()) {
-        auto ang = engine->GetAngles(slot);
+        auto ang = engine->GetAngles();
         if (sar_hud_angles.GetInt() == 1) {
             DrawElement("ang: %.3f %.3f", ang.x, ang.y);
         } else {
@@ -104,9 +93,8 @@ DETOUR(VGui::Paint, int mode)
         }
     }
     if (sar_hud_velocity.GetBool()) {
-        auto player = client->GetPlayer(slot + 1);
+        auto player = server->GetPlayer();
         if (player) {
-<<<<<<< HEAD
             if (sar_hud_velocity.GetInt() == 3) {
                 float vel[3];
                 vel[0] = server->GetLocalVelocity(player).x;
@@ -117,15 +105,6 @@ DETOUR(VGui::Paint, int mode)
                 auto vel = (sar_hud_velocity.GetInt() == 1)
                     ? server->GetLocalVelocity(player).Length()
                     : server->GetLocalVelocity(player).Length2D();
-=======
-            if (sar_hud_velocity.GetInt() >= 3) {
-                auto vel = client->GetLocalVelocity(player);
-                DrawElement("vel: x : %.3f y : %.3f z : %.3f", vel.x, vel.y, vel.z);
-            } else {
-                auto vel = (sar_hud_velocity.GetInt() == 1)
-                    ? client->GetLocalVelocity(player).Length()
-                    : client->GetLocalVelocity(player).Length2D();
->>>>>>> 1b44ab346acb6d0aa2e8764be26e9196dfc09ec2
                 DrawElement("vel: %.3f", vel);
             }
         } else {
@@ -186,12 +165,13 @@ DETOUR(VGui::Paint, int mode)
         DrawElement("jumps: %i", stat->jumps->total);
     }
     if (sar_hud_portals.isRegistered && sar_hud_portals.GetBool()) {
-        auto player = server->GetPlayer(slot + 1);
+        auto player = server->GetPlayer();
         if (player) {
             DrawElement("portals: %i", server->GetPortals(player));
         } else {
             DrawElement("portals: -");
         }
+        DrawElement("aaa: %i", slot);
     }
     if (sar_hud_steps.GetBool()) {
         auto stat = stats->Get(slot);
@@ -248,7 +228,7 @@ DETOUR(VGui::Paint, int mode)
     }
     // Tas tools
     if (sar_hud_velocity_angle.GetBool()) {
-        auto player = server->GetPlayer(slot + 1);
+        auto player = server->GetPlayer();
         if (player) {
             auto velocityAngles = tasTools->GetVelocityAngles(player);
             DrawElement("vel ang: %.3f %.3f", velocityAngles.x, velocityAngles.y);
@@ -257,7 +237,7 @@ DETOUR(VGui::Paint, int mode)
         }
     }
     if (sar_hud_acceleration.GetBool()) {
-        auto player = server->GetPlayer(slot + 1);
+        auto player = server->GetPlayer();
         if (player) {
             auto acceleration = tasTools->GetAcceleration(player);
             if (sar_hud_acceleration.GetInt() == 1) {
@@ -270,8 +250,7 @@ DETOUR(VGui::Paint, int mode)
         }
     }
     if (sar_hud_player_info.GetBool()) {
-        auto player = server->GetPlayer(slot + 1);
-        auto info = tasTools->GetPlayerInfo(player);
+        auto info = tasTools->GetPlayerInfo();
         if (info) {
             if (tasTools->propType == PropType::Boolean) {
                 DrawElement("%s::%s: %s", tasTools->className, tasTools->propName, *reinterpret_cast<bool*>(info) ? "true" : "false");
@@ -296,6 +275,17 @@ DETOUR(VGui::Paint, int mode)
 
     surface->FinishDrawing();
 
+    // Draw other HUDs
+    if (slot == 0) {
+        for (auto const& hud : vgui->huds) {
+            hud->Draw();
+        }
+    } else if (slot == 1) {
+        for (auto const& hud : vgui->huds2) {
+            hud->Draw();
+        }
+    }
+
     return VGui::Paint(thisptr, mode);
 }
 
@@ -310,11 +300,11 @@ bool VGui::Init()
     this->huds2.push_back(inputHud2 = new InputHud());
     this->huds.push_back(inspectionHud = new InspectionHud());
 
-    if (sar.game->Is(SourceGame_Portal2Game | SourceGame_Portal)) {
+    if (sar.game->version & (SourceGame_Portal2Game | SourceGame_Portal)) {
         this->huds.push_back(speedrunHud = new SpeedrunHud());
     }
 
-    if (sar.game->Is(SourceGame_HalfLife2Engine)) {
+    if (sar.game->version & SourceGame_HalfLife2Engine) {
         this->respectClShowPos = false;
     }
 
@@ -327,11 +317,7 @@ void VGui::Shutdown()
     for (auto const& hud : this->huds) {
         delete hud;
     }
-    for (auto const& hud : this->huds2) {
-        delete hud;
-    }
     this->huds.clear();
-    this->huds2.clear();
 }
 
 VGui* vgui;

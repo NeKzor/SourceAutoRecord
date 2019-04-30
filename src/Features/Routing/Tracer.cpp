@@ -8,29 +8,17 @@
 #include "Modules/Server.hpp"
 
 #include "Command.hpp"
-#include "Offsets.hpp"
 
 Tracer* tracer;
 
 Tracer::Tracer()
     : traces()
 {
-    for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
-        this->traces.push_back(new TraceResult());
-    }
     this->hasLoaded = true;
 }
-Tracer::~Tracer()
-{
-    for (const auto& trace : this->traces) {
-        delete trace;
-    }
-    this->traces.clear();
-}
-
 TraceResult* Tracer::GetTraceResult(int nSlot)
 {
-    return this->traces[nSlot];
+    return &this->traces[nSlot];
 }
 void Tracer::Start(int nSlot, Vector source)
 {
@@ -67,19 +55,17 @@ float Tracer::CalculateLength(const TraceResult* trace, TracerLengthType type)
 
 CON_COMMAND(sar_trace_a, "Saves location A for tracing.\n")
 {
-    auto nSlot = GET_SLOT();
-    auto player = server->GetPlayer(nSlot + 1);
+    auto player = server->GetPlayer();
     if (player) {
-        tracer->Start(nSlot, server->GetAbsOrigin(player));
+        tracer->Start(GET_SLOT(), server->GetAbsOrigin(player));
         console->Print("Saved location A for tracing!\n");
     }
 }
 CON_COMMAND(sar_trace_b, "Saves location B for tracing.\n")
 {
-    auto nSlot = GET_SLOT();
-    auto player = server->GetPlayer(nSlot + 1);
+    auto player = server->GetPlayer();
     if (player) {
-        tracer->Stop(nSlot, server->GetAbsOrigin(player));
+        tracer->Stop(GET_SLOT(), server->GetAbsOrigin(player));
         console->Print("Saved location B for tracing!\n");
     }
 }

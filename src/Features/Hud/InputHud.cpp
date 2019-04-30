@@ -93,9 +93,8 @@ bool InputHud::GetCurrentSize(int& xSize, int& ySize)
 void InputHud::Draw()
 {
     auto mode = sar_ihud.GetInt();
-    if (mode == 0) {
+    if (mode == 0)
         return;
-    }
 
     auto mvForward = this->buttonBits & IN_FORWARD;
     auto mvBack = this->buttonBits & IN_BACK;
@@ -231,14 +230,17 @@ CON_COMMAND_F_COMPLETION(sar_ihud_setpos, "Sets automatically the position of in
     sar_ihud_setpos_CompletionFunc)
 {
     if (args.ArgC() != 3) {
-        return console->Print(sar_ihud_setpos.ThisPtr()->m_pszHelpString);
+        console->Print("sar_ihud_setpos <top, center or bottom> <left, center or right> : "
+                       "Sets automatically the position of input HUD.\n");
+        return;
     }
 
     auto xSize = 0;
     auto ySize = 0;
 
     if (!inputHud->GetCurrentSize(xSize, ySize)) {
-        return console->Print("HUD not active!\n");
+        console->Print("HUD not active!\n");
+        return;
     }
 
     auto xScreen = 0;

@@ -33,14 +33,12 @@ bool Memory::TryGetModule(const char* moduleName, Memory::ModuleInfo* info)
         if (EnumProcessModules(pHandle, hMods, sizeof(hMods), &cbNeeded)) {
             for (unsigned i = 0; i < (cbNeeded / sizeof(HMODULE)); ++i) {
                 char buffer[MAX_PATH];
-                if (!GetModuleFileName(hMods[i], buffer, sizeof(buffer))) {
+                if (!GetModuleFileName(hMods[i], buffer, sizeof(buffer)))
                     continue;
-                }
 
                 auto modinfo = MODULEINFO();
-                if (!GetModuleInformation(pHandle, hMods[i], &modinfo, sizeof(modinfo))) {
+                if (!GetModuleInformation(pHandle, hMods[i], &modinfo, sizeof(modinfo)))
                     continue;
-                }
 
                 auto module = ModuleInfo();
 
@@ -169,76 +167,6 @@ uintptr_t Memory::Scan(const char* moduleName, const char* pattern, int offset)
     }
     return result;
 }
-std::vector<uintptr_t> Memory::MultiScan(const char* moduleName, const char* pattern, int offset)
-{
-    std::vector<uintptr_t> result;
-    auto length = std::strlen(pattern);
-
-    auto info = Memory::ModuleInfo();
-    if (Memory::TryGetModule(moduleName, &info)) {
-        auto start = uintptr_t(info.base);
-        auto end = start + info.size;
-        auto addr = uintptr_t();
-        while (true) {
-            auto addr = Memory::FindAddress(start, end, pattern);
-            if (addr) {
-                result.push_back(addr + offset);
-                start = addr + length;
-            } else {
-                break;
-            }
-        }
-    }
-    return result;
-}
-
-std::vector<uintptr_t> Memory::Scan(const char* moduleName, const Memory::Pattern* pattern)
-{
-    std::vector<uintptr_t> result;
-
-    auto info = Memory::ModuleInfo();
-    if (Memory::TryGetModule(moduleName, &info)) {
-        auto start = uintptr_t(info.base);
-        auto end = start + info.size;
-        auto addr = Memory::FindAddress(start, end, pattern->signature);
-        if (addr) {
-            for (auto const& offset : pattern->offsets) {
-                result.push_back(addr + offset);
-            }
-        }
-    }
-    return result;
-}
-std::vector<std::vector<uintptr_t>> Memory::MultiScan(const char* moduleName, const Memory::Patterns* patterns)
-{
-    auto results = std::vector<std::vector<uintptr_t>>();
-
-    auto info = Memory::ModuleInfo();
-    if (Memory::TryGetModule(moduleName, &info)) {
-        auto moduleStart = uintptr_t(info.base);
-        auto moduleEnd = moduleStart + info.size;
-
-        for (const auto& pattern : *patterns) {
-            auto length = std::strlen(pattern->signature);
-            auto start = moduleStart;
-
-            while (true) {
-                auto addr = Memory::FindAddress(start, moduleEnd, pattern->signature);
-                if (addr) {
-                    auto result = std::vector<uintptr_t>();
-                    for (const auto& offset : pattern->offsets) {
-                        result.push_back(addr + offset);
-                    }
-                    results.push_back(result);
-                    start = addr + length;
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-    return results;
-}
 
 #ifdef _WIN32
 Memory::Patch::~Patch()
@@ -257,20 +185,20 @@ bool Memory::Patch::Execute(uintptr_t location, unsigned char* bytes)
 
     for (size_t i = 0; i < this->size; ++i) {
         if (!ReadProcessMemory(GetCurrentProcess(),
-                reinterpret_cast<LPVOID>(this->location + i),
-                &this->original[i],
-                1,
-                0)) {
+            reinterpret_cast<LPVOID>(this->location + i),
+            &this->original[i],
+            1,
+            0)) {
             return false;
         }
     }
 
     for (size_t i = 0; i < this->size; ++i) {
         if (!WriteProcessMemory(GetCurrentProcess(),
-                reinterpret_cast<LPVOID>(this->location + i),
-                &bytes[i],
-                1,
-                0)) {
+            reinterpret_cast<LPVOID>(this->location + i),
+            &bytes[i],
+            1,
+            0)) {
             return false;
         }
     }
@@ -281,10 +209,10 @@ bool Memory::Patch::Restore()
     if (this->location && this->original) {
         for (size_t i = 0; i < this->size; ++i) {
             if (!WriteProcessMemory(GetCurrentProcess(),
-                    reinterpret_cast<LPVOID>(this->location + i),
-                    &this->original[i],
-                    1,
-                    0)) {
+                reinterpret_cast<LPVOID>(this->location + i),
+                &this->original[i],
+                1,
+                0)) {
                 return false;
             }
         }

@@ -29,7 +29,6 @@ std::string GetProcessName();
 
 uintptr_t FindAddress(const uintptr_t start, const uintptr_t end, const char* target);
 uintptr_t Scan(const char* moduleName, const char* pattern, int offset = 0);
-std::vector<uintptr_t> MultiScan(const char* moduleName, const char* pattern, int offset = 0);
 
 #ifdef _WIN32
 class Patch {
@@ -44,20 +43,6 @@ public:
     bool Restore();
 };
 #endif
-
-struct Pattern {
-    const char* signature;
-    std::vector<int> offsets;
-};
-
-typedef std::vector<int> Offset;
-typedef std::vector<const Pattern*> Patterns;
-
-#define PATTERN(name, sig, ...) Memory::Pattern name { sig, Memory::Offset({ __VA_ARGS__ }) }
-#define PATTERNS(name, ...) Memory::Patterns name({ __VA_ARGS__ })
-
-std::vector<uintptr_t> Scan(const char* moduleName, const Pattern* pattern);
-std::vector<std::vector<uintptr_t>> MultiScan(const char* moduleName, const Patterns* patterns);
 
 template <typename T = uintptr_t>
 T Absolute(const char* moduleName, int relative)

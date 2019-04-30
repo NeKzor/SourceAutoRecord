@@ -10,17 +10,18 @@
 
 Variable::Variable()
     : ptr(nullptr)
-    , originalFlags(0)
-    , originalFnChangeCallback(nullptr)
     , version(SourceGame_Unknown)
+    , originalFlags(0)
+    , originalfnChangeCallback(0)
     , isRegistered(false)
     , isReference(false)
 {
 }
 Variable::~Variable()
 {
-    if (!this->isReference) {
-        SAFE_DELETE(this->ptr)
+    if (!isReference) {
+        delete ptr;
+        ptr = nullptr;
     }
 }
 Variable::Variable(const char* name)
@@ -50,26 +51,47 @@ Variable::Variable(const char* name, const char* value, float min, float max, co
 {
     Create(name, value, flags, helpstr, true, min, true, max);
 }
-void Variable::Create(const char* name, const char* value, int flags, const char* helpstr, bool hasmin, float min, bool hasmax, float max)
+void Variable::Create(const char* name, const char* value, int flags, const char* helpstr, bool hasmin, float min, bool hasmax,
+    float max)
 {
-    this->ptr = new ConVar(name, value, flags, helpstr, hasmin, min, hasmax, max);
+    this->ptr = new ConVar();
+    this->ptr->m_pszName = name;
+    this->ptr->m_pszHelpString = helpstr;
+    this->ptr->m_nFlags = flags;
+    this->ptr->m_pParent = this->ptr;
+    this->ptr->m_pszDefaultValue = value;
+    this->ptr->m_StringLength = std::strlen(this->ptr->m_pszDefaultValue) + 1;
+    this->ptr->m_pszString = new char[this->ptr->m_StringLength];
+    std::memcpy(this->ptr->m_pszString, this->ptr->m_pszDefaultValue, this->ptr->m_StringLength);
+    this->ptr->m_fValue = (float)std::atof(this->ptr->m_pszString);
+    this->ptr->m_nValue = (int)this->ptr->m_fValue;
+    this->ptr->m_bHasMin = hasmin;
+    this->ptr->m_fMinVal = min;
+    this->ptr->m_bHasMax = hasmax;
+    this->ptr->m_fMaxVal = max;
 
     Variable::list.push_back(this);
 }
-void Variable::Realloc()
+void Variable::PostInit()
 {
-    if (sar.game->Is(SourceGame_Portal2Engine)) {
-        auto newptr = new ConVar2(
-            this->ptr->m_pszName,
-            this->ptr->m_pszDefaultValue,
-            this->ptr->m_nFlags,
-            this->ptr->m_pszHelpString,
-            this->ptr->m_bHasMin,
-            this->ptr->m_fMinVal,
-            this->ptr->m_bHasMax,
-            this->ptr->m_fMaxVal);
+    if (sar.game->version & SourceGame_Portal2Engine) {
+        auto newptr = new ConVar2();
+        newptr->m_pszName = this->ptr->m_pszName;
+        newptr->m_pszHelpString = this->ptr->m_pszHelpString;
+        newptr->m_nFlags = this->ptr->m_nFlags;
+        newptr->m_pParent = newptr;
+        newptr->m_pszDefaultValue = this->ptr->m_pszDefaultValue;
+        newptr->m_StringLength = this->ptr->m_StringLength;
+        newptr->m_pszString = new char[newptr->m_StringLength];
+        std::memcpy(newptr->m_pszString, newptr->m_pszDefaultValue, newptr->m_StringLength);
+        newptr->m_fValue = this->ptr->m_fValue;
+        newptr->m_nValue = this->ptr->m_nValue;
+        newptr->m_bHasMin = this->ptr->m_bHasMin;
+        newptr->m_fMinVal = this->ptr->m_fMinVal;
+        newptr->m_bHasMax = this->ptr->m_bHasMax;
+        newptr->m_fMaxVal = this->ptr->m_fMaxVal;
         delete this->ptr;
-        this->ptr = reinterpret_cast<ConVar*>(newptr);
+        this->ptr = newptr;
     }
 }
 ConVar* Variable::ThisPtr()
@@ -147,11 +169,11 @@ void Variable::Lock()
 void Variable::DisableChange()
 {
     if (this->ptr) {
-        if (sar.game->Is(SourceGame_Portal2Engine)) {
-            this->originalSize = ((ConVar2*)this->ptr)->m_fnChangeCallback.m_Size;
-            ((ConVar2*)this->ptr)->m_fnChangeCallback.m_Size = 0;
-        } else if (sar.game->Is(SourceGame_HalfLife2Engine)) {
-            this->originalFnChangeCallback = this->ptr->m_fnChangeCallback;
+        if (sar.game->version & SourceGame_Portal2Engine) {
+            this->originalSize = ((ConVar2*)this->ptr)->m_Size;
+            ((ConVar2*)this->ptr)->m_Size = 0;
+        } else if (sar.game->version & SourceGame_HalfLife2Engine) {
+            this->originalfnChangeCallback = this->ptr->m_fnChangeCallback;
             this->ptr->m_fnChangeCallback = nullptr;
         }
     }
@@ -159,10 +181,10 @@ void Variable::DisableChange()
 void Variable::EnableChange()
 {
     if (this->ptr) {
-        if (sar.game->Is(SourceGame_Portal2Engine)) {
-            ((ConVar2*)this->ptr)->m_fnChangeCallback.m_Size = this->originalSize;
-        } else if (sar.game->Is(SourceGame_HalfLife2Engine)) {
-            this->ptr->m_fnChangeCallback = this->originalFnChangeCallback;
+        if (sar.game->version & SourceGame_Portal2Engine) {
+            ((ConVar2*)this->ptr)->m_Size = this->originalSize;
+        } else if (sar.game->version & SourceGame_HalfLife2Engine) {
+            this->ptr->m_fnChangeCallback = this->originalfnChangeCallback;
         }
     }
 }
@@ -172,34 +194,20 @@ void Variable::UniqueFor(int version)
 }
 void Variable::Register()
 {
-    if (!this->isRegistered && !this->isReference && this->ptr) {
+    if (!this->isRegistered && !this->isReference) {
         this->isRegistered = true;
-        this->Realloc();
+        this->PostInit();
         this->ptr->ConCommandBase_VTable = tier1->ConVar_VTable;
         this->ptr->ConVar_VTable = tier1->ConVar_VTable2;
-        tier1->Create(this->ptr,
-            this->ptr->m_pszName,
-            this->ptr->m_pszDefaultValue,
-            this->ptr->m_nFlags,
-            this->ptr->m_pszHelpString,
-            this->ptr->m_bHasMin,
-            this->ptr->m_fMinVal,
-            this->ptr->m_bHasMax,
-            this->ptr->m_fMaxVal,
-            nullptr);
+        tier1->RegisterConCommand(tier1->g_pCVar->ThisPtr(), this->ptr);
+        tier1->m_pConCommandList = this->ptr;
     }
 }
 void Variable::Unregister()
 {
-    if (this->isRegistered && !this->isReference && this->ptr) {
+    if (this->isRegistered && !this->isReference) {
         this->isRegistered = false;
         tier1->UnregisterConCommand(tier1->g_pCVar->ThisPtr(), this->ptr);
-#ifdef _WIN32
-        tier1->Dtor(this->ptr, 0);
-#else
-        tier1->Dtor(this->ptr);
-#endif
-        SAFE_DELETE(this->ptr)
     }
 }
 bool Variable::operator!()
@@ -210,7 +218,7 @@ int Variable::RegisterAll()
 {
     auto result = 0;
     for (const auto& var : Variable::list) {
-        if (var->version != SourceGame_Unknown && !sar.game->Is(var->version)) {
+        if (var->version != SourceGame_Unknown && !(var->version & sar.game->version)) {
             continue;
         }
         var->Register();

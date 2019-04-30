@@ -7,8 +7,9 @@ class Command {
 private:
     ConCommand* ptr;
 
-public:
     int version;
+
+public:
     bool isRegistered;
     bool isReference;
 

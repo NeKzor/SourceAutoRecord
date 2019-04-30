@@ -19,7 +19,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <CLRSupport>false</CLRSupport>
@@ -61,16 +61,15 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(ProjectDir)</AdditionalUsingDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)\lib;$(ProjectDir)</AdditionalLibraryDirectories>
@@ -99,8 +98,6 @@
       <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(ProjectDir)</AdditionalUsingDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DisableSpecificWarnings>26495</DisableSpecificWarnings>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -123,7 +120,6 @@
     <ClCompile Include="Features\ClassDumper.cpp" />
     <ClCompile Include="Features\Config.cpp" />
     <ClCompile Include="Features\Cvars.cpp" />
-    <ClCompile Include="Features\DataMapDumper.cpp" />
     <ClCompile Include="Features\Demo\Demo.cpp" />
     <ClCompile Include="Features\Demo\DemoParser.cpp" />
     <ClCompile Include="Features\EntityList.cpp" />
@@ -133,7 +129,6 @@
     <ClCompile Include="Features\Hud\InspectionHud.cpp" />
     <ClCompile Include="Features\Hud\SpeedrunHud.cpp" />
     <ClCompile Include="Features\Imitator.cpp" />
-    <ClCompile Include="Features\InfraSession.cpp" />
     <ClCompile Include="Features\Listener.cpp" />
     <ClCompile Include="Features\OffsetFinder.cpp" />
     <ClCompile Include="Features\Rebinder.cpp" />
@@ -164,6 +159,7 @@
     <ClCompile Include="Features\ReplaySystem\ReplayProvider.cpp" />
     <ClCompile Include="Features\ReplaySystem\ReplayRecorder.cpp" />
     <ClCompile Include="Features\ReplaySystem\ReplayView.cpp" />
+    <ClCompile Include="Features\Tas\AutoStrafer.cpp" />
     <ClCompile Include="Features\Tas\TasTools.cpp" />
     <ClCompile Include="Features\Teleporter.cpp" />
     <ClCompile Include="Features\Timer\PauseTimer.cpp" />
@@ -184,7 +180,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Games\Windows\INFRA.cpp" />
     <ClCompile Include="Games\Windows\ApertureTag.cpp" />
     <ClCompile Include="Games\Windows\Portal.cpp" />
     <ClCompile Include="Games\Windows\PortalStoriesMel.cpp" />
@@ -241,11 +236,9 @@
     <ClInclude Include="..\lib\minhook\MinHook.h" />
     <ClInclude Include="Cheats.hpp" />
     <ClInclude Include="Command.hpp" />
-    <ClInclude Include="Features.hpp" />
     <ClInclude Include="Features\ClassDumper.hpp" />
     <ClInclude Include="Features\Config.hpp" />
     <ClInclude Include="Features\Cvars.hpp" />
-    <ClInclude Include="Features\DataMapDumper.hpp" />
     <ClInclude Include="Features\Demo\Demo.hpp" />
     <ClInclude Include="Features\Demo\DemoParser.hpp" />
     <ClInclude Include="Features\EntityList.hpp" />
@@ -255,7 +248,6 @@
     <ClInclude Include="Features\Hud\InspectionHud.hpp" />
     <ClInclude Include="Features\Hud\SpeedrunHud.hpp" />
     <ClInclude Include="Features\Imitator.hpp" />
-    <ClInclude Include="Features\InfraSession.hpp" />
     <ClInclude Include="Features\Listener.hpp" />
     <ClInclude Include="Features\OffsetFinder.hpp" />
     <ClInclude Include="Features\Rebinder.hpp" />
@@ -290,6 +282,7 @@
     <ClInclude Include="Features\ReplaySystem\ReplayProvider.hpp" />
     <ClInclude Include="Features\ReplaySystem\ReplayRecorder.hpp" />
     <ClInclude Include="Features\ReplaySystem\ReplayView.hpp" />
+    <ClInclude Include="Features\Tas\AutoStrafer.hpp" />
     <ClInclude Include="Features\Tas\TasTools.hpp" />
     <ClInclude Include="Features\Teleporter.hpp" />
     <ClInclude Include="Features\Timer\PauseTimer.hpp" />
@@ -326,7 +319,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Games\Windows\INFRA.hpp" />
     <ClInclude Include="Games\Windows\ApertureTag.hpp" />
     <ClInclude Include="Games\Windows\HalfLife2.hpp" />
     <ClInclude Include="Games\Windows\Portal.hpp" />
@@ -335,7 +327,6 @@
     <ClInclude Include="Games\Windows\TheBeginnersGuide.hpp" />
     <ClInclude Include="Games\Windows\TheStanleyParable.hpp" />
     <ClInclude Include="Interface.hpp" />
-    <ClInclude Include="Modules.hpp" />
     <ClInclude Include="Modules\Client.hpp" />
     <ClInclude Include="Modules\Console.hpp" />
     <ClInclude Include="Modules\Engine.hpp" />

@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/NeKzor/SourceAutoRecord.svg?branch=master)](https://travis-ci.org/NeKzor/SourceAutoRecord)
-[![Build Version](https://img.shields.io/badge/version-v1.9-brightgreen.svg)](https://github.com/NeKzor/SourceAutoRecord/projects/3)
+[![Build Version](https://img.shields.io/badge/version-v1.8-brightgreen.svg)](https://github.com/NeKzor/SourceAutoRecord/projects/3)
 [![Release Status](https://img.shields.io/github/release/NeKzor/SourceAutoRecord/all.svg)](https://github.com/NeKzor/SourceAutoRecord/releases)
 
 ## Features
@@ -22,7 +22,6 @@ Game|Windows|Linux
 [The Beginners Guide](https://store.steampowered.com/app/303210)|✔|✔
 [Half-Life 2](https://store.steampowered.com/app/220)|✔|✔
 [Portal](https://store.steampowered.com/app/400)|✔|✔
-[INFRA](https://store.steampowered.com/app/251110)|✔|➖
 
 ¹ Latest Steam version.
 
@@ -32,7 +31,8 @@ Game|Windows|Linux
 - [Issues & Troubleshooting](doc/issue.md)
 - [Mapping](doc/mapping.md)
 - [Maps](doc/maps.md)
-- [Console Commands & Variables](doc/cvars.md)
+- [Tool-Assisted-Speedruns](doc/tas.md)
+- [Console Commands & Variables](https://nekzor.github.io/cvars/sar)
 
 ## Inspired By
 - [SourceDemoRender](https://github.com/crashfort/SourceDemoRender)

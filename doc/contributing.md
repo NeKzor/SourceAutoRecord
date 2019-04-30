@@ -12,6 +12,7 @@
 ### Linux
 
 - g++ 5.4.0
+- gcc-multilib
 - g++-multilib
 - Make 4.1
 - Configure `makefile`

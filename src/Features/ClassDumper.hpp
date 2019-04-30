@@ -18,7 +18,8 @@ private:
 
 public:
     ClassDumper();
-    void Dump(bool dumpServer = true);
+    void DumpServerClasses();
+    void DumpClientClasses();
 
 private:
     void DumpSendTable(std::ofstream& file, SendTable* table, int& level);

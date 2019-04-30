@@ -61,38 +61,27 @@ CON_COMMAND(sar_togglewait, "Enables or disables \"wait\" for the command buffer
     console->Print("%s wait!\n", (state) ? "Enabled" : "Disabled");
 }
 
-// P2, INFRA and HL2 only
-#ifdef _WIN32
-#define TRACE_SHUTDOWN_PATTERN "6A 00 68 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? "
-#define TRACE_SHUTDOWN_OFFSET1 3
-#define TRACE_SHUTDOWN_OFFSET2 10
-#else
-#define TRACE_SHUTDOWN_PATTERN "C7 44 24 04 00 00 00 00 C7 04 24 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? C7"
-#define TRACE_SHUTDOWN_OFFSET1 11
-#define TRACE_SHUTDOWN_OFFSET2 10
-#endif
+// P2 and Half-Life 2 Engine only
 CON_COMMAND(sar_delete_alias_cmds, "Deletes all alias commands.\n")
 {
-    using _Cmd_Shutdown = int (*)();
-    static _Cmd_Shutdown Cmd_Shutdown = nullptr;
-
-    if (!Cmd_Shutdown) {
-        auto result = Memory::MultiScan(engine->Name(), TRACE_SHUTDOWN_PATTERN, TRACE_SHUTDOWN_OFFSET1);
-        if (!result.empty()) {
-            for (auto const& addr : result) {
-                if (!std::strcmp(*reinterpret_cast<char**>(addr), "Cmd_Shutdown()")) {
-                    Cmd_Shutdown = Memory::Read<_Cmd_Shutdown>(addr + TRACE_SHUTDOWN_OFFSET2);
-                    break;
-                }
-            }
-       }
+    if (!engine->cmd_alias->next) {
+        return console->Print("Nothing to delete.\n");
     }
 
-    if (Cmd_Shutdown) {
-        Cmd_Shutdown();
-    } else {
-        console->Print("Unable to find Cmd_Shutdown() function!\n");
-    }
+    auto count = 0;
+    auto cur = engine->cmd_alias->next;
+    do {
+        auto next = cur->next;
+        // Better than valve because no mem-leak :^)
+        delete[] cur->value;
+        delete cur;
+        cur = next;
+        ++count;
+    } while (cur);
+
+    engine->cmd_alias->next = nullptr;
+
+    console->Print("Deleted %i alias commands!\n", count);
 }
 
 void Cheats::Init()
@@ -113,39 +102,37 @@ void Cheats::Init()
     cl_forwardspeed = Variable("cl_forwardspeed");
     host_framerate = Variable("host_framerate");
 
-    if (sar.game->Is(SourceGame_Portal2Game)) {
+    if (sar.game->version & SourceGame_Portal2Game) {
         sv_transition_fade_time = Variable("sv_transition_fade_time");
         sv_laser_cube_autoaim = Variable("sv_laser_cube_autoaim");
         ui_loadingscreen_transition_time = Variable("ui_loadingscreen_transition_time");
         hide_gun_when_holding = Variable("hide_gun_when_holding");
-    } else if (sar.game->Is(SourceGame_TheStanleyParable | SourceGame_TheBeginnersGuide)) {
+    } else if (sar.game->version & (SourceGame_TheStanleyParable | SourceGame_TheBeginnersGuide)) {
         Command::ActivateAutoCompleteFile("map", map_CompletionFunc);
         Command::ActivateAutoCompleteFile("changelevel", changelevel_CompletionFunc);
         Command::ActivateAutoCompleteFile("changelevel2", changelevel2_CompletionFunc);
     }
-
-    auto s3 = SourceGame_Portal2Game | SourceGame_Portal;
 
     sar_jumpboost.UniqueFor(SourceGame_Portal2Engine);
     sar_aircontrol.UniqueFor(SourceGame_Portal2Engine);
     sar_hud_portals.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
     sar_disable_challenge_stats_hud.UniqueFor(SourceGame_Portal2);
     sar_debug_listener.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
-    sar_sr_hud.UniqueFor(s3);
-    sar_sr_hud_x.UniqueFor(s3);
-    sar_sr_hud_y.UniqueFor(s3);
-    sar_sr_hud_font_color.UniqueFor(s3);
-    sar_sr_hud_font_index.UniqueFor(s3);
-    sar_speedrun_autostart.UniqueFor(s3);
-    sar_speedrun_autostop.UniqueFor(s3);
-    sar_speedrun_standard.UniqueFor(s3);
+    sar_sr_hud.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_sr_hud_x.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_sr_hud_y.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_sr_hud_font_color.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_sr_hud_font_index.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_autostart.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_autostop.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_standard.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
     sar_duckjump.UniqueFor(SourceGame_Portal2Game);
     sar_replay_viewmode.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_mimic.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_tas_ss_forceuser.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
-    sar_hud_pause_timer.UniqueFor(s3);
-    sar_speedrun_time_pauses.UniqueFor(s3);
-    sar_timer_time_pauses.UniqueFor(s3);
+    sar_hud_pause_timer.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_time_pauses.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_timer_time_pauses.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
 
     startbhop.UniqueFor(SourceGame_TheStanleyParable);
     endbhop.UniqueFor(SourceGame_TheStanleyParable);
@@ -153,20 +140,20 @@ void Cheats::Init()
     sar_workshop.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_workshop_update.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_workshop_list.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
-    sar_speedrun_result.UniqueFor(s3);
-    sar_speedrun_export.UniqueFor(s3);
-    sar_speedrun_export_pb.UniqueFor(s3);
-    sar_speedrun_import.UniqueFor(s3);
-    sar_speedrun_category.UniqueFor(s3);
-    sar_speedrun_categories.UniqueFor(s3);
-    sar_speedrun_offset.UniqueFor(s3);
-    sar_speedrun_start.UniqueFor(s3);
-    sar_speedrun_stop.UniqueFor(s3);
-    sar_speedrun_split.UniqueFor(s3);
-    sar_speedrun_pause.UniqueFor(s3);
-    sar_speedrun_resume.UniqueFor(s3);
-    sar_speedrun_reset.UniqueFor(s3);
-    sar_togglewait.UniqueFor(SourceGame_Portal2Game | SourceGame_INFRA);
+    sar_speedrun_result.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_export.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_export_pb.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_import.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_category.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_categories.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_offset.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_start.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_stop.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_split.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_pause.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_resume.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_speedrun_reset.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
+    sar_togglewait.UniqueFor(SourceGame_Portal2Game);
     sar_tas_ss.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_delete_alias_cmds.UniqueFor(SourceGame_Portal2Game | SourceGame_HalfLife2Engine);
     sar_tas_strafe.UniqueFor(SourceGame_Portal2Engine);
@@ -181,7 +168,7 @@ void Cheats::Init()
 }
 void Cheats::Shutdown()
 {
-    if (sar.game->Is(SourceGame_TheStanleyParable | SourceGame_TheBeginnersGuide)) {
+    if (sar.game->version & (SourceGame_TheStanleyParable | SourceGame_TheBeginnersGuide)) {
         Command::DectivateAutoCompleteFile("map");
         Command::DectivateAutoCompleteFile("changelevel");
         Command::DectivateAutoCompleteFile("changelevel2");

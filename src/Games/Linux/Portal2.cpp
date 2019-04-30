@@ -13,11 +13,9 @@ void Portal2::LoadOffsets()
 
     // engine.so
 
-    Dtor = 0; // ConVar
     InternalSetValue = 19; // ConVar
     InternalSetFloatValue = 20; // ConVar
     InternalSetIntValue = 21; // ConVar
-    Create = 25; // ConVar
     GetScreenSize = 5; // CEngineClient
     ClientCmd = 7; // CEngineClient
     GetClientStateFunction = 11; // CEngineClient::ClientCmd
@@ -67,7 +65,7 @@ void Portal2::LoadOffsets()
     Frame = 6; // CEngine
     m_bLoadGame = 440; // CGameClient::ActivatePlaye/CBaseServer::m_szLevelName
     ScreenPosition = 11; // CIVDebugOverlay
-    MAX_SPLITSCREEN_PLAYERS = 2; // maxplayers
+    cmd_alias = 236; // alias
 
     // libvstdlib.so
 

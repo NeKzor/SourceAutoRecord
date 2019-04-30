@@ -137,7 +137,8 @@ CON_COMMAND(sar_avg_result, "Prints result of average.\n")
 CON_COMMAND(sar_cps_add, "Saves current time of timer.\n")
 {
     if (!timer->isRunning) {
-        return console->DevMsg("Timer isn't running!\n");
+        console->DevMsg("Timer isn't running!\n");
+        return;
     }
 
     auto tick = timer->GetTick(engine->GetSessionTick());
@@ -153,7 +154,8 @@ CON_COMMAND(sar_cps_result, "Prints result of timer checkpoints.\n")
     if (cps > 0) {
         console->Print("Result of %i checkpoint%s:\n", cps, (cps == 1) ? "" : "s");
     } else {
-        return console->Print("No result!\n");
+        console->Print("No result!\n");
+        return;
     }
 
     for (size_t i = 0; i < cps; ++i) {
