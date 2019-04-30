@@ -55,7 +55,6 @@ REDECL(Server::AirMove_Mid_Trampoline);
 
 void* Server::GetPlayer(int index)
 {
-    index = (index == -1) ? engine->GetLocalPlayerIndex() : index;
     return this->UTIL_PlayerByIndex(index);
 }
 int Server::GetPortals(void* entity)
@@ -109,7 +108,7 @@ bool Server::IsPlayer(void* entity)
 int Server::GetSplitScreenPlayerSlot(void* entity)
 {
     // Simplified version of CBasePlayer::GetSplitScreenPlayerSlot
-    for (auto i = 0; i < MAX_SPLITSCREEN_PLAYERS; ++i) {
+    for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
         if (server->UTIL_PlayerByIndex(i + 1) == entity) {
             return i;
         }
@@ -130,10 +129,7 @@ DETOUR_T(bool, Server::CheckJumpButton)
     auto autoJump = cheating && sar_autojump.GetBool();
     auto duckJump = cheating && sar_duckjump.isRegistered && sar_duckjump.GetBool();
 
-    auto original = 0;
     if (autoJump) {
-        original = *m_nOldButtons;
-
         if (!server->jumpedLastTime)
             *m_nOldButtons &= ~IN_JUMP;
     }
@@ -145,11 +141,6 @@ DETOUR_T(bool, Server::CheckJumpButton)
         ? Server::CheckJumpButtonBase(thisptr)
         : Server::CheckJumpButton(thisptr);
     server->callFromCheckJumpButton = false;
-
-    if (autoJump) {
-        if (!(*m_nOldButtons & IN_JUMP))
-            *m_nOldButtons = original;
-    }
 
     if (result) {
         server->jumpedLastTime = true;
@@ -334,7 +325,7 @@ bool Server::Init()
         this->g_GameMovement->Hook(Server::CheckJumpButton_Hook, Server::CheckJumpButton, Offsets::CheckJumpButton);
         this->g_GameMovement->Hook(Server::PlayerMove_Hook, Server::PlayerMove, Offsets::PlayerMove);
 
-        if (sar.game->version & SourceGame_Portal2Engine) {
+        if (sar.game->Is(SourceGame_Portal2Engine)) {
             this->g_GameMovement->Hook(Server::ProcessMovement_Hook, Server::ProcessMovement, Offsets::ProcessMovement);
             this->g_GameMovement->Hook(Server::FinishGravity_Hook, Server::FinishGravity, Offsets::FinishGravity);
             this->g_GameMovement->Hook(Server::AirMove_Hook, Server::AirMove, Offsets::AirMove);
@@ -347,14 +338,16 @@ bool Server::Init()
             Memory::Deref<_CheckJumpButton>(baseOffset + Offsets::CheckJumpButton * sizeof(uintptr_t*), &this->CheckJumpButtonBase);
 
 #ifdef _WIN32
-            auto airMoveMid = this->g_GameMovement->Original(Offsets::AirMove) + AirMove_Mid_Offset;
-            if (Memory::FindAddress(airMoveMid, airMoveMid + 5, AirMove_Signature) == airMoveMid) {
-                MH_HOOK_MID(this->AirMove_Mid, airMoveMid);
-                this->AirMove_Continue = airMoveMid + AirMove_Continue_Offset;
-                this->AirMove_Skip = airMoveMid + AirMove_Skip_Offset;
-                console->DevMsg("SAR: Verified sar_aircontrol 1!\n");
-            } else {
-                console->Warning("SAR: Failed to enable sar_aircontrol 1 style!\n");
+            if (!sar.game->Is(SourceGame_INFRA)) {
+                auto airMoveMid = this->g_GameMovement->Original(Offsets::AirMove) + AirMove_Mid_Offset;
+                if (Memory::FindAddress(airMoveMid, airMoveMid + 5, AirMove_Signature) == airMoveMid) {
+                    MH_HOOK_MID(this->AirMove_Mid, airMoveMid);
+                    this->AirMove_Continue = airMoveMid + AirMove_Continue_Offset;
+                    this->AirMove_Skip = airMoveMid + AirMove_Skip_Offset;
+                    console->DevMsg("SAR: Verified sar_aircontrol 1!\n");
+                } else {
+                    console->Warning("SAR: Failed to enable sar_aircontrol 1 style!\n");
+                }
             }
 #endif
         }
@@ -363,6 +356,7 @@ bool Server::Init()
     if (auto g_ServerTools = Interface::Create(this->Name(), "VSERVERTOOLS0")) {
         auto GetIServerEntity = g_ServerTools->Original(Offsets::GetIServerEntity);
         Memory::Deref(GetIServerEntity + Offsets::m_EntPtrArray, &this->m_EntPtrArray);
+        Interface::Delete(g_ServerTools);
     }
 
     if (this->g_ServerGameDLL) {
@@ -373,7 +367,7 @@ bool Server::Init()
         this->GetAllServerClasses = this->g_ServerGameDLL->Original<_GetAllServerClasses>(Offsets::GetAllServerClasses);
         this->IsRestoring = this->g_ServerGameDLL->Original<_IsRestoring>(Offsets::IsRestoring);
 
-        if (sar.game->version & (SourceGame_Portal2Game | SourceGame_Portal)) {
+        if (sar.game->Is(SourceGame_Portal2Game | SourceGame_Portal)) {
             this->g_ServerGameDLL->Hook(Server::GameFrame_Hook, Server::GameFrame, Offsets::GameFrame);
         }
     }
@@ -385,11 +379,11 @@ bool Server::Init()
     offsetFinder->ServerSide("CBasePlayer", "m_flMaxspeed", &Offsets::m_flMaxspeed);
     offsetFinder->ServerSide("CBasePlayer", "m_vecViewOffset[0]", &Offsets::S_m_vecViewOffset);
 
-    if (sar.game->version & SourceGame_Portal2Engine) {
+    if (sar.game->Is(SourceGame_Portal2Engine)) {
         offsetFinder->ServerSide("CBasePlayer", "m_bDucked", &Offsets::m_bDucked);
         offsetFinder->ServerSide("CBasePlayer", "m_flFriction", &Offsets::m_flFriction);
     }
-    if (sar.game->version & (SourceGame_Portal | SourceGame_Portal2Game)) {
+    if (sar.game->Is(SourceGame_Portal | SourceGame_Portal2Game)) {
         offsetFinder->ServerSide("CPortal_Player", "iNumPortalsPlaced", &Offsets::iNumPortalsPlaced);
     }
 

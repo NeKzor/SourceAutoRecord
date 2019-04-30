@@ -1,6 +1,7 @@
 #pragma once
-#include "Interface.hpp"
 #include "Module.hpp"
+
+#include "Interface.hpp"
 #include "Utils.hpp"
 
 #ifdef _WIN32
@@ -23,6 +24,17 @@ public:
     void* ConVar_VTable = nullptr;
     void* ConVar_VTable2 = nullptr;
     _AutoCompletionFunc AutoCompletionFunc = nullptr;
+
+#ifdef _WIN32
+    using _Dtor = int(__func*)(ConVar* thisptr, char a2);
+#else
+    using _Dtor = int(__func*)(ConVar* thisptr);
+#endif
+    using _Create = int(__func*)(ConVar* thisptr, const char* pName, const char* pDefaultValue, int flags, const char* pHelpString, bool bMin, float fMin, bool bMax,
+        float fMax, FnChangeCallback_t callback);
+
+    _Dtor Dtor = nullptr;
+    _Create Create = nullptr;
 
 public:
     bool Init() override;

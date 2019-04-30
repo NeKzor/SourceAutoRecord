@@ -1,5 +1,10 @@
 #include "Tier1.hpp"
 
+#ifdef _WIN32
+#include "Game.hpp"
+#include "SAR.hpp"
+#endif
+
 #include "Interface.hpp"
 #include "Offsets.hpp"
 #include "Utils.hpp"
@@ -12,7 +17,7 @@ bool Tier1::Init()
         this->UnregisterConCommand = this->g_pCVar->Original<_UnregisterConCommand>(Offsets::UnregisterConCommand);
         this->FindCommandBase = this->g_pCVar->Original<_FindCommandBase>(Offsets::FindCommandBase);
 
-        this->m_pConCommandList = (ConCommandBase*)((uintptr_t)this->g_pCVar->ThisPtr() + Offsets::m_pConCommandList);
+        this->m_pConCommandList = reinterpret_cast<ConCommandBase*>((uintptr_t)this->g_pCVar->ThisPtr() + Offsets::m_pConCommandList);
 
         auto listdemo = reinterpret_cast<ConCommand*>(this->FindCommandBase(this->g_pCVar->ThisPtr(), "listdemo"));
         if (listdemo) {
@@ -28,6 +33,18 @@ bool Tier1::Init()
         if (sv_lan) {
             this->ConVar_VTable = sv_lan->ConCommandBase_VTable;
             this->ConVar_VTable2 = sv_lan->ConVar_VTable;
+
+            auto vtable =
+#ifdef _WIN32
+            sar.game->Is(SourceGame_HalfLife2Engine)
+                ? &this->ConVar_VTable
+                : &this->ConVar_VTable2;
+#else
+                &this->ConVar_VTable;
+#endif
+
+            this->Dtor = Memory::VMT<_Dtor>(vtable, Offsets::Dtor);
+            this->Create = Memory::VMT<_Create>(vtable, Offsets::Create);
         }
     }
 

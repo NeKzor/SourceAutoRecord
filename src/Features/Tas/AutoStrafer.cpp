@@ -10,7 +10,13 @@
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
 
+#include "Command.hpp"
+#include "Offsets.hpp"
 #include "Utils.hpp"
+<<<<<<< HEAD
+=======
+#include "Variable.hpp"
+>>>>>>> 1b44ab346acb6d0aa2e8764be26e9196dfc09ec2
 
 AutoStrafer* autoStrafer;
 
@@ -18,12 +24,23 @@ AutoStrafer::AutoStrafer()
     : in_autostrafe()
     , states()
 {
+    for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
+        this->states.push_back(new StrafeState());
+    }
+
     this->hasLoaded = true;
+}
+AutoStrafer::~AutoStrafer()
+{
+    for (auto& state : this->states) {
+        delete state;
+    }
+    this->states.clear();
 }
 void AutoStrafer::Strafe(void* pPlayer, CMoveData* pMove)
 {
     auto slot = server->GetSplitScreenPlayerSlot(pPlayer);
-    auto strafe = &this->states[slot];
+    auto strafe = this->states[slot];
 
     if (pMove->m_nButtons & IN_AUTOSTRAFE && !(pMove->m_nOldButtons & IN_AUTOSTRAFE)) {
         strafe->type = StrafingType::Straight;
@@ -40,14 +57,21 @@ void AutoStrafer::Strafe(void* pPlayer, CMoveData* pMove)
 
     // whishdir set based on current angle ("controller" inputs)
     if (strafe->vecType == VecStrafeType::Normal || strafe->vecType == VecStrafeType::Visual) {
+<<<<<<< HEAD
         //make vectorial strafing look like AD strafing
+=======
+        // make vectorial strafing look like AD strafing
+>>>>>>> 1b44ab346acb6d0aa2e8764be26e9196dfc09ec2
         if (strafe->vecType == VecStrafeType::Visual) {
             QAngle newAngle = { 0, velAngle, 0 };
             pMove->m_vecViewAngles = newAngle;
             pMove->m_vecAbsViewAngles = newAngle;
 
             engine->SetAngles(slot, newAngle);
+<<<<<<< HEAD
             //engine->SetAngles(newAngle);
+=======
+>>>>>>> 1b44ab346acb6d0aa2e8764be26e9196dfc09ec2
         }
 
         angle = DEG2RAD(angle - pMove->m_vecAbsViewAngles.y);
@@ -97,6 +121,7 @@ float AutoStrafer::GetStrafeAngle(const StrafeState* strafe, void* pPlayer, cons
     float F = pMove->m_flForwardMove / cl_forwardspeed.GetFloat();
     float S = pMove->m_flSideMove / cl_sidespeed.GetFloat();
 
+<<<<<<< HEAD
     auto offset = 0;
     offsetFinder->ServerSide("CPortal_Player", "m_bDucked", &offset, false);
     auto player = server->GetPlayer();
@@ -110,6 +135,16 @@ float AutoStrafer::GetStrafeAngle(const StrafeState* strafe, void* pPlayer, cons
     float sideMove = pMove->m_flSideMove / stateLen * duckMultiplier;
     float max_speed = sv_maxspeed.GetFloat();
     float M = std::fminf(max_speed, sqrt(forwardMove * forwardMove + sideMove * sideMove));
+=======
+    auto isCrouched = *reinterpret_cast<bool*>((uintptr_t)pPlayer + Offsets::m_bDucked);
+
+    float duckMultiplier = (grounded && isCrouched) ? 1.0f / 3.0f : 1.0f;
+    float stateLen = sqrt(F * F + S * S);
+    float forwardMove = pMove->m_flForwardMove / stateLen * duckMultiplier;
+    float sideMove = pMove->m_flSideMove / stateLen * duckMultiplier;
+    float maxSpeed = sv_maxspeed.GetFloat();
+    float M = std::fminf(maxSpeed, sqrt(forwardMove * forwardMove + sideMove * sideMove));
+>>>>>>> 1b44ab346acb6d0aa2e8764be26e9196dfc09ec2
 
     // Getting other stuff
     float A = (grounded) ? sv_accelerate.GetFloat() : sv_airaccelerate.GetFloat() / 2;
@@ -140,6 +175,8 @@ float AutoStrafer::GetStrafeAngle(const StrafeState* strafe, void* pPlayer, cons
     return RAD2DEG(theta);
 }
 
+// Commands
+
 void IN_AutoStrafeDown(const CCommand& args) { client->KeyDown(&autoStrafer->in_autostrafe, (args.ArgC() > 1) ? args[1] : nullptr); }
 void IN_AutoStrafeUp(const CCommand& args) { client->KeyUp(&autoStrafer->in_autostrafe, (args.ArgC() > 1) ? args[1] : nullptr); }
 
@@ -159,14 +196,35 @@ CON_COMMAND(sar_tas_strafe, "sar_tas_strafe <type> <direction> : Automatic straf
         type = static_cast<StrafingType>(std::atoi(args[1]));
         direction = std::atoi(args[2]);
     } else {
+<<<<<<< HEAD
         return console->Print("sar_tas_strafe <type> <direction> : Automatic strafing.\n"
                               "Type: 0 = off, 1 = straight, 2 = turning and keeping velocity, 3 = turning with velocity gain.\n"
                               "Direction: -1 = left, 1 = right.\n");
+=======
+        return console->Print(sar_tas_strafe.ThisPtr()->m_pszHelpString);
+>>>>>>> 1b44ab346acb6d0aa2e8764be26e9196dfc09ec2
     }
 
     auto nSlot = GET_SLOT();
-    autoStrafer->states[nSlot].type = type;
-    autoStrafer->states[nSlot].direction = direction;
+    autoStrafer->states[nSlot]->type = type;
+    autoStrafer->states[nSlot]->direction = direction;
+}
+CON_COMMAND(sar_tas_strafe_vectorial, "sar_tas_strafe_vectorial <type>: Change type of vectorial strafing.\n"
+                                      "0 = Auto-strafer calculates perfect viewangle,\n"
+                                      "1 = Auto-strafer calculates perfect forward-side movement,\n"
+                                      "2 = Auto-strafer calculates perfect forward-side movement, "
+                                      "while setting the viewangle toward current velocity, to make strafing visually visible.\n")
+{
+    auto type = VecStrafeType::Disabled;
+
+    if (args.ArgC() == 2) {
+        type = static_cast<VecStrafeType>(std::atoi(args[1]));
+    } else {
+        return console->Print(sar_tas_strafe_vectorial.ThisPtr()->m_pszHelpString);
+    }
+
+    auto nSlot = GET_ACTIVE_SPLITSCREEN_SLOT();
+    autoStrafer->states[nSlot]->vecType = type;
 }
 CON_COMMAND(sar_tas_strafe_vectorial, "sar_tas_strafe_vectorial <type>: Change type of vectorial strafing.\n"
                                       "0 = Auto-strafer calculates perfect viewangle.\n"

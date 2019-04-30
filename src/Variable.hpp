@@ -1,21 +1,21 @@
 #pragma once
 #include "Modules/Tier1.hpp"
 
-#include "Game.hpp"
+#include "Utils/SDK.hpp"
 
 class Variable {
 private:
     ConVar* ptr;
 
-    int version;
     int originalFlags;
 
     union {
-        void* originalfnChangeCallback;
+        FnChangeCallback_t originalFnChangeCallback;
         int originalSize;
     };
 
 public:
+    int version;
     bool isRegistered;
     bool isReference;
 
@@ -31,7 +31,7 @@ public:
 
     void Create(const char* name, const char* value, int flags = 0, const char* helpstr = "", bool hasmin = false, float min = 0,
         bool hasmax = false, float max = 0);
-    void PostInit();
+    void Realloc();
 
     ConVar* ThisPtr();
     ConVar2* ThisPtr2();

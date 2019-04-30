@@ -18,7 +18,7 @@ EntityList::EntityList()
 }
 CEntInfo* EntityList::GetEntityInfoByIndex(int index)
 {
-    auto size = (sar.game->version & SourceGame_Portal2Engine)
+    auto size = sar.game->Is(SourceGame_Portal2Engine)
         ? sizeof(CEntInfo2)
         : sizeof(CEntInfo);
     return reinterpret_cast<CEntInfo*>((uintptr_t)server->m_EntPtrArray + size * index);
@@ -94,10 +94,11 @@ CON_COMMAND(sar_list_ents, "Lists entities.\n")
     }
     console->Print("[page %i of %i]\n", page, pages);
 }
-CON_COMMAND(sar_find_ent, "Finds entity in the entity list by name.\n")
+CON_COMMAND(sar_find_ent, "Finds entity in the entity list by name.\n"
+                          "Usage: sar_find_ent <m_iName>\n")
 {
     if (args.ArgC() != 2) {
-        return console->Print("sar_find_ent <m_iName> : Finds entity in the entity list by name.\n");
+        return console->Print(sar_find_ent.ThisPtr()->m_pszHelpString);
     }
 
     console->Msg("Results for %s\n", args[1]);
@@ -119,10 +120,11 @@ CON_COMMAND(sar_find_ent, "Finds entity in the entity list by name.\n")
         break;
     }
 }
-CON_COMMAND(sar_find_ents, "Finds entities in the entity list by class name.\n")
+CON_COMMAND(sar_find_ents, "Finds entities in the entity list by class name.\n"
+                           "Usage: sar_find_ents <m_iClassName>\n")
 {
     if (args.ArgC() != 2) {
-        return console->Print("sar_find_ents <m_iClassName> : Finds entities in the entity list by class name.\n");
+        return console->Print(sar_find_ents.ThisPtr()->m_pszHelpString);
     }
 
     console->Print("Results for %s\n", args[1]);

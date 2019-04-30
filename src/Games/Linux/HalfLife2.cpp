@@ -13,9 +13,11 @@ void HalfLife2::LoadOffsets()
 
     // engine.so
 
+    Dtor = 0; // ConVar
     InternalSetValue = 14; // ConVar
     InternalSetFloatValue = 15; // ConVar
     InternalSetIntValue = 16; // ConVar
+    Create = 19; // ConVar
     GetScreenSize = 5; // CEngineClient
     ClientCmd = 7; // CEngineClient
     Cbuf_AddText = 28; // CEngineClient::ClientCmd
@@ -64,7 +66,7 @@ void HalfLife2::LoadOffsets()
     ScreenPosition = 9; // CIVDebugOverlay
     m_pConCommandList = 44; // CCvar
     IsCommand = 2; // ConCommandBase
-    cmd_alias = 284; // alias
+    MAX_SPLITSCREEN_PLAYERS = 1; // maxplayers
 
     // libvstdlib.so
 

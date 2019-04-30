@@ -33,9 +33,11 @@ extern int JoyStickApplyMovement;
 extern int CreateMove;
 
 // ConVar
+extern int Dtor;
 extern int InternalSetValue;
 extern int InternalSetFloatValue;
 extern int InternalSetIntValue;
+extern int Create;
 
 // CMatSystemSurface
 extern int DrawSetColor;
@@ -196,7 +198,6 @@ extern int eng;
 extern int HostState_OnClientConnected;
 extern int hoststate;
 extern int m_bLoadGame;
-extern int cmd_alias;
 extern int NUM_ENT_ENTRIES;
 extern int m_iClassName;
 extern int m_iName;
@@ -207,4 +208,5 @@ extern int CUserCmdSize;
 extern int MULTIPLAYER_BACKUP;
 extern int PerUserInput_tSize;
 extern int GetLocalClient;
+extern int MAX_SPLITSCREEN_PLAYERS;
 }
