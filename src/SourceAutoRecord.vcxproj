@@ -184,6 +184,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Games\Windows\Ghosting.cpp" />
     <ClCompile Include="Games\Windows\HalfLife2Unpack.cpp" />
     <ClCompile Include="Games\Windows\INFRA.cpp" />
     <ClCompile Include="Games\Windows\ApertureTag.cpp" />
@@ -328,6 +329,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Games\Windows\Ghosting.hpp" />
     <ClInclude Include="Games\Windows\HalfLife2Unpack.hpp" />
     <ClInclude Include="Games\Windows\INFRA.hpp" />
     <ClInclude Include="Games\Windows\ApertureTag.hpp" />

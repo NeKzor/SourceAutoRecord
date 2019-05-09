@@ -17,6 +17,7 @@
 #include GAME(INFRA)
 #include GAME(HalfLife2Unpack)
 #include GAME(PortalUnpack)
+#include GAME(Ghosting)
 #endif
 
 #define HAS_GAME_FLAG(flag, name)        \
@@ -90,6 +91,10 @@ Game* Game::CreateNew()
     if (!modDir.compare(INFRA::ModDir())) {
         return new INFRA();
     }
+
+    if (!modDir.compare("ghostingmod")) {
+        return new Ghosting();
+    }
 #endif
 
     return nullptr;
@@ -110,6 +115,7 @@ std::string Game::VersionToString(int version)
         HAS_GAME_FLAG(SourceGame_ApertureTag,                      "Aperture Tag")
         HAS_GAME_FLAG(SourceGame_PortalStoriesMel,                 "Portal Stories: Mel")
         HAS_GAME_FLAG(SourceGame_INFRA,                            "INFRA")
+        HAS_GAME_FLAG(SourceGame_Ghosting,                         "Ghosting")
     }
     return games;
 }

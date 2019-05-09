@@ -213,13 +213,19 @@ DETOUR(Client::GetButtonBits, bool bResetState)
 
 bool Client::Init()
 {
-    bool readJmp = false;
+    auto readJmp = false;
+    auto CreateInterfaceInternalOffset = Offsets::CreateInterfaceInternal;
+    auto s_pInterfaceRegsOffset = Offsets::s_pInterfaceRegs;
+
 #ifdef _WIN32
     readJmp = sar.game->Is(SourceGame_TheStanleyParable | SourceGame_TheBeginnersGuide);
+    if (sar.game->Is(SourceGame_Ghosting)) {
+        s_pInterfaceRegsOffset = 6;
+    }
 #endif
 
-    this->g_ClientDLL = Interface::Create(this->Name(), "VClient0");
-    this->s_EntityList = Interface::Create(this->Name(), "VClientEntityList0", false);
+    this->g_ClientDLL = Interface::Create(this->Name(), "VClient0", true, true, CreateInterfaceInternalOffset, s_pInterfaceRegsOffset);
+    this->s_EntityList = Interface::Create(this->Name(), "VClientEntityList0", false, false, CreateInterfaceInternalOffset, s_pInterfaceRegsOffset);
 
     if (this->g_ClientDLL) {
         this->GetAllClasses = this->g_ClientDLL->Original<_GetAllClasses>(Offsets::GetAllClasses, readJmp);

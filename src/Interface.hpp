@@ -1,6 +1,8 @@
 #pragma once
 #include "Utils/Memory.hpp"
 
+#include "Offsets.hpp"
+
 class Interface {
 public:
     uintptr_t** baseclass;
@@ -59,9 +61,11 @@ public:
     }
 
     static Interface* Create(void* ptr, bool copyVtable = true, bool autoHook = true);
-    static Interface* Create(const char* filename, const char* interfaceSymbol, bool copyVtable = true, bool autoHook = true);
+    static Interface* Create(const char* filename, const char* interfaceSymbol, bool copyVtable = true, bool autoHook = true,
+        int CreateInterfaceInternalOffset = Offsets::CreateInterfaceInternal, int s_pInterfaceRegsOffset = Offsets::s_pInterfaceRegs);
+
     static void Delete(Interface* ptr);
-    static void* GetPtr(const char* filename, const char* interfaceSymbol);
+    static void* GetPtr(const char* filename, const char* interfaceSymbol, int CreateInterfaceInternalOffset, int s_pInterfaceRegsOffset);
 
     template <typename T = void*>
     static T Get(const char* filename, const char* interfaceSymbol)

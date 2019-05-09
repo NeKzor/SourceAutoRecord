@@ -569,6 +569,31 @@ struct SendProp2 {
     const void* m_pExtraData; // 80
 };
 
+struct SendProp3 {
+    void* VMT; // 0
+    RecvProp* m_pMatchingRecvProp; // 4
+    SendPropType m_Type; // 8
+    int m_nBits; // 12
+    float m_fLowValue; // 16
+    float m_fHighValue; // 20
+    SendProp3* m_pArrayProp; // 24
+    ArrayLengthSendProxyFn m_ArrayLengthProxy; // 28
+    int m_nElements; // 32
+    int m_ElementStride; // 36
+    union {
+        char* m_pExcludeDTName; // 40
+        char* m_pParentArrayPropName; // 40
+    };
+    char* m_pVarName; // 44
+    float m_fHighLowMul; // 58
+    int m_Flags; // 52
+    SendVarProxyFn m_ProxyFn; // 56
+    SendTableProxyFn m_DataTableProxyFn; // 60
+    SendTable* m_pDataTable; // 64
+    int m_Offset; // 68
+    const void* m_pExtraData; // 72
+};
+
 struct SendTable {
     SendProp* m_pProps;
     int m_nProps;

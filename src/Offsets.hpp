@@ -167,6 +167,8 @@ extern int GetIServerEntity;
 extern int ClientCommand;
 
 // Others
+extern int CreateInterfaceInternal;
+extern int s_pInterfaceRegs;
 extern int tickcount;
 extern int interval_per_tick;
 extern int GetClientStateFunction;

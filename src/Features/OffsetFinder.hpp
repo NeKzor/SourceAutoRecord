@@ -5,6 +5,9 @@
 #include "Utils.hpp"
 
 class OffsetFinder : public Feature {
+private:
+    int sendPropSize;
+
 public:
     OffsetFinder();
     void ServerSide(const char* className, const char* propName, int* offset);

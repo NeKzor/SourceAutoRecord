@@ -7,12 +7,7 @@
 #include "Utils/Memory.hpp"
 #include "Utils/SDK.hpp"
 
-#define CreateInterfaceInternal_Offset 5
-#ifdef _WIN32
-#define s_pInterfaceRegs_Offset 6
-#else
-#define s_pInterfaceRegs_Offset 11
-#endif
+#include "Offsets.hpp"
 
 Interface::Interface()
     : baseclass(nullptr)
@@ -79,9 +74,10 @@ Interface* Interface::Create(void* ptr, bool copyVtable, bool autoHook)
 {
     return (ptr) ? new Interface(ptr, copyVtable, autoHook) : nullptr;
 }
-Interface* Interface::Create(const char* filename, const char* interfaceSymbol, bool copyVtable, bool autoHook)
+Interface* Interface::Create(const char* filename, const char* interfaceSymbol, bool copyVtable, bool autoHook, int CreateInterfaceInternalOffset,
+    int s_pInterfaceRegsOffset)
 {
-    auto ptr = Interface::GetPtr(filename, interfaceSymbol);
+    auto ptr = Interface::GetPtr(filename, interfaceSymbol, Offsets::CreateInterfaceInternal, Offsets::s_pInterfaceRegs);
     return (ptr) ? new Interface(ptr, copyVtable, autoHook) : nullptr;
 }
 void Interface::Delete(Interface* ptr)
@@ -91,7 +87,7 @@ void Interface::Delete(Interface* ptr)
         ptr = nullptr;
     }
 }
-void* Interface::GetPtr(const char* filename, const char* interfaceSymbol)
+void* Interface::GetPtr(const char* filename, const char* interfaceSymbol, int CreateInterfaceInternalOffset, int s_pInterfaceRegsOffset)
 {
     auto handle = Memory::GetModuleHandleByName(filename);
     if (!handle) {
@@ -108,13 +104,20 @@ void* Interface::GetPtr(const char* filename, const char* interfaceSymbol)
     }
 
 #ifdef _WIN32
-    auto obe = Memory::Deref<uint8_t>(CreateInterface) == 0xE9; // jmp
+    // Seen in orange box engine
+    auto jmp = Memory::Deref<uint8_t>(CreateInterface) == 0xE9;
+    if (jmp) {
+        s_pInterfaceRegsOffset = 3;
+    }
 #else
-    auto obe = false;
+    auto se2007 = false;
+    auto jmp = false;
 #endif
 
-    auto CreateInterfaceInternal = Memory::Read(CreateInterface + (obe ? 1 : CreateInterfaceInternal_Offset));
-    auto s_pInterfaceRegs = Memory::DerefDeref<InterfaceReg*>(CreateInterfaceInternal + (obe ? 3 : s_pInterfaceRegs_Offset));
+    auto CreateInterfaceInternal = (CreateInterfaceInternalOffset)
+        ? Memory::Read(CreateInterface + (jmp ? 1 : CreateInterfaceInternalOffset))
+        : CreateInterface;
+    auto s_pInterfaceRegs = Memory::DerefDeref<InterfaceReg*>(CreateInterfaceInternal + s_pInterfaceRegsOffset);
 
     void* result = nullptr;
     for (auto& current = s_pInterfaceRegs; current; current = current->m_pNext) {

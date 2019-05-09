@@ -167,6 +167,12 @@ int GetIServerEntity;
 int ClientCommand;
 
 // Others
+int CreateInterfaceInternal = 5;
+#ifdef _WIN32
+int s_pInterfaceRegs = 6;
+#else
+int s_pInterfaceRegs = 11
+#endif
 int tickcount;
 int interval_per_tick;
 int GetClientStateFunction;
