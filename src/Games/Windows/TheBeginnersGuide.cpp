@@ -10,12 +10,19 @@ TheBeginnersGuide::TheBeginnersGuide()
 void TheBeginnersGuide::LoadOffsets()
 {
     TheStanleyParable::LoadOffsets();
+
+    using namespace Offsets;
+
+    // client.dll
+
+    KeyDown = 269; // CInput::JoyStickApplyMovement
+    KeyUp = 248; // CInput::JoyStickApplyMovement
 }
 const char* TheBeginnersGuide::Version()
 {
     return "The Beginners Guide (6167)";
 }
-const char* TheBeginnersGuide::Process()
+const char* TheBeginnersGuide::ModDir()
 {
-    return "beginnersguide.exe";
+    return "beginnersguide";
 }

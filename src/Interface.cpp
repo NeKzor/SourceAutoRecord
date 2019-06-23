@@ -49,14 +49,14 @@ Interface::~Interface()
 void Interface::CopyVtable()
 {
     if (!this->copy) {
-        this->copy = std::make_unique<uintptr_t[]>(this->vtableSize);
-        std::memcpy(this->copy.get(), this->vtable, this->vtableSize * sizeof(uintptr_t));
+        this->copy = std::make_unique<uintptr_t[]>(this->vtableSize + 1);
+        std::memcpy(this->copy.get(), this->vtable - 1, sizeof(uintptr_t) + this->vtableSize * sizeof(uintptr_t));
     }
 }
 void Interface::EnableHooks()
 {
     if (!this->isHooked) {
-        *this->baseclass = this->copy.get();
+        *this->baseclass = this->copy.get() + 1;
         this->isHooked = true;
     }
 }
@@ -70,7 +70,7 @@ void Interface::DisableHooks()
 bool Interface::Unhook(int index)
 {
     if (index >= 0 && index < this->vtableSize) {
-        this->copy[index] = this->vtable[index];
+        this->copy[index + 1] = this->vtable[index];
         return true;
     }
     return false;
@@ -99,7 +99,7 @@ void* Interface::GetPtr(const char* filename, const char* interfaceSymbol)
         return nullptr;
     }
 
-    auto CreateInterface = Memory::GetSymbolAddress(handle, "CreateInterface");
+    auto CreateInterface = Memory::GetSymbolAddress<uintptr_t>(handle, "CreateInterface");
     Memory::CloseModuleHandle(handle);
 
     if (!CreateInterface) {
@@ -107,8 +107,14 @@ void* Interface::GetPtr(const char* filename, const char* interfaceSymbol)
         return nullptr;
     }
 
-    auto CreateInterfaceInternal = Memory::Read((uintptr_t)CreateInterface + CreateInterfaceInternal_Offset);
-    auto s_pInterfaceRegs = **reinterpret_cast<InterfaceReg***>(CreateInterfaceInternal + s_pInterfaceRegs_Offset);
+#ifdef _WIN32
+    auto obe = Memory::Deref<uint8_t>(CreateInterface) == 0xE9; // jmp
+#else
+    auto obe = false;
+#endif
+
+    auto CreateInterfaceInternal = Memory::Read(CreateInterface + (obe ? 1 : CreateInterfaceInternal_Offset));
+    auto s_pInterfaceRegs = Memory::DerefDeref<InterfaceReg*>(CreateInterfaceInternal + (obe ? 3 : s_pInterfaceRegs_Offset));
 
     void* result = nullptr;
     for (auto& current = s_pInterfaceRegs; current; current = current->m_pNext) {

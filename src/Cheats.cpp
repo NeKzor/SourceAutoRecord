@@ -114,7 +114,6 @@ void Cheats::Init()
     host_framerate = Variable("host_framerate");
 
     if (sar.game->Is(SourceGame_Portal2Game)) {
-        sv_transition_fade_time = Variable("sv_transition_fade_time");
         sv_laser_cube_autoaim = Variable("sv_laser_cube_autoaim");
         ui_loadingscreen_transition_time = Variable("ui_loadingscreen_transition_time");
         hide_gun_when_holding = Variable("hide_gun_when_holding");
@@ -170,6 +169,7 @@ void Cheats::Init()
     sar_tas_ss.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_delete_alias_cmds.UniqueFor(SourceGame_Portal2Game | SourceGame_HalfLife2Engine);
     sar_tas_strafe.UniqueFor(SourceGame_Portal2Engine);
+    sar_tas_strafe_vectorial.UniqueFor(SourceGame_Portal2Engine);
     startautostrafe.UniqueFor(SourceGame_Portal2Engine);
     endautostrafe.UniqueFor(SourceGame_Portal2Engine);
     sar_dump_events.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);

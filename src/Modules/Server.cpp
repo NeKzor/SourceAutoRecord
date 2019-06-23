@@ -31,7 +31,6 @@ Variable sv_friction;
 Variable sv_maxspeed;
 Variable sv_stopspeed;
 Variable sv_maxvelocity;
-Variable sv_transition_fade_time;
 Variable sv_laser_cube_autoaim;
 Variable sv_edgefriction;
 Variable cl_sidespeed;
@@ -383,7 +382,8 @@ bool Server::Init()
         offsetFinder->ServerSide("CBasePlayer", "m_bDucked", &Offsets::m_bDucked);
         offsetFinder->ServerSide("CBasePlayer", "m_flFriction", &Offsets::m_flFriction);
     }
-    if (sar.game->Is(SourceGame_Portal | SourceGame_Portal2Game)) {
+
+    if (sar.game->Is(SourceGame_Portal2Game)) {
         offsetFinder->ServerSide("CPortal_Player", "iNumPortalsPlaced", &Offsets::iNumPortalsPlaced);
     }
 
