@@ -270,22 +270,3 @@ CON_COMMAND(sar_tas_setang, "sar_tas_setang <x> <y> [z] [speed] : Sets {x, y, z}
         tasTools->data[nSlot]->targetAngles = { static_cast<float>(std::atof(args[1])), static_cast<float>(std::atof(args[2])), static_cast<float>(std::atof(args[3])) };
     }
 }
-CON_COMMAND(sar_tas_setang_rand, "sar_tas_setang_rand <pitch_min> <pitch_max> <yaw_min> <yaw_max> : Sets random view angles within given ranges.\n")
-{
-    if (!sv_cheats.GetBool()) {
-        return console->Print("Cannot use sar_tas_setang_rand without sv_cheats set to 1.\n");
-    }
-
-    if (args.ArgC() < 5) {
-        return console->Print("Missing arguments : sar_tas_setangrand <pitch_min> <pitch_max> <yaw_min> <yaw_max>.\n");
-    }
-
-    auto nSlot = GET_SLOT();
-
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_real_distribution<float> dist_pitch(static_cast<float>(std::atof(args[1])), std::nextafter(static_cast<float>(std::atof(args[2])), 361));
-    std::uniform_real_distribution<float> dist_yaw(static_cast<float>(std::atof(args[3])), std::nextafter(static_cast<float>(std::atof(args[4])), 361));
-
-    engine->SetAngles(nSlot, QAngle{ dist_pitch(mt), dist_yaw(mt), 0 });
-}
