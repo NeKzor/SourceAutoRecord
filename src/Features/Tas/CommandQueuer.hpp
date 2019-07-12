@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "Features/Feature.hpp"
 
@@ -20,6 +21,9 @@ public:
     int baseIndex;
     int curSplitScreen;
     int curDelay;
+    std::string number_regex;
+    std::regex float_regex;
+    std::regex int_regex;
 
 public:
     CommandQueuer();
@@ -31,6 +35,7 @@ public:
     void Reset();
     void Start();
     void DelayQueueBy(int frames);
+	void RandomRegex(std::string& input);
 };
 
 extern CommandQueuer* cmdQueuer;
