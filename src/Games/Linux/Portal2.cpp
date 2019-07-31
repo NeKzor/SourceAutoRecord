@@ -37,6 +37,7 @@ void Portal2::LoadOffsets()
     StringToButtonCode = 31; // CInputSystem
     SleepUntilInput = 33; // CInputSystem
     GetRecordingTick = 1; // CDemoRecorder
+    net_time = 28; // CDemoRecorder::GetRecordingTick
     SetSignonState = 3; // CDemoRecorder
     StopRecording = 7; // CDemoRecorder
     GetPlaybackTick = 4; // CDemoPlayer
@@ -162,7 +163,7 @@ void Portal2::LoadOffsets()
 }
 const char* Portal2::Version()
 {
-    return "Portal 2 (7054)";
+    return "Portal 2 (7293)";
 }
 const float Portal2::Tickrate()
 {

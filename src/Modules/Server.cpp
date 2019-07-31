@@ -69,6 +69,10 @@ bool Server::IsPlayer(void* entity)
 {
     return Memory::VMT<bool (*)(void*)>(entity, Offsets::IsPlayer)(entity);
 }
+bool Server::AllowsMovementChanges()
+{
+    return !sv_bonus_challenge.GetBool() || sv_cheats.GetBool();
+}
 int Server::GetSplitScreenPlayerSlot(void* entity)
 {
     // Simplified version of CBasePlayer::GetSplitScreenPlayerSlot
@@ -84,44 +88,47 @@ int Server::GetSplitScreenPlayerSlot(void* entity)
 // CGameMovement::CheckJumpButton
 DETOUR_T(bool, Server::CheckJumpButton)
 {
-    auto player = *reinterpret_cast<void**>((uintptr_t)thisptr + Offsets::player);
-    auto mv = *reinterpret_cast<CHLMoveData**>((uintptr_t)thisptr + Offsets::mv);
+    auto jumped = false;
 
-    auto cheating = !sv_bonus_challenge.GetBool() || sv_cheats.GetBool();
-    auto autoJump = sar_autojump.GetBool() && cheating;
-    auto duckJump = sar_duckjump.isRegistered && sar_duckjump.GetBool() && cheating;
-    
-    if (autoJump) {
-        if (!server->jumpedLastTime)
+    if (server->AllowsMovementChanges()) {
+        auto mv = *reinterpret_cast<CHLMoveData**>((uintptr_t)thisptr + Offsets::mv);
+
+        if (sar_autojump.GetBool() && !server->jumpedLastTime) {
             mv->m_nOldButtons &= ~IN_JUMP;
+        }
+
+        server->jumpedLastTime = false;
+        server->savedVerticalVelocity = mv->m_vecVelocity[2];
+
+        server->callFromCheckJumpButton = true;
+        jumped = (sar_duckjump.isRegistered && sar_duckjump.GetBool())
+            ? Server::CheckJumpButtonBase(thisptr)
+            : Server::CheckJumpButton(thisptr);
+        server->callFromCheckJumpButton = false;
+
+        if (jumped) {
+            server->jumpedLastTime = true;
+        }
+    } else {
+        jumped = Server::CheckJumpButton(thisptr);
     }
 
-    server->jumpedLastTime = false;
-    server->savedVerticalVelocity = mv->m_vecVelocity[2];
-
-    server->callFromCheckJumpButton = true;
-    auto result = (duckJump)
-        ? Server::CheckJumpButtonBase(thisptr)
-        : Server::CheckJumpButton(thisptr);
-    server->callFromCheckJumpButton = false;
-
-    if (result) {
-        server->jumpedLastTime = true;
-
+    if (jumped) {
+        auto player = *reinterpret_cast<void**>((uintptr_t)thisptr + Offsets::player);
         auto stat = stats->Get(server->GetSplitScreenPlayerSlot(player));
         ++stat->jumps->total;
         ++stat->steps->total;
         stat->jumps->StartTrace(server->GetAbsOrigin(player));
     }
 
-    return result;
+    return jumped;
 }
 
 // CGameMovement::PlayerMove
 DETOUR(Server::PlayerMove)
 {
     auto player = *reinterpret_cast<void**>((uintptr_t)thisptr + Offsets::player);
-    auto mv = *reinterpret_cast<CHLMoveData**>((uintptr_t)thisptr + Offsets::mv);
+    auto mv = *reinterpret_cast<const CHLMoveData**>((uintptr_t)thisptr + Offsets::mv);
 
     auto m_fFlags = *reinterpret_cast<int*>((uintptr_t)player + Offsets::m_fFlags);
     auto m_MoveType = *reinterpret_cast<int*>((uintptr_t)player + Offsets::m_MoveType);
@@ -169,14 +176,13 @@ DETOUR(Server::ProcessMovement, void* pPlayer, CMoveData* pMove)
 DETOUR(Server::FinishGravity)
 {
     if (server->callFromCheckJumpButton) {
-        auto player = *reinterpret_cast<void**>((uintptr_t)thisptr + Offsets::player);
-        auto mv = *reinterpret_cast<CHLMoveData**>((uintptr_t)thisptr + Offsets::mv);
-
-        auto m_bDucked = *reinterpret_cast<bool*>((uintptr_t)player + Offsets::m_bDucked);
-
         if (sar_duckjump.GetBool()) {
-            auto m_pSurfaceData = *reinterpret_cast<uintptr_t*>((uintptr_t)player + Offsets::m_pSurfaceData);
-            auto m_fFlags = *reinterpret_cast<int*>((uintptr_t)player + Offsets::m_fFlags);
+            auto player = *reinterpret_cast<uintptr_t*>((uintptr_t)thisptr + Offsets::player);
+            auto mv = *reinterpret_cast<CHLMoveData**>((uintptr_t)thisptr + Offsets::mv);
+
+            auto m_pSurfaceData = *reinterpret_cast<uintptr_t*>(player + Offsets::m_pSurfaceData);
+            auto m_bDucked = *reinterpret_cast<bool*>(player + Offsets::m_bDucked);
+            auto m_fFlags = *reinterpret_cast<int*>(player + Offsets::m_fFlags);
 
             auto flGroundFactor = (m_pSurfaceData) ? *reinterpret_cast<float*>(m_pSurfaceData + Offsets::jumpFactor) : 1.0f;
             auto flMul = std::sqrt(2 * sv_gravity.GetFloat() * GAMEMOVEMENT_JUMP_HEIGHT);
@@ -189,6 +195,11 @@ DETOUR(Server::FinishGravity)
         }
 
         if (sar_jumpboost.GetBool()) {
+            auto player = *reinterpret_cast<uintptr_t*>((uintptr_t)thisptr + Offsets::player);
+            auto mv = *reinterpret_cast<CHLMoveData**>((uintptr_t)thisptr + Offsets::mv);
+
+            auto m_bDucked = *reinterpret_cast<bool*>(player + Offsets::m_bDucked);
+
             Vector vecForward;
             Math::AngleVectors(mv->m_vecViewAngles, &vecForward);
             vecForward.z = 0;
@@ -219,7 +230,7 @@ DETOUR(Server::FinishGravity)
 // CGameMovement::AirMove
 DETOUR_B(Server::AirMove)
 {
-    if (sar_aircontrol.GetInt() >= 2) {
+    if (sar_aircontrol.GetInt() >= 2 && server->AllowsMovementChanges()) {
         return Server::AirMoveBase(thisptr);
     }
 
@@ -233,7 +244,7 @@ DETOUR_MID_MH(Server::AirMove_Mid)
         pushfd
     }
 
-    if ((!sv_bonus_challenge.GetBool() || sv_cheats.GetBool()) && sar_aircontrol.GetBool())
+    if (sar_aircontrol.GetBool() && server->AllowsMovementChanges())
     {
         __asm {
             popfd
@@ -286,7 +297,7 @@ DETOUR(Server::GameFrame, bool simulating)
     }
 
     if (session->isRunning && sar_speedrun_standard.GetBool()) {
-        speedrun->CheckRules(engine->tickcount);
+        speedrun->CheckRules(engine->GetTick());
     }
 
 #ifndef _WIN32
@@ -312,7 +323,7 @@ bool Server::Init()
             auto baseCtor = Memory::Read(ctor + Offsets::AirMove_Offset1);
             auto baseOffset = Memory::Deref<uintptr_t>(baseCtor + Offsets::AirMove_Offset2);
             Memory::Deref<_AirMove>(baseOffset + Offsets::AirMove * sizeof(uintptr_t*), &Server::AirMoveBase);
-            
+
             Memory::Deref<_CheckJumpButton>(baseOffset + Offsets::CheckJumpButton * sizeof(uintptr_t*), &Server::CheckJumpButtonBase);
 
 #ifdef _WIN32

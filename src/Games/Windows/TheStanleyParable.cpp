@@ -21,6 +21,12 @@ void TheStanleyParable::LoadOffsets()
     tickcount = 103; // CClientState::ProcessTick
     interval_per_tick = 73; // CClientState::ProcessTick
     HostState_OnClientConnected = 695; // CClientState::SetSignonStatey
+    net_time = 21; // CDemoRecorder::GetRecordingTick (TODO)
+
+    // server.dll
+
+    m_pSurfaceData = 4096; // CGameMovement::CheckJumpButton
+    jumpFactor = 72; // CGameMovement::CheckJumpButton
 
     // client.dll
 

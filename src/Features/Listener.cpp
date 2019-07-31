@@ -39,10 +39,10 @@ void Listener::Init()
         }
     }
 
-    if (tier1->hasLoaded && tier1->InstallGlobalChangeCallback && !this->installedChangeCallback) {
+    /*if (tier1->hasLoaded && tier1->InstallGlobalChangeCallback && !this->installedChangeCallback) {
         tier1->InstallGlobalChangeCallback(tier1->g_pCVar->ThisPtr(), (FnChangeCallback_t)Listener::OnCheatsChanged);
         installedChangeCallback = true;
-    }
+    }*/
 }
 void Listener::Shutdown()
 {
@@ -51,10 +51,10 @@ void Listener::Shutdown()
         this->m_bRegisteredForEvents = false;
     }
 
-    if (tier1->hasLoaded && tier1->RemoveGlobalChangeCallback && this->installedChangeCallback) {
+    /*if (tier1->hasLoaded && tier1->RemoveGlobalChangeCallback && this->installedChangeCallback) {
         tier1->RemoveGlobalChangeCallback(tier1->g_pCVar->ThisPtr(), (FnChangeCallback_t)Listener::OnCheatsChanged);
         this->installedChangeCallback = false;
-    }
+    }*/
 }
 Listener::~Listener()
 {
@@ -67,7 +67,7 @@ void Listener::FireGameEvent(IGameEvent* ev)
     }
 
     if (sar_debug_listener.GetBool()) {
-        console->Print("[%i] Event fired: %s\n", engine->GetSessionTick(), ev->GetName());
+        console->Print("[%i] Event fired: %s\n", session->GetTick(), ev->GetName());
         if (engine->ConPrintEvent) {
 #ifdef _WIN32
             engine->ConPrintEvent(ev);

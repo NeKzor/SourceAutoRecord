@@ -22,9 +22,9 @@ CommandQueuer::CommandQueuer()
     , baseIndex(0)
     , curSplitScreen(0)
     , curDelay(0)
-    , number_regex("([-+]?\\d*(\\d|(\\.\\d))\\d*([eE]([+-]?\\d+))?)")
-    , float_regex("\\[" + number_regex + ":" + number_regex + "\\]")
-    , int_regex("\\{" + number_regex + ":" + number_regex + "\\}")
+    , numberRegex("([-+]?\\d*(\\d|(\\.\\d))\\d*([eE]([+-]?\\d+))?)")
+    , floatRegex("\\[" + numberRegex + ":" + numberRegex + "\\]")
+    , intRegex("\\{" + numberRegex + ":" + numberRegex + "\\}")
 {
     this->hasLoaded = true;
 }
@@ -91,24 +91,18 @@ void CommandQueuer::DelayQueueBy(int frames)
 }
 void CommandQueuer::RandomRegex(std::string& input)
 {
-    for (std::sregex_iterator it = std::sregex_iterator(input.begin(), input.end(), this->float_regex); it != std::sregex_iterator(); ++it) {
+    for (std::sregex_iterator it = std::sregex_iterator(input.begin(), input.end(), this->floatRegex); it != std::sregex_iterator(); ++it) {
         std::smatch m = *it;
         float rand = Math::RandomNumber(std::stof(m.str(1)), std::stof(m.str(6)));
-        input = std::regex_replace(input, this->float_regex, std::to_string(rand), std::regex_constants::format_first_only);
+        input = std::regex_replace(input, this->floatRegex, std::to_string(rand), std::regex_constants::format_first_only);
     }
 
-	/*std::smatch m;
-    while (std::regex_search(input, m, this->int_regex)) {
-        int rand = Math::RandomNumber(std::stoi(m.str(1)), std::stoi(m.str(6)));
-        input = std::regex_replace(tmp, this->int_regex, std::to_string(rand), std::regex_constants::format_first_only);
-	}*/
 
-    for (std::sregex_iterator it = std::sregex_iterator(input.begin(), input.end(), this->int_regex); it != std::sregex_iterator(); ++it) {
+    for (std::sregex_iterator it = std::sregex_iterator(input.begin(), input.end(), this->intRegex); it != std::sregex_iterator(); ++it) {
         std::smatch m = *it;
         int rand = Math::RandomNumber(std::stoi(m.str(1)), std::stoi(m.str(6)));
-        input = std::regex_replace(input, this->int_regex, std::to_string(rand), std::regex_constants::format_first_only);
+        input = std::regex_replace(input, this->intRegex, std::to_string(rand), std::regex_constants::format_first_only);
     }
-
 }
 
 // Commands
@@ -129,6 +123,7 @@ CON_COMMAND(sar_tas_frame_at,
             cmdQueuer->RandomRegex(tab_args[i]);
         }
     }
+
     cmdQueuer->AddFrame(std::atoi(tab_args[0].c_str()), tab_args[1]);
 }
 CON_COMMAND(sar_tas_frames_at,
@@ -147,6 +142,7 @@ CON_COMMAND(sar_tas_frames_at,
             cmdQueuer->RandomRegex(tab_args[i]);
         }
     }
+
     cmdQueuer->AddFrames(std::atoi(tab_args[0].c_str()), std::atoi(tab_args[1].c_str()), std::atoi(tab_args[2].c_str()), tab_args[3]);
 }
 CON_COMMAND(sar_tas_frame_next,
@@ -178,9 +174,8 @@ CON_COMMAND(sar_tas_frame_after,
             cmdQueuer->RandomRegex(tab_args[i]);
         }
     }
-    cmdQueuer->AddFrame(std::atoi(tab_args[0].c_str()), tab_args[1], true);
 
-    //cmdQueuer->AddFrame(std::atoi(args[1]), std::string(args[2]), true);
+    cmdQueuer->AddFrame(std::atoi(tab_args[0].c_str()), tab_args[1], true);
 }
 CON_COMMAND(sar_tas_frames_after,
     "Adds command frame multiple times to the queue after waiting for specified amount of frames.\n"
@@ -198,9 +193,8 @@ CON_COMMAND(sar_tas_frames_after,
             cmdQueuer->RandomRegex(tab_args[i]);
         }
     }
-    cmdQueuer->AddFrames(std::atoi(tab_args[0].c_str()), std::atoi(tab_args[1].c_str()), std::atoi(tab_args[2].c_str()), tab_args[3], true);
 
-    //cmdQueuer->AddFrames(std::atoi(args[1]), std::atoi(args[2]), std::atoi(args[3]), std::string(args[4]), true);
+    cmdQueuer->AddFrames(std::atoi(tab_args[0].c_str()), std::atoi(tab_args[1].c_str()), std::atoi(tab_args[2].c_str()), tab_args[3], true);
 }
 CON_COMMAND(sar_tas_frame_offset,
     "sar_tas_frame_after rely on the last sar_tas_frame_offset.\n"

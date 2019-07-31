@@ -75,7 +75,6 @@ float Math::RandomNumber(const float& min, const float& max)
 }
 int Math::RandomNumber(const int& min, const int& max)
 {
-
     std::random_device rd;
     std::mt19937 mt(rd());
     std::uniform_int_distribution<int> dist_pitch(min, max);

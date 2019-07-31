@@ -26,10 +26,12 @@ void TheStanleyParable::LoadOffsets()
     demorecorder = 105; // CClientState::Disconnect
     m_szLevelName = 56; // CEngineTool::GetCurrentMap
     Key_SetBinding = 59; // unbind
+    net_time = 21; // CDemoRecorder::GetRecordingTick
 
     // server.so
 
     NUM_ENT_ENTRIES = 8192; // CBaseEntityList::CBaseEntityList
+    m_pSurfaceData = 4120; // CGameMovement::CheckJumpButton
 
     // client.so
 

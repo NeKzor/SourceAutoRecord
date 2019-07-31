@@ -46,12 +46,12 @@ public:
 
     bool IsActive();
 
-    void Start(const int* engineTicks);
+    void Start(const int engineTicks);
     void Pause();
-    void Resume(const int* engineTicks);
-    void PreUpdate(const int* engineTicks, const char* engineMap);
-    void PostUpdate(const int* engineTicks, const char* engineMap);
-    void CheckRules(const int* engineTicks);
+    void Resume(const int engineTicks);
+    void PreUpdate(const int engineTicks, const char* engineMap);
+    void PostUpdate(const int engineTicks, const char* engineMap);
+    void CheckRules(const int engineTicks);
     void Stop(bool addSegment = true);
     void Reset();
     void Split(bool visited);
@@ -60,7 +60,7 @@ public:
 
     int GetSession();
     int GetTotal();
-    char* GetCurrentMap();
+    const char* GetCurrentMap();
 
     void SetIntervalPerTick(const float* ipt);
     const float GetIntervalPerTick();

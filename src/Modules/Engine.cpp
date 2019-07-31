@@ -18,6 +18,7 @@
 #include "Variable.hpp"
 
 Variable host_framerate;
+Variable net_showmsg;
 
 REDECL(Engine::Disconnect);
 REDECL(Engine::Disconnect2);
@@ -46,10 +47,9 @@ void Engine::ExecuteCommand(const char* cmd)
 {
     this->ClientCmd(this->engineClient->ThisPtr(), cmd);
 }
-int Engine::GetSessionTick()
+int Engine::GetTick()
 {
-    auto result = *this->tickcount - session->baseTick;
-    return (result >= 0) ? result : 0;
+    return (this->GetMaxClients() < 2) ? *this->tickcount : TIME_TO_TICKS(*this->net_time);
 }
 float Engine::ToTime(int tick)
 {
@@ -168,7 +168,7 @@ DETOUR(Engine::SetSignonState2, int state, int count)
 // CEngine::Frame
 DETOUR(Engine::Frame)
 {
-    speedrun->PreUpdate(engine->tickcount, engine->m_szLevelName);
+    speedrun->PreUpdate(engine->GetTick(), engine->m_szLevelName);
 
     if (engine->hoststate->m_currentState != session->prevState) {
         session->Changed();
@@ -176,7 +176,7 @@ DETOUR(Engine::Frame)
     session->prevState = engine->hoststate->m_currentState;
 
     if (engine->hoststate->m_activeGame || std::strlen(engine->m_szLevelName) == 0) {
-        speedrun->PostUpdate(engine->tickcount, engine->m_szLevelName);
+        speedrun->PostUpdate(engine->GetTick(), engine->m_szLevelName);
     }
 
     return Engine::Frame(thisptr);
@@ -419,9 +419,13 @@ bool Engine::Init()
     Command::Hook("exit", Engine::exit_callback_hook, Engine::exit_callback);
     Command::Hook("quit", Engine::quit_callback_hook, Engine::quit_callback);
     Command::Hook("help", Engine::help_callback_hook, Engine::help_callback);
-    Command::Hook("gameui_activate", Engine::gameui_activate_callback_hook, Engine::gameui_activate_callback);
+
+    if (sar.game->Is(SourceGame_Portal2Game)) {
+        Command::Hook("gameui_activate", Engine::gameui_activate_callback_hook, Engine::gameui_activate_callback);
+    }
 
     host_framerate = Variable("host_framerate");
+    net_showmsg = Variable("net_showmsg");
 
     return this->hasLoaded = this->engineClient && this->s_ServerPlugin && this->demoplayer && this->demorecorder;
 }
