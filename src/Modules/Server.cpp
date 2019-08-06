@@ -270,25 +270,18 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
-    if (simulating && ghost->isReady && sar_ghost_autostart.GetBool()) {
+    if (simulating && ghost->isReady()) {
 
         auto tick = session->GetTick();
-        if (server->mapSpawning && tick == (ghost->startTick + (ghost->CMTime - ghost->endTick))){
-            ghost->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
-            server->SetKeyValueChar(ghost->ghost_entity, "model", "models/props/metal_box.mdl");
-            server->SetKeyValueChar(ghost->ghost_entity, "origin", "0 0 0");
-            server->DispatchSpawn(ghost->ghost_entity);
-            console->Print("Player replay has been sucessfully spawned.\n");
-            server->mapSpawning = false;
-            server->inMap = true;
-            server->tickCount = 0;
+        if (tick == (ghost->startTick + (ghost->CMTime - ghost->endTick))){
+            ghost->Start();
 		}
 
         if (server->tickCount < ghost->positionList.size() && server->inMap) {
 
 			std::string x = std::to_string(ghost->positionList.at(server->tickCount).x);
             std::string y = std::to_string(ghost->positionList.at(server->tickCount).y);
-            std::string z = std::to_string(ghost->positionList.at(server->tickCount).z + 64);
+            std::string z = std::to_string(ghost->positionList.at(server->tickCount).z + sar_ghost_height.GetFloat());
             std::string xyz = x + " " + y + " " + z;
             server->SetKeyValueChar(ghost->ghost_entity, "origin", xyz.c_str());
 
@@ -297,7 +290,7 @@ DETOUR(Server::GameFrame, bool simulating)
 		    }
         } else if (server->tickCount == ghost->positionList.size()) {
             console->Print("Demo has finished.\n");
-            ghost->isReady = false;
+            ghost->Reset();
         }
     }
 

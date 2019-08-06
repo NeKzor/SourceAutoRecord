@@ -26,10 +26,7 @@ int EngineDemoRecorder::GetTick()
 DETOUR(EngineDemoRecorder::SetSignonState, int state)
 {
     if (state == SIGNONSTATE_NONE) {
-        server->mapSpawning = false;
-        ghost->isReady = false;
-        server->inMap = false;
-        ghost->ghost_entity = nullptr;
+        ghost->Reset();
 	}
 
     //SIGNONSTATE_FULL is set twice during first CM load. Using SINGONSTATE_SPAWN for demo number increase instead
@@ -39,8 +36,6 @@ DETOUR(EngineDemoRecorder::SetSignonState, int state)
         }
     }
     if (state == SIGNONSTATE_FULL) {
-        ghost->isReady = true;
-        server->mapSpawning = true;
         //autorecording in different session (save deletion)
         if (engine->demorecorder->isRecordingDemo) {
             *engine->demorecorder->m_bRecording = true;
