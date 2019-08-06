@@ -34,6 +34,7 @@ public:
     using _AddText = void(__func*)(void* thisptr, const char* pText, int nTickDelay);
     using _ClientCommand = int (*)(void* thisptr, void* pEdict, const char* szFmt, ...);
     using _GetLocalClient = int (*)(int index);
+    using _PrecacheModel = bool(__stdcall*)(const char*, bool);
 #ifdef _WIN32
     using _GetScreenSize = int(__stdcall*)(int& width, int& height);
     using _GetActiveSplitScreenPlayerSlot = int (*)();
@@ -62,6 +63,7 @@ public:
     _ConPrintEvent ConPrintEvent = nullptr;
     _ClientCommand ClientCommand = nullptr;
     _GetLocalClient GetLocalClient = nullptr;
+    _PrecacheModel PrecacheModel = nullptr;
 
     EngineDemoPlayer* demoplayer = nullptr;
     EngineDemoRecorder* demorecorder = nullptr;

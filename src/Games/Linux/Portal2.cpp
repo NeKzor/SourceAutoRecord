@@ -116,6 +116,11 @@ void Portal2::LoadOffsets()
     NUM_ENT_ENTRIES = 8192; // CBaseEntityList::CBaseEntityList
     GetIServerEntity = 2; // CServerTools
     m_EntPtrArray = 48; // CServerTools::GetIServerEntity
+    SetKeyValueChar = 12; // CServerTools::SetKeyValue (const char *szValue)
+    SetKeyValueChar = 13; // CServerTools::SetKeyValue (float flValue )
+    SetKeyValueChar = 14; // CServerTools::SetKeyValue (const Vector &vecValue )
+    CreateEntityByName = 15; // CServerTools::CreateEntityByName
+    DispatchSpawn = 16; //CServerTool::DispatchSpawn
     ClientCommand = 39; // CVEngineServer
     IsPlayer = 86; // CBasePlayer
     m_pSurfaceData = 4116; // CGameMovement::CheckJumpButton

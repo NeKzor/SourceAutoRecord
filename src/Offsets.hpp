@@ -123,6 +123,7 @@ extern int Paint;
 
 // CEngineTool
 extern int GetCurrentMap;
+extern int PrecacheModel;
 
 // CSchemeManager
 extern int GetIScheme;
@@ -163,6 +164,11 @@ extern int m_bWaitEnabled;
 
 // CServerTools
 extern int GetIServerEntity;
+extern int CreateEntityByName;
+extern int DispatchSpawn;
+extern int SetKeyValueChar;
+extern int SetKeyValueFloat;
+extern int SetKeyValueVector;
 
 // CVEngineServer
 extern int ClientCommand;

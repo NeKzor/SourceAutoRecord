@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "Features/Demo/Ghost.hpp"
 #include "Features/OffsetFinder.hpp"
 #include "Features/Routing/EntityInspector.hpp"
 #include "Features/Session.hpp"
@@ -269,6 +270,37 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
+    if (simulating && ghost->isReady && sar_ghost_autostart.GetBool() && session->isRunning) {
+
+        auto tick = session->GetTick();
+        if (server->mapSpawning && tick == (ghost->startTick + (ghost->CMTime - ghost->endTick))){
+            ghost->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
+            server->SetKeyValueChar(ghost->ghost_entity, "model", "models/props/metal_box.mdl");
+            server->SetKeyValueChar(ghost->ghost_entity, "origin", "0 0 0");
+            server->DispatchSpawn(ghost->ghost_entity);
+            console->Print("Player replay has been sucessfully spawned.\n");
+            server->mapSpawning = false;
+            server->inMap = true;
+            server->tickCount = 0;
+		}
+
+        if (server->tickCount < ghost->positionList.size() && server->inMap) {
+
+			std::string x = std::to_string(ghost->positionList.at(server->tickCount).x);
+            std::string y = std::to_string(ghost->positionList.at(server->tickCount).y);
+            std::string z = std::to_string(ghost->positionList.at(server->tickCount).z + 64);
+            std::string xyz = x + " " + y + " " + z;
+            server->SetKeyValueChar(ghost->ghost_entity, "origin", xyz.c_str());
+
+			if (tick % 2 == 0) {
+                server->tickCount++;
+		    }
+        } else if (server->tickCount == ghost->positionList.size()) {
+            console->Print("Demo has finished.\n");
+            ghost->isReady = false;
+        }
+    }
+
     if (!server->IsRestoring()) {
         if (!simulating && !pauseTimer->IsActive()) {
             pauseTimer->Start();
@@ -307,6 +339,10 @@ DETOUR(Server::GameFrame, bool simulating)
 
 bool Server::Init()
 {
+    mapSpawning = false;
+    inMap = false;
+    tickCount = 0;
+
     this->g_GameMovement = Interface::Create(this->Name(), "GameMovement0");
     this->g_ServerGameDLL = Interface::Create(this->Name(), "ServerGameDLL0");
 
@@ -345,6 +381,13 @@ bool Server::Init()
     if (auto g_ServerTools = Interface::Create(this->Name(), "VSERVERTOOLS0")) {
         auto GetIServerEntity = g_ServerTools->Original(Offsets::GetIServerEntity);
         Memory::Deref(GetIServerEntity + Offsets::m_EntPtrArray, &this->m_EntPtrArray);
+
+        this->CreateEntityByName = g_ServerTools->Original<_CreateEntityByName>(Offsets::CreateEntityByName);
+        this->DispatchSpawn = g_ServerTools->Original<_DispatchSpawn>(Offsets::DispatchSpawn);
+        this->SetKeyValueChar = g_ServerTools->Original<_SetKeyValueChar>(Offsets::SetKeyValueChar);
+        this->SetKeyValueFloat = g_ServerTools->Original<_SetKeyValueFloat>(Offsets::SetKeyValueFloat);
+        this->SetKeyValueVector = g_ServerTools->Original<_SetKeyValueVector>(Offsets::SetKeyValueVector);
+
         Interface::Delete(g_ServerTools);
     }
 

@@ -360,6 +360,9 @@ bool Engine::Init()
         auto GetCurrentMap = tool->Original(Offsets::GetCurrentMap);
         this->m_szLevelName = Memory::Deref<char*>(GetCurrentMap + Offsets::m_szLevelName);
         this->m_bLoadgame = reinterpret_cast<bool*>((uintptr_t)this->m_szLevelName + Offsets::m_bLoadGame);
+
+        this->PrecacheModel = tool->Original<_PrecacheModel>(Offsets::PrecacheModel);
+
         Interface::Delete(tool);
     }
 

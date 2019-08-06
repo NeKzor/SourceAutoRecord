@@ -6,6 +6,8 @@
 
 #include "Console.hpp"
 #include "Engine.hpp"
+#include "Server.hpp"
+#include "Features/Demo/Ghost.hpp"
 
 #include "Command.hpp"
 #include "Offsets.hpp"
@@ -23,6 +25,12 @@ int EngineDemoRecorder::GetTick()
 // CDemoRecorder::SetSignonState
 DETOUR(EngineDemoRecorder::SetSignonState, int state)
 {
+    if (state == SIGNONSTATE_NONE) {
+        server->mapSpawning = false;
+        ghost->isReady = false;
+        server->inMap = false;
+	}
+
     //SIGNONSTATE_FULL is set twice during first CM load. Using SINGONSTATE_SPAWN for demo number increase instead
     if (state == SIGNONSTATE_SPAWN) {
         if (engine->demorecorder->isRecordingDemo || *engine->demorecorder->m_bRecording) {
@@ -30,6 +38,8 @@ DETOUR(EngineDemoRecorder::SetSignonState, int state)
         }
     }
     if (state == SIGNONSTATE_FULL) {
+        ghost->isReady = true;
+        server->mapSpawning = true;
         //autorecording in different session (save deletion)
         if (engine->demorecorder->isRecordingDemo) {
             *engine->demorecorder->m_bRecording = true;

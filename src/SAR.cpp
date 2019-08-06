@@ -77,6 +77,7 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
                 this->cheats->Init();
 
                 this->features->AddFeature<TasTools>(&tasTools);
+                this->features->AddFeature<Ghost>(&ghost);
 
                 if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
                     this->features->AddFeature<Listener>(&listener);
