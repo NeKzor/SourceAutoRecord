@@ -29,6 +29,7 @@ DETOUR(EngineDemoRecorder::SetSignonState, int state)
         server->mapSpawning = false;
         ghost->isReady = false;
         server->inMap = false;
+        ghost->ghost_entity = nullptr;
 	}
 
     //SIGNONSTATE_FULL is set twice during first CM load. Using SINGONSTATE_SPAWN for demo number increase instead

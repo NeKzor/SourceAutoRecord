@@ -270,7 +270,7 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
-    if (simulating && ghost->isReady && sar_ghost_autostart.GetBool() && session->isRunning) {
+    if (simulating && ghost->isReady && sar_ghost_autostart.GetBool()) {
 
         auto tick = session->GetTick();
         if (server->mapSpawning && tick == (ghost->startTick + (ghost->CMTime - ghost->endTick))){
