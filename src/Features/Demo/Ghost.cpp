@@ -8,10 +8,12 @@
 Ghost* ghost;
 
 Variable sar_ghost_enable("sar_ghost_enable", 0, "Start automatically the ghost playback when loading a map.\n");
-Variable sar_ghost_height("sar_ghost_height", "16", "Height of the ghost.\n");
+Variable sar_ghost_height("sar_ghost_height", "16", -256, "Height of the ghost.\n");
+Variable sar_ghost_transparency("sar_ghost_transparency", "255", 0, 256, "Transparency of the ghost.\n");
 
 Ghost::Ghost()
     : positionList()
+    , angleList()
     , ghost_entity(nullptr)
     , startTick()
     , CMTime(0)
@@ -27,7 +29,7 @@ void Ghost::Reset()
     ghost->ghost_entity = nullptr;
     ghost->isPlaying = false;
     server->tickCount = 0;
-    console->Print("Reset.\n");
+    console->Print("Ghost reset.\n");
 }
 
 void Ghost::Start()
@@ -35,7 +37,15 @@ void Ghost::Start()
     ghost->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
     server->SetKeyValueChar(ghost->ghost_entity, "model", this->modelName);
     server->SetKeyValueChar(ghost->ghost_entity, "origin", "0 0 0");
-    console->Print("Player replay has been sucessfully spawned.\n");
+    server->SetKeyValueChar(ghost->ghost_entity, "angles", "0 0 0");
+
+    if (sar_ghost_transparency.GetFloat() <= 254) {
+        server->SetKeyValueChar(ghost->ghost_entity, "rendermode", "1");
+        server->SetKeyValueFloat(ghost->ghost_entity, "renderamt", sar_ghost_transparency.GetFloat());
+    } else {
+        server->SetKeyValueChar(ghost->ghost_entity, "rendermode", "0");
+    }
+
 	server->DispatchSpawn(ghost->ghost_entity);
     ghost->isPlaying = true;
     server->tickCount = 0;

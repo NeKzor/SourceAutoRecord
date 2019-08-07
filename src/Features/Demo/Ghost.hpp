@@ -15,6 +15,7 @@ private:
 
 public:
     std::vector<QAngle> positionList;
+    std::vector<QAngle> angleList;
     int startTick;
     int endTick;
     void* ghost_entity;
@@ -36,3 +37,4 @@ extern Command sar_ghost_set_CM_time;
 extern Command sar_ghost_set_prop_model;
 extern Variable sar_ghost_enable;
 extern Variable sar_ghost_height;
+extern Variable sar_ghost_transparency;

@@ -126,6 +126,7 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                                     waitForNext = false;
                                 }
                                 ghost->positionList.push_back(QAngle{ vo_x, vo_y, vo_z });
+                                ghost->angleList.push_back(QAngle{ va_x, va_y, va_z });
                             } else {
                                 console->Msg("[%i] flags: %i | "
                                              "view origin: %.3f/%.3f/%.3f | "

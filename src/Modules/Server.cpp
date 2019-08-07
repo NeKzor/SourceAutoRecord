@@ -282,6 +282,9 @@ DETOUR(Server::GameFrame, bool simulating)
             std::string position_string = std::to_string(position.x) + " " + std::to_string(position.y) + " " + std::to_string(position.z + sar_ghost_height.GetFloat());
             server->SetKeyValueChar(ghost->ghost_entity, "origin", position_string.c_str());
 
+			QAngle angles = ghost->angleList.at(server->tickCount);
+            std::string angle_string = std::to_string(angles.x) + " " + std::to_string(angles.y) + " " + std::to_string(angles.z);
+            server->SetKeyValueChar(ghost->ghost_entity, "angles", angle_string.c_str());
 
 			if (tick % 2 == 0) {
                 server->tickCount++;
