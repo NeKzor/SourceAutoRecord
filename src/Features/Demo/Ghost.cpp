@@ -18,7 +18,7 @@ Ghost::Ghost()
     , startTick()
     , CMTime(0)
     , endTick(0)
-    , modelName("models/props/metal_box.mdl")
+    , modelName("models/props/food_can/food_can_open.mdl")
     , isPlaying(false)
 {
     this->hasLoaded = true;

@@ -273,7 +273,7 @@ DETOUR(Server::GameFrame, bool simulating)
     if (simulating && ghost->IsReady()) {
 
         auto tick = session->GetTick();
-        if (tick == (ghost->startTick + (ghost->CMTime - ghost->endTick))){
+        if ((engine->GetMaxClients() == 1 && tick == (ghost->startTick + (ghost->CMTime - ghost->endTick))) || (engine->GetMaxClients() > 1 && tick == ghost->startTick)){
             ghost->Start();
 		}
 
@@ -286,9 +286,13 @@ DETOUR(Server::GameFrame, bool simulating)
             std::string angle_string = std::to_string(angles.x) + " " + std::to_string(angles.y) + " " + std::to_string(angles.z);
             server->SetKeyValueChar(ghost->ghost_entity, "angles", angle_string.c_str());
 
-			if (tick % 2 == 0) {
+            if (engine->GetMaxClients() == 1) {
+                if (tick % 2 == 0) {
+                    server->tickCount++;
+                }
+            } else {
                 server->tickCount++;
-		    }
+			}
         }
 		if (server->tickCount == ghost->positionList.size()) {
             console->Print("Ghost has finished.\n");
