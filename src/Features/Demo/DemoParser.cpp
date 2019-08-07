@@ -55,7 +55,7 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
         file.read((char*)&demo->playbackFrames, sizeof(demo->playbackFrames));
         file.read((char*)&demo->signOnLength, sizeof(demo->signOnLength));
 
-		ghost->endTick = demo->playbackTicks;
+        ghost->endTick = demo->playbackTicks;
 
         if (!headerOnly) {
             if (demo->demoProtocol != 4) {
@@ -159,9 +159,9 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                         file.read(&cmd[0], length);
 
                         if (outputMode == 3) {
-							if (tick == 0) {
+                            if (tick == 0) {
                                 waitForNext = true;
-							}
+                            }
                         }
 
                         if (outputMode != 3) {
