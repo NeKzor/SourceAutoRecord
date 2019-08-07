@@ -11,6 +11,7 @@
 #include "Features/Summary.hpp"
 #include "Features/Tas/CommandQueuer.hpp"
 #include "Features/Timer/Timer.hpp"
+#include "Features/Demo/Ghost.hpp"
 
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
@@ -131,6 +132,10 @@ void Session::Ended()
     if (!this->isRunning) {
         return;
     }
+
+	//Ghost
+    engine->PrecacheModel(ghost->modelName, true);
+	ghost->Reset();
 
     auto tick = this->GetTick();
 

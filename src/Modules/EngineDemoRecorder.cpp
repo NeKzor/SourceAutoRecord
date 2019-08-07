@@ -25,10 +25,6 @@ int EngineDemoRecorder::GetTick()
 // CDemoRecorder::SetSignonState
 DETOUR(EngineDemoRecorder::SetSignonState, int state)
 {
-    if (state == SIGNONSTATE_NONE) {
-        ghost->Reset();
-	}
-
     //SIGNONSTATE_FULL is set twice during first CM load. Using SINGONSTATE_SPAWN for demo number increase instead
     if (state == SIGNONSTATE_SPAWN) {
         if (engine->demorecorder->isRecordingDemo || *engine->demorecorder->m_bRecording) {

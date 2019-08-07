@@ -20,12 +20,13 @@ public:
     void* ghost_entity;
     int CMTime;
     char modelName[64];
+    bool isPlaying;
 
 public:
     Ghost();
     void Reset();
     void Start();
-    bool isReady();
+    bool IsReady();
 };
 
 extern Ghost* ghost;

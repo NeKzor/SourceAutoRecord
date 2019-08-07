@@ -270,26 +270,25 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
-    if (simulating && ghost->isReady()) {
+    if (simulating && ghost->IsReady()) {
 
         auto tick = session->GetTick();
         if (tick == (ghost->startTick + (ghost->CMTime - ghost->endTick))){
             ghost->Start();
 		}
 
-        if (server->tickCount < ghost->positionList.size() && server->inMap) {
+        if (ghost->isPlaying) {
+            QAngle position = ghost->positionList.at(server->tickCount);
+            std::string position_string = std::to_string(position.x) + " " + std::to_string(position.y) + " " + std::to_string(position.z + sar_ghost_height.GetFloat());
+            server->SetKeyValueChar(ghost->ghost_entity, "origin", position_string.c_str());
 
-			std::string x = std::to_string(ghost->positionList.at(server->tickCount).x);
-            std::string y = std::to_string(ghost->positionList.at(server->tickCount).y);
-            std::string z = std::to_string(ghost->positionList.at(server->tickCount).z + sar_ghost_height.GetFloat());
-            std::string xyz = x + " " + y + " " + z;
-            server->SetKeyValueChar(ghost->ghost_entity, "origin", xyz.c_str());
 
 			if (tick % 2 == 0) {
                 server->tickCount++;
 		    }
-        } else if (server->tickCount == ghost->positionList.size()) {
-            console->Print("Demo has finished.\n");
+        }
+		if (server->tickCount == ghost->positionList.size()) {
+            console->Print("Ghost has finished.\n");
             ghost->Reset();
         }
     }

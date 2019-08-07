@@ -17,6 +17,7 @@ Ghost::Ghost()
     , CMTime(0)
     , endTick(0)
     , modelName("models/props/metal_box.mdl")
+    , isPlaying(false)
 {
     this->hasLoaded = true;
 }
@@ -24,7 +25,7 @@ Ghost::Ghost()
 void Ghost::Reset()
 {
     ghost->ghost_entity = nullptr;
-    server->inMap = false;
+    ghost->isPlaying = false;
     server->tickCount = 0;
     console->Print("Reset.\n");
 }
@@ -34,13 +35,17 @@ void Ghost::Start()
     ghost->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
     server->SetKeyValueChar(ghost->ghost_entity, "model", this->modelName);
     server->SetKeyValueChar(ghost->ghost_entity, "origin", "0 0 0");
-    server->DispatchSpawn(ghost->ghost_entity);
     console->Print("Player replay has been sucessfully spawned.\n");
-    server->inMap = true;
+	server->DispatchSpawn(ghost->ghost_entity);
+    ghost->isPlaying = true;
     server->tickCount = 0;
+
+	if (ghost->ghost_entity != nullptr) {
+        console->Print("Say 'Hi !' to Jonnil !\n");
+	}
 }
 
-bool Ghost::isReady()
+bool Ghost::IsReady()
 {
     if (ghost->CMTime > 0 && ghost->positionList.size() > 0 && sar_ghost_enable.GetBool()) {
         return true;
@@ -74,6 +79,7 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
     auto dir = std::string(engine->GetGameDirectory()) + std::string("/") + name;
     if (parser.Parse(dir, &demo)) {
         parser.Adjust(&demo);
+        console->Print("Ghost sucessfully created !\n");
     } else {
         console->Print("Could not parse \"%s\"!\n", name.c_str());
     }
