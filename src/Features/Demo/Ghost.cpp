@@ -41,6 +41,7 @@ void Ghost::Start()
 {
     this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
     server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
+    server->SetKeyValueChar(this->ghost_entity, "targetname", "ghost");
     server->SetKeyValueVector(this->ghost_entity, "origin", this->positionList.at(this->tickCount));
     server->SetKeyValueChar(this->ghost_entity, "angles", "0 0 0");
 
