@@ -2,7 +2,6 @@
 #include <regex>
 #include <string>
 #include <vector>
-#include <regex>
 
 #include "Features/Feature.hpp"
 

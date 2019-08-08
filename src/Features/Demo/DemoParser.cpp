@@ -55,8 +55,6 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
         file.read((char*)&demo->playbackFrames, sizeof(demo->playbackFrames));
         file.read((char*)&demo->signOnLength, sizeof(demo->signOnLength));
 
-        ghost->endTick = demo->playbackTicks;
-
         if (!headerOnly) {
             if (demo->demoProtocol != 4) {
                 this->hasAlignmentByte = false;
@@ -125,8 +123,8 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                                     ghost->startTick = tick;
                                     waitForNext = false;
                                 }
-                                ghost->positionList.push_back(QAngle{ vo_x, vo_y, vo_z });
-                                ghost->angleList.push_back(QAngle{ va_x, va_y, va_z });
+                                ghost->positionList.push_back(Vector{ vo_x, vo_y, vo_z });
+                                ghost->angleList.push_back(Vector{ va_x, va_y, va_z });
                             } else {
                                 console->Msg("[%i] flags: %i | "
                                              "view origin: %.3f/%.3f/%.3f | "

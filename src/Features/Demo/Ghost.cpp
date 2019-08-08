@@ -2,6 +2,7 @@
 
 #include "Features/Demo/Demo.hpp"
 #include "Features/Demo/DemoParser.hpp"
+#include "Features/Session.hpp"
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
 
@@ -20,47 +21,85 @@ Ghost::Ghost()
     , endTick(0)
     , modelName("models/props/food_can/food_can_open.mdl")
     , isPlaying(false)
+    , mapSpawning(false)
+    , inMap(false)
+    , tickCount(0)
 {
     this->hasLoaded = true;
 }
 
 void Ghost::Reset()
 {
-    ghost->ghost_entity = nullptr;
-    ghost->isPlaying = false;
-    server->tickCount = 0;
+    this->ghost_entity = nullptr;
+    this->isPlaying = false;
+    this->tickCount = 0;
     console->Print("Ghost reset.\n");
 }
 
 void Ghost::Start()
 {
-    ghost->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
-    server->SetKeyValueChar(ghost->ghost_entity, "model", this->modelName);
-    server->SetKeyValueChar(ghost->ghost_entity, "origin", "0 0 0");
-    server->SetKeyValueChar(ghost->ghost_entity, "angles", "0 0 0");
+    this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
+    server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
+    server->SetKeyValueChar(this->ghost_entity, "origin", "0 0 0");
+    server->SetKeyValueChar(this->ghost_entity, "angles", "0 0 0");
 
     if (sar_ghost_transparency.GetFloat() <= 254) {
-        server->SetKeyValueChar(ghost->ghost_entity, "rendermode", "1");
-        server->SetKeyValueFloat(ghost->ghost_entity, "renderamt", sar_ghost_transparency.GetFloat());
+        server->SetKeyValueChar(this->ghost_entity, "rendermode", "1");
+        server->SetKeyValueFloat(this->ghost_entity, "renderamt", sar_ghost_transparency.GetFloat());
     } else {
-        server->SetKeyValueChar(ghost->ghost_entity, "rendermode", "0");
+        server->SetKeyValueChar(this->ghost_entity, "rendermode", "0");
     }
 
-	server->DispatchSpawn(ghost->ghost_entity);
-    ghost->isPlaying = true;
-    server->tickCount = 0;
+    server->DispatchSpawn(this->ghost_entity);
+    this->isPlaying = true;
+    this->tickCount = 0;
 
-	if (ghost->ghost_entity != nullptr) {
+    if (this->ghost_entity != nullptr) {
         console->Print("Say 'Hi !' to Jonnil !\n");
-	}
+    }
 }
 
 bool Ghost::IsReady()
 {
-    if (ghost->CMTime > 0 && ghost->positionList.size() > 0 && sar_ghost_enable.GetBool()) {
+    if (this->CMTime > 0 && this->positionList.size() > 0 && sar_ghost_enable.GetBool()) {
         return true;
     }
     return false;
+}
+
+void Ghost::SetCMTime(float playbackTime)
+{
+    float time = playbackTime * 60;
+    int ticks = std::round(time);
+    this->CMTime = ticks;
+    console->Print("Final time of the demo : %f\n", playbackTime);
+}
+
+void Ghost::Think()
+{
+    auto tick = session->GetTick();
+    if ((engine->GetMaxClients() == 1 && tick == (this->startTick + (this->CMTime - this->endTick))) || (engine->GetMaxClients() > 1 && tick == this->startTick)) {
+        this->Start();
+    }
+
+    if (this->isPlaying) {
+        Vector position = this->positionList.at(this->tickCount);
+        position.z += sar_ghost_height.GetFloat();
+        server->SetKeyValueVector(this->ghost_entity, "origin", position);
+        server->SetKeyValueVector(this->ghost_entity, "angles", this->angleList.at(this->tickCount));
+
+        if (engine->GetMaxClients() == 1) {
+            if (tick % 2 == 0) {
+                this->tickCount++;
+            }
+        } else {
+            this->tickCount++;
+        }
+    }
+    if (this->tickCount == this->positionList.size()) {
+        console->Print("Ghost has finished.\n");
+        this->Reset();
+    }
 }
 
 // Commands
@@ -89,21 +128,14 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
     auto dir = std::string(engine->GetGameDirectory()) + std::string("/") + name;
     if (parser.Parse(dir, &demo)) {
         parser.Adjust(&demo);
+        ghost->endTick = demo.playbackTicks;
+        ghost->SetCMTime(demo.playbackTime);
         console->Print("Ghost sucessfully created !\n");
     } else {
         console->Print("Could not parse \"%s\"!\n", name.c_str());
     }
 }
-CON_COMMAND(sar_ghost_set_CM_time, "Due to lack of information from Volvo, I need final CM time. I'm crying.\n")
-{
-    if (args.ArgC() <= 1) {
-        return console->Print(sar_ghost_set_CM_time.ThisPtr()->m_pszHelpString);
-    }
 
-    float time = static_cast<float>(std::atof(args[1])) * 60;
-    int ticks = std::round(time);
-    ghost->CMTime = ticks;
-}
 CON_COMMAND(sar_ghost_set_prop_model, "Set the prop model. Example : models/props/metal_box.mdl\n")
 {
     if (args.ArgC() <= 1) {

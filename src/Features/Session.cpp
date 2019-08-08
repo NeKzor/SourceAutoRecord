@@ -66,7 +66,8 @@ void Session::Start()
     if (this->isRunning) {
         return;
     }
-
+	
+    engine->PrecacheModel(ghost->modelName, true);
     auto tick = engine->GetTick();
 
     this->Rebase(tick);
@@ -134,7 +135,6 @@ void Session::Ended()
     }
 
 	//Ghost
-    engine->PrecacheModel(ghost->modelName, true);
 	ghost->Reset();
 
     auto tick = this->GetTick();

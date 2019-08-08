@@ -12,28 +12,32 @@
 class Ghost : public Feature {
 
 private:
+    int tickCount;
 
 public:
-    std::vector<QAngle> positionList;
-    std::vector<QAngle> angleList;
+    std::vector<Vector> positionList;
+    std::vector<Vector> angleList;
     int startTick;
     int endTick;
     void* ghost_entity;
     int CMTime;
     char modelName[64];
     bool isPlaying;
+    bool mapSpawning;
+    bool inMap;
 
 public:
     Ghost();
     void Reset();
     void Start();
     bool IsReady();
+    void SetCMTime(float);
+    void Think();
 };
 
 extern Ghost* ghost;
 
 extern Command sar_ghost_set_demo;
-extern Command sar_ghost_set_CM_time;
 extern Command sar_ghost_set_prop_model;
 extern Variable sar_ghost_enable;
 extern Variable sar_ghost_height;

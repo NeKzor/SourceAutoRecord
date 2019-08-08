@@ -271,33 +271,7 @@ DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
     if (simulating && ghost->IsReady()) {
-
-        auto tick = session->GetTick();
-        if ((engine->GetMaxClients() == 1 && tick == (ghost->startTick + (ghost->CMTime - ghost->endTick))) || (engine->GetMaxClients() > 1 && tick == ghost->startTick)){
-            ghost->Start();
-		}
-
-        if (ghost->isPlaying) {
-            QAngle position = ghost->positionList.at(server->tickCount);
-            std::string position_string = std::to_string(position.x) + " " + std::to_string(position.y) + " " + std::to_string(position.z + sar_ghost_height.GetFloat());
-            server->SetKeyValueChar(ghost->ghost_entity, "origin", position_string.c_str());
-
-			QAngle angles = ghost->angleList.at(server->tickCount);
-            std::string angle_string = std::to_string(angles.x) + " " + std::to_string(angles.y) + " " + std::to_string(angles.z);
-            server->SetKeyValueChar(ghost->ghost_entity, "angles", angle_string.c_str());
-
-            if (engine->GetMaxClients() == 1) {
-                if (tick % 2 == 0) {
-                    server->tickCount++;
-                }
-            } else {
-                server->tickCount++;
-			}
-        }
-		if (server->tickCount == ghost->positionList.size()) {
-            console->Print("Ghost has finished.\n");
-            ghost->Reset();
-        }
+        ghost->Think();        
     }
 
     if (!server->IsRestoring()) {
@@ -338,10 +312,6 @@ DETOUR(Server::GameFrame, bool simulating)
 
 bool Server::Init()
 {
-    mapSpawning = false;
-    inMap = false;
-    tickCount = 0;
-
     this->g_GameMovement = Interface::Create(this->Name(), "GameMovement0");
     this->g_ServerGameDLL = Interface::Create(this->Name(), "ServerGameDLL0");
 

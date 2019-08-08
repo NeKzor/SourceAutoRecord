@@ -39,10 +39,6 @@ public:
     CGlobalVars* gpGlobals = nullptr;
     CEntInfo* m_EntPtrArray = nullptr;
 
-    bool mapSpawning;
-    bool inMap;
-    int tickCount;
-
 private:
     bool jumpedLastTime = false;
     float savedVerticalVelocity = 0.0f;
