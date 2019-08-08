@@ -13,3 +13,6 @@ REM copy /Y "%src%" "%dest%\Half-Life 2\%binary%"
 REM copy /Y "%src%" "%dest%\The Stanley Parable\%binary%"
 REM copy /Y "%src%" "%dest%\The Beginners Guide\%binary%"
 REM copy /Y "%src%" "%dest%\INFRA\%binary%"
+
+REM copy /Y "%src%" "%unpack%\hl2\%binary%"
+REM copy /Y "%src%" "%unpack%\portal\%binary%"
