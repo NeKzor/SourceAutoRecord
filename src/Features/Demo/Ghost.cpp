@@ -18,12 +18,12 @@ Ghost::Ghost()
     , ghost_entity(nullptr)
     , startTick()
     , CMTime(0)
-    , endTick(0)
     , modelName("models/props/food_can/food_can_open.mdl")
     , isPlaying(false)
     , mapSpawning(false)
-    , inMap(false)
     , tickCount(0)
+    , startDelay(0)
+    , demo()
 {
     this->hasLoaded = true;
 }
@@ -32,7 +32,8 @@ void Ghost::Reset()
 {
     this->ghost_entity = nullptr;
     this->isPlaying = false;
-    this->tickCount = 0;
+    this->tickCount = GetStartDelay();
+
     console->Print("Ghost reset.\n");
 }
 
@@ -40,7 +41,7 @@ void Ghost::Start()
 {
     this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
     server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
-    server->SetKeyValueChar(this->ghost_entity, "origin", "0 0 0");
+    server->SetKeyValueVector(this->ghost_entity, "origin", this->positionList.at(this->tickCount));
     server->SetKeyValueChar(this->ghost_entity, "angles", "0 0 0");
 
     if (sar_ghost_transparency.GetFloat() <= 254) {
@@ -52,7 +53,6 @@ void Ghost::Start()
 
     server->DispatchSpawn(this->ghost_entity);
     this->isPlaying = true;
-    this->tickCount = 0;
 
     if (this->ghost_entity != nullptr) {
         console->Print("Say 'Hi !' to Jonnil !\n");
@@ -69,16 +69,14 @@ bool Ghost::IsReady()
 
 void Ghost::SetCMTime(float playbackTime)
 {
-    float time = playbackTime * 60;
-    int ticks = std::round(time);
-    this->CMTime = ticks;
-    console->Print("Final time of the demo : %f\n", playbackTime);
+    float time = (playbackTime)*60;
+    this->CMTime = std::round(time);
 }
 
 void Ghost::Think()
 {
     auto tick = session->GetTick();
-    if ((engine->GetMaxClients() == 1 && tick == (this->startTick + (this->CMTime - this->endTick))) || (engine->GetMaxClients() > 1 && tick == this->startTick)) {
+    if ((engine->GetMaxClients() == 1 && tick == (this->startTick + (this->CMTime - this->demo.playbackTicks))) || (engine->GetMaxClients() > 1 && tick == this->startTick)) {
         this->Start();
     }
 
@@ -100,6 +98,16 @@ void Ghost::Think()
         console->Print("Ghost has finished.\n");
         this->Reset();
     }
+}
+
+int Ghost::GetStartDelay()
+{
+    return this->startDelay;
+}
+
+void Ghost::SetStartDelay(int delay)
+{
+    this->startDelay = delay;
 }
 
 // Commands
@@ -124,13 +132,11 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
     DemoParser parser;
     parser.outputMode = 3;
 
-    Demo demo;
     auto dir = std::string(engine->GetGameDirectory()) + std::string("/") + name;
-    if (parser.Parse(dir, &demo)) {
-        parser.Adjust(&demo);
-        ghost->endTick = demo.playbackTicks;
-        ghost->SetCMTime(demo.playbackTime);
-        console->Print("Ghost sucessfully created !\n");
+    if (parser.Parse(dir, &ghost->demo)) {
+        parser.Adjust(&ghost->demo);
+        ghost->SetCMTime(ghost->demo.playbackTime);
+        console->Print("Ghost sucessfully created ! Final time of the ghost : %f\n", ghost->demo.playbackTime);
     } else {
         console->Print("Could not parse \"%s\"!\n", name.c_str());
     }
@@ -142,4 +148,26 @@ CON_COMMAND(sar_ghost_set_prop_model, "Set the prop model. Example : models/prop
         return console->Print(sar_ghost_set_prop_model.ThisPtr()->m_pszHelpString);
     }
     std::strncpy(ghost->modelName, args[1], sizeof(ghost->modelName));
+}
+
+CON_COMMAND(sar_ghost_time_offset, "In seconds. Start the ghost with a delay. Can be negative of positive.\n")
+{
+    if (args.ArgC() <= 1) {
+        return console->Print(sar_ghost_time_offset.ThisPtr()->m_pszHelpString);
+    }
+    float delay = static_cast<float>(std::atof(args[1]));
+
+    if (delay < 0) { //Asking for faster ghost
+        if (delay * 60 > ghost->positionList.size()) { //Too fast
+            console->Print("Time offset is too low.\n");
+            return;
+        } else { //Ok
+            ghost->SetStartDelay(-delay * 60); //Seconds -> ticks ; TODO : Check if this works properly in Coop
+            console->Print("Final time of the ghost : %f\n", ghost->demo.playbackTime + delay);
+        }
+    } else if (delay > 0) { //Asking for slower ghost
+        ghost->SetStartDelay(0);
+        ghost->SetCMTime(ghost->demo.playbackTime + delay);
+        console->Print("Final time of the ghost : %f\n", ghost->demo.playbackTime + delay);
+    }
 }
