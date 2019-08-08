@@ -64,6 +64,7 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
             ghost->positionList.clear();
             ghost->angleList.clear();
             bool waitForNext = false;
+            int lastTick = 0;
 
             while (!file.eof() && !file.bad()) {
                 unsigned char cmd;
@@ -125,10 +126,11 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                                     waitForNext = true;
                                 }
 
-                                if (tick > 0 && waitForNext) {
+                                if (tick > 0 && waitForNext && lastTick != tick) {
                                     if (ghost->startTick == 0) {
                                         ghost->startTick = tick;
                                     }
+                                    lastTick = tick;
                                     ghost->positionList.push_back(Vector{ vo_x, vo_y, vo_z });
                                     ghost->angleList.push_back(Vector{ va_x, va_y, va_z });
                                 }
