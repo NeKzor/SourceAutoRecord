@@ -61,6 +61,8 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                 this->maxSplitScreenClients = 1;
             }
 
+            ghost->positionList.clear();
+            ghost->angleList.clear();
             bool waitForNext = false;
 
             while (!file.eof() && !file.bad()) {
@@ -119,12 +121,17 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                             file.read((char*)&lva2_z, sizeof(lva2_z));
 
                             if (outputMode == 3) {
-                                if (waitForNext && tick != 0) {
-                                    ghost->startTick = tick;
-                                    waitForNext = false;
+                                if (tick == 0) {
+                                    waitForNext = true;
                                 }
-                                ghost->positionList.push_back(Vector{ vo_x, vo_y, vo_z });
-                                ghost->angleList.push_back(Vector{ va_x, va_y, va_z });
+
+                                if (tick > 0 && waitForNext) {
+                                    if (ghost->startTick == 0) {
+                                        ghost->startTick = tick;
+                                    }
+                                    ghost->positionList.push_back(Vector{ vo_x, vo_y, vo_z });
+                                    ghost->angleList.push_back(Vector{ va_x, va_y, va_z });
+                                }
                             } else {
                                 console->Msg("[%i] flags: %i | "
                                              "view origin: %.3f/%.3f/%.3f | "
@@ -155,12 +162,6 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                     if (outputMode >= 1) {
                         std::string cmd(length, ' ');
                         file.read(&cmd[0], length);
-
-                        if (outputMode == 3) {
-                            if (tick == 0) {
-                                waitForNext = true;
-                            }
-                        }
 
                         if (outputMode != 3) {
                             console->Msg("[%i] %s\n", tick, cmd.c_str());
