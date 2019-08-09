@@ -9,8 +9,12 @@ private:
     GhostEntity* ghost;
 
 public:
+    bool enabled;
+
+public:
     GhostPlayer();
     void Run();
+    void Stop();
     bool IsReady();
     void ResetGhost();
     void ResetCoord();
@@ -26,6 +30,6 @@ extern GhostPlayer* ghostPlayer;
 extern Command sar_ghost_set_demo;
 extern Command sar_ghost_set_prop_model;
 extern Command sar_ghost_time_offset;
-extern Variable sar_ghost_enable;
+extern Command sar_ghost_enable;
 extern Variable sar_ghost_height;
 extern Variable sar_ghost_transparency;

@@ -30,6 +30,7 @@ public:
 public:
     GhostEntity();
     void Reset();
+    void Stop();
     GhostEntity* Spawn();
     bool IsReady();
     void SetCMTime(float);

@@ -29,12 +29,18 @@ void GhostEntity::Reset()
     this->tickCount = GetStartDelay();
 }
 
+void GhostEntity::Stop()
+{
+    delete this->ghost_entity;
+    this->isPlaying = false;
+}
+
 GhostEntity* GhostEntity::Spawn()
 {
     this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
     server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
     server->SetKeyValueChar(this->ghost_entity, "targetname", "ghost");
-    server->SetKeyValueVector(this->ghost_entity, "origin", this->positionList.at(this->tickCount));
+    server->SetKeyValueVector(this->ghost_entity, "origin", this->positionList[(this->tickCount)]);
     server->SetKeyValueChar(this->ghost_entity, "angles", "0 0 0");
 
     if (sar_ghost_transparency.GetFloat() <= 254) {
@@ -57,7 +63,7 @@ GhostEntity* GhostEntity::Spawn()
 
 bool GhostEntity::IsReady()
 {
-    if (this->CMTime > 0 && this->positionList.size() > 0 && sar_ghost_enable.GetBool()) {
+    if (ghostPlayer->enabled && this->CMTime > 0) { //No need to check positionList anymore, cause CMTime is > 0 if PositionList > 0
         return true;
     }
     return false;
@@ -77,10 +83,10 @@ void GhostEntity::Think()
     }
 
     if (this->isPlaying) {
-        Vector position = this->positionList.at(this->tickCount);
+        Vector position = this->positionList[(this->tickCount)];
         position.z += sar_ghost_height.GetFloat();
         server->SetKeyValueVector(this->ghost_entity, "origin", position);
-        server->SetKeyValueVector(this->ghost_entity, "angles", this->angleList.at(this->tickCount));
+        server->SetKeyValueVector(this->ghost_entity, "angles", this->angleList[(this->tickCount)]);
 
         if (engine->GetMaxClients() == 1) {
             if (tick % 2 == 0) {

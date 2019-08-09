@@ -3,12 +3,12 @@
 
 GhostPlayer* ghostPlayer;
 
-Variable sar_ghost_enable("sar_ghost_enable", 0, "Start automatically the ghost playback when loading a map.\n");
 Variable sar_ghost_height("sar_ghost_height", "16", -256, "Height of the ghost.\n");
 Variable sar_ghost_transparency("sar_ghost_transparency", "255", 0, 256, "Transparency of the ghost.\n");
 
 GhostPlayer::GhostPlayer()
     : ghost()
+    , enabled(false)
 {
     this->hasLoaded = true;
     this->ghost = new GhostEntity();
@@ -22,6 +22,11 @@ bool GhostPlayer::IsReady()
 void GhostPlayer::Run()
 {
     this->ghost->Think();
+}
+
+void GhostPlayer::Stop()
+{
+    this->ghost->Stop();
 }
 
 void GhostPlayer::ResetGhost()
@@ -77,12 +82,13 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
 
     DemoParser parser;
     parser.outputMode = 3;
-    Demo demo = ghostPlayer->GetGhost()->demo;
+    Demo demo;
 
     auto dir = std::string(engine->GetGameDirectory()) + std::string("/") + name;
     if (parser.Parse(dir, &demo)) {
         parser.Adjust(&demo);
         ghostPlayer->GetGhost()->SetCMTime(demo.playbackTime);
+        ghostPlayer->GetGhost()->demo = demo;
         console->Print("Ghost sucessfully created ! Final time of the ghost : %f\n", demo.playbackTime);
     } else {
         console->Print("Could not parse \"%s\"!\n", name.c_str());
@@ -118,4 +124,19 @@ CON_COMMAND(sar_ghost_time_offset, "In seconds. Start the ghost with a delay. Ca
         ghost->SetCMTime(ghost->demo.playbackTime + delay);
         console->Print("Final time of the ghost : %f\n", ghost->demo.playbackTime + delay);
     }
+}
+
+CON_COMMAND(sar_ghost_enable, "Start automatically the ghost playback when loading a map.\n")
+{
+    if (args.ArgC() <= 1) {
+        return console->Print(sar_ghost_time_offset.ThisPtr()->m_pszHelpString);
+    }
+    bool enable = static_cast<bool>(std::atoi(args[1]));
+    if (enable) {
+        ghostPlayer->enabled = true;
+    } else {
+        ghostPlayer->enabled = false;
+        ghostPlayer->Stop();
+        delete ghostPlayer->GetGhost();
+	}
 }
