@@ -137,6 +137,5 @@ CON_COMMAND(sar_ghost_enable, "Start automatically the ghost playback when loadi
     } else {
         ghostPlayer->enabled = false;
         ghostPlayer->Stop();
-        delete ghostPlayer->GetGhost();
 	}
 }

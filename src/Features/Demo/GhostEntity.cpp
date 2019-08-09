@@ -31,8 +31,8 @@ void GhostEntity::Reset()
 
 void GhostEntity::Stop()
 {
+    this->Reset();
     delete this->ghost_entity;
-    this->isPlaying = false;
 }
 
 GhostEntity* GhostEntity::Spawn()
