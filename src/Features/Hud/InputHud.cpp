@@ -38,6 +38,10 @@ Variable sar_ihud_layout("sar_ihud_layout", "WASDCSELRSR", "Layout of input HUD.
                                                            "reload.\n"
                                                            "Pass an empty string to disable drawing labels completely.\n",
     0);
+Variable sar_ihud_keyboard_layout("sar_ihud_keyboard_layout", "0", 0, "Keyboard layouts :\n"
+                                                                      "0 = QWERTY,\n"
+                                                                      "1 = AZERTY,\n"
+                                                                      "2 = BLENDERISTE.\n");
 Variable sar_ihud_shadow("sar_ihud_shadow", "1", "Draws button shadows of input HUD.\n");
 Variable sar_ihud_shadow_color("sar_ihud_shadow_color", "0 0 0 32", "RGBA button shadow color of input HUD.\n", 0);
 Variable sar_ihud_shadow_font_color("sar_ihud_shadow_font_color", "255 255 255 32", "RGBA button shadow font color of input HUD.\n", 0);
@@ -45,6 +49,7 @@ Variable sar_ihud_shadow_font_color("sar_ihud_shadow_font_color", "255 255 255 3
 const int row0 = 0;
 const int row1 = 1;
 const int row2 = 2;
+const int row3 = 3;
 
 const int col0 = 0;
 const int col1 = 1;
@@ -120,7 +125,15 @@ void InputHud::Draw()
     auto fontColor = this->GetColor(sar_ihud_font_color.GetString());
     auto font = scheme->GetDefaultFont() + sar_ihud_font_index.GetInt();
 
-    auto symbols = std::string("WASDCSELRSR");
+    std::string symbols;
+    if (sar_ihud_keyboard_layout.GetInt() == 0) {
+        symbols = std::string("WASDCSELRSR");
+    } else if (sar_ihud_keyboard_layout.GetInt() == 1) {
+        symbols = std::string("ZQSDCSELRSR");
+    } else if (sar_ihud_keyboard_layout.GetInt() == 2) {
+        symbols = std::string("WASDSSELRSR");
+    }
+
     auto layout = std::string(sar_ihud_layout.GetString());
     if (layout.length() == symbols.length()) {
         symbols = layout;
@@ -151,8 +164,9 @@ void InputHud::Draw()
         ++element;
     };
 
-    /*
-        Layout:
+    if (sar_ihud_keyboard_layout.GetInt() == 0) {
+        /*
+        QWERTY layout:
 
             row|col0|1|2|3|4|5|6|7|8
             ---|---------------------
@@ -161,20 +175,72 @@ void InputHud::Draw()
               2|ctrl|spacebar   |l|r
     */
 
-    DrawElement(1, mvForward, col2, row0);
-    DrawElement(1, mvLeft, col1, row1);
-    DrawElement(1, mvBack, col2, row1);
-    DrawElement(1, mvRight, col3, row1);
+        DrawElement(1, mvForward, col2, row0);
+        DrawElement(1, mvLeft, col1, row1);
+        DrawElement(1, mvBack, col2, row1);
+        DrawElement(1, mvRight, col3, row1);
 
-    DrawElement(2, mvDuck, col0, row2);
-    DrawElement(2, mvJump, col1, row2, col6);
-    DrawElement(2, mvUse, col3, row0);
+        DrawElement(2, mvDuck, col0, row2);
+        DrawElement(2, mvJump, col1, row2, col6);
+        DrawElement(2, mvUse, col3, row0);
 
-    DrawElement(3, mvAttack, col7, row2);
-    DrawElement(3, mvAttack2, col8, row2);
+        DrawElement(3, mvAttack, col7, row2);
+        DrawElement(3, mvAttack2, col8, row2);
 
-    DrawElement(4, mvSpeed, col0, row1);
-    DrawElement(4, mvReload, col4, row0);
+        DrawElement(4, mvSpeed, col0, row1);
+        DrawElement(4, mvReload, col4, row0);
+    } else if (sar_ihud_keyboard_layout.GetInt() == 1) {
+        /*
+        AZERTY layout:
+
+            row|col0|1|2|3|4|5|6|7|8
+            ---|---------------------
+              0|       z|e|r
+              1|shft|q|s|d
+              2|ctrl|spacebar   |l|r
+        */
+
+        DrawElement(1, mvForward, col2, row0);
+        DrawElement(1, mvLeft, col1, row1);
+        DrawElement(1, mvBack, col2, row1);
+        DrawElement(1, mvRight, col3, row1);
+
+        DrawElement(2, mvDuck, col0, row2);
+        DrawElement(2, mvJump, col1, row2, col6);
+        DrawElement(2, mvUse, col3, row0);
+
+        DrawElement(3, mvAttack, col7, row2);
+        DrawElement(3, mvAttack2, col8, row2);
+
+        DrawElement(4, mvSpeed, col0, row1);
+        DrawElement(4, mvReload, col4, row0);
+    } else if (sar_ihud_keyboard_layout.GetInt() == 2) {
+        /*
+        BLENDERISTE layout:
+
+            row|col0|1|2|3|4|5|6|7|8
+            ---|---------------------
+              0|    |a| |e
+              1|    |q|s|d
+              2|shft|w|
+			  3|ctrl|spacebar   |l|r
+        */
+
+        DrawElement(1, mvForward, col1, row2);
+        DrawElement(1, mvLeft, col1, row0);
+        DrawElement(1, mvBack, col2, row1);
+        DrawElement(1, mvRight, col3, row1);
+
+        DrawElement(2, mvDuck, col0, row2);
+        DrawElement(2, mvJump, col1, row3, col6);
+        DrawElement(2, mvUse, col3, row0);
+
+        DrawElement(3, mvAttack, col7, row3);
+        DrawElement(3, mvAttack2, col8, row3);
+
+        DrawElement(4, mvSpeed, col0, row0);
+        DrawElement(4, mvReload, col4, row0);
+    }
 
     surface->FinishDrawing();
 }
