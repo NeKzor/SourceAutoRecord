@@ -15,7 +15,6 @@ GhostEntity::GhostEntity()
     , CMTime(0)
     , modelName("models/props/food_can/food_can_open.mdl")
     , isPlaying(false)
-    , mapSpawning(false)
     , tickCount(0)
     , startDelay(0)
     , demo()
@@ -35,14 +34,20 @@ void GhostEntity::Stop()
     delete this->ghost_entity;
 }
 
-GhostEntity* GhostEntity::Spawn()
+GhostEntity* GhostEntity::Spawn(bool instantPlay, bool playerPos)
 {
     this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
     server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
     server->SetKeyValueChar(this->ghost_entity, "targetname", "ghost");
-    server->SetKeyValueVector(this->ghost_entity, "origin", this->positionList[(this->tickCount)]);
-    server->SetKeyValueChar(this->ghost_entity, "angles", "0 0 0");
+    if (!playerPos) {
+        server->SetKeyValueVector(this->ghost_entity, "origin", this->positionList[(this->tickCount)]);
+    } else {
+        Vector pos = server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1));
+        pos.z += sar_ghost_height.GetFloat();
+        server->SetKeyValueVector(this->ghost_entity, "origin", pos);
+    }
 
+    server->SetKeyValueChar(this->ghost_entity, "angles", "0 0 0");
     if (sar_ghost_transparency.GetFloat() <= 254) {
         server->SetKeyValueChar(this->ghost_entity, "rendermode", "1");
         server->SetKeyValueFloat(this->ghost_entity, "renderamt", sar_ghost_transparency.GetFloat());
@@ -51,7 +56,7 @@ GhostEntity* GhostEntity::Spawn()
     }
 
     server->DispatchSpawn(this->ghost_entity);
-    this->isPlaying = true;
+    this->isPlaying = instantPlay;
 
     if (this->ghost_entity != nullptr) {
         console->Print("Say 'Hi !' to Jonnil !\n");
@@ -110,4 +115,9 @@ int GhostEntity::GetStartDelay()
 void GhostEntity::SetStartDelay(int delay)
 {
     this->startDelay = delay;
+}
+
+void GhostEntity::ChangeModel(const char modelName[64])
+{
+    std::strncpy(this->modelName, modelName, sizeof(this->modelName));
 }

@@ -25,16 +25,16 @@ public:
     int CMTime;
     char modelName[64];
     bool isPlaying;
-    bool mapSpawning;
 
 public:
     GhostEntity();
     void Reset();
     void Stop();
-    GhostEntity* Spawn();
+    GhostEntity* Spawn(bool instantPlay = true, bool playerPos = false);
     bool IsReady();
     void SetCMTime(float);
     void Think();
     int GetStartDelay();
     void SetStartDelay(int);
+    void ChangeModel(const char modelName[64]);
 };
