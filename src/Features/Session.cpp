@@ -11,7 +11,7 @@
 #include "Features/Summary.hpp"
 #include "Features/Tas/CommandQueuer.hpp"
 #include "Features/Timer/Timer.hpp"
-#include "Features/Demo/Ghost.hpp"
+#include "Features/Demo/GhostEntity.hpp"
 
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"

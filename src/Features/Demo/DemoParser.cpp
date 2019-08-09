@@ -5,7 +5,7 @@
 #include <string>
 
 #include "Demo.hpp"
-#include "Ghost.hpp"
+#include "GhostEntity.hpp"
 
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"

@@ -1,4 +1,4 @@
-#include "Features/Demo/Ghost.hpp"
+#include "Features/Demo/GhostEntity.hpp"
 
 #include "Features/Demo/Demo.hpp"
 #include "Features/Demo/DemoParser.hpp"
@@ -25,7 +25,7 @@ Ghost::Ghost()
     , startDelay(0)
     , demo()
 {
-    this->hasLoaded = true;
+    //this->hasLoaded = true;
 }
 
 void Ghost::Reset()

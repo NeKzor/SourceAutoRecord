@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "Features/Demo/Ghost.hpp"
+#include "Features/Demo/GhostEntity.hpp"
 #include "Features/OffsetFinder.hpp"
 #include "Features/Routing/EntityInspector.hpp"
 #include "Features/Session.hpp"
