@@ -5,7 +5,7 @@
 #include <string>
 
 #include "Demo.hpp"
-#include "GhostEntity.hpp"
+#include "GhostPlayer.hpp"
 
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
@@ -55,16 +55,17 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
         file.read((char*)&demo->playbackFrames, sizeof(demo->playbackFrames));
         file.read((char*)&demo->signOnLength, sizeof(demo->signOnLength));
 
+        ghostPlayer->ResetCoord();
+        std::vector<Vector> positionList;
+        std::vector<Vector> anglesList;
+        bool waitForNext = false;
+        int lastTick = 0;
+
         if (!headerOnly) {
             if (demo->demoProtocol != 4) {
                 this->hasAlignmentByte = false;
                 this->maxSplitScreenClients = 1;
             }
-
-            ghost->positionList.clear();
-            ghost->angleList.clear();
-            bool waitForNext = false;
-            int lastTick = 0;
 
             while (!file.eof() && !file.bad()) {
                 unsigned char cmd;
@@ -127,12 +128,12 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                                 }
 
                                 if (tick > 0 && waitForNext && lastTick != tick) {
-                                    if (ghost->startTick == 0) {
-                                        ghost->startTick = tick;
+                                    if (ghostPlayer->GetStartTick() == 0) {
+                                        ghostPlayer->SetStartTick(tick);
                                     }
                                     lastTick = tick;
-                                    ghost->positionList.push_back(Vector{ vo_x, vo_y, vo_z });
-                                    ghost->angleList.push_back(Vector{ va_x, va_y, va_z });
+                                    positionList.push_back(Vector{ vo_x, vo_y, vo_z });
+                                    anglesList.push_back(Vector{ va_x, va_y, va_z });
                                 }
                             } else {
                                 console->Msg("[%i] flags: %i | "
@@ -218,6 +219,7 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                 }
             }
         }
+        ghostPlayer->SetCoordList(positionList, anglesList);
         file.close();
     } catch (const std::exception& ex) {
         console->Warning("SAR: Error occurred when trying to parse the demo file.\n"

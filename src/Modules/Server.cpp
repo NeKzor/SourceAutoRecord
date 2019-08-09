@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "Features/Demo/GhostEntity.hpp"
+#include "Features/Demo/GhostPlayer.hpp"
 #include "Features/OffsetFinder.hpp"
 #include "Features/Routing/EntityInspector.hpp"
 #include "Features/Session.hpp"
@@ -270,8 +270,8 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
-    if (simulating && ghost->IsReady()) {
-        ghost->Think();        
+    if (simulating && ghostPlayer->IsReady()) {
+        ghostPlayer->Run();
     }
 
     if (!server->IsRestoring()) {

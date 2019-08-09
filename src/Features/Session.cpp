@@ -11,7 +11,7 @@
 #include "Features/Summary.hpp"
 #include "Features/Tas/CommandQueuer.hpp"
 #include "Features/Timer/Timer.hpp"
-#include "Features/Demo/GhostEntity.hpp"
+#include "Features/Demo/GhostPlayer.hpp"
 
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
@@ -67,7 +67,7 @@ void Session::Start()
         return;
     }
 	
-    engine->PrecacheModel(ghost->modelName, true);
+    engine->PrecacheModel(ghostPlayer->GetGhost()->modelName, true);
     auto tick = engine->GetTick();
 
     this->Rebase(tick);
@@ -135,7 +135,7 @@ void Session::Ended()
     }
 
 	//Ghost
-	ghost->Reset();
+    ghostPlayer->ResetGhost();
 
     auto tick = this->GetTick();
 

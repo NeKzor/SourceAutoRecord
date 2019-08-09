@@ -3,14 +3,14 @@
 
 #include "Features/Feature.hpp"
 
-#include "Utils/SDK.hpp"
 #include "Command.hpp"
-#include "Variable.hpp"
 #include "Features/Demo/Demo.hpp"
+#include "Utils/SDK.hpp"
+#include "Variable.hpp"
 
 #include <vector>
 
-class Ghost : public Feature {
+class GhostEntity {
 
 private:
     int tickCount;
@@ -28,21 +28,12 @@ public:
     bool mapSpawning;
 
 public:
-    Ghost();
+    GhostEntity();
     void Reset();
-    void Start();
+    GhostEntity* Spawn();
     bool IsReady();
     void SetCMTime(float);
     void Think();
     int GetStartDelay();
     void SetStartDelay(int);
 };
-
-extern Ghost* ghost;
-
-extern Command sar_ghost_set_demo;
-extern Command sar_ghost_set_prop_model;
-extern Command sar_ghost_time_offset;
-extern Variable sar_ghost_enable;
-extern Variable sar_ghost_height;
-extern Variable sar_ghost_transparency;
