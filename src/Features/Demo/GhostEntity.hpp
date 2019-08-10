@@ -26,6 +26,8 @@ public:
     char modelName[64];
     bool isPlaying;
 
+    void* trail;
+
 public:
     GhostEntity();
     void Reset();
@@ -37,4 +39,5 @@ public:
     int GetStartDelay();
     void SetStartDelay(int);
     void ChangeModel(const char modelName[64]);
+    void CreateTrail();
 };
