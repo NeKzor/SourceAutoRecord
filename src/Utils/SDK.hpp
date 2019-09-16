@@ -47,15 +47,25 @@ struct Vector {
     {
         return ((float*)this)[i];
     }
-    static inline float DotProduct(const Vector& a, const Vector& b) 
+    static inline float DotProduct(const Vector& a, const Vector& b)
     {
-        return a.x*b.x + a.y*b.y + a.z*b.z; 
+        return a.x*b.x + a.y*b.y + a.z*b.z;
     }
 };
 
 struct QAngle {
     float x, y, z;
 };
+
+inline QAngle VectorToQAngle(const Vector& v)
+{
+    return { v.x, v.y, v.z };
+}
+
+inline Vector QAngleToVector(const QAngle& a)
+{
+    return { a.x, a.y, a.z };
+}
 
 struct Color {
     Color()

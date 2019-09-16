@@ -19,6 +19,10 @@ private:
 public:
     std::vector<Vector> positionList;
     std::vector<Vector> angleList;
+    std::string ID;
+    std::string name;
+    char currentMap[64];
+    bool sameMap;
     Demo demo;
     int startTick;
     void* ghost_entity;
@@ -32,12 +36,14 @@ public:
     GhostEntity();
     void Reset();
     void Stop();
-    GhostEntity* Spawn(bool instantPlay = true, bool playerPos = false);
+    GhostEntity* Spawn(bool instantPlay = true, bool playerPos = false, Vector position = { 0, 0, 0 });
     bool IsReady();
     void SetCMTime(float);
     void Think();
+    void NetworkThink();
     int GetStartDelay();
     void SetStartDelay(int);
     void ChangeModel(const char modelName[64]);
-    void CreateTrail();
+    void SetPosAng(const Vector&, const Vector&);
+    //void CreateTrail();
 };

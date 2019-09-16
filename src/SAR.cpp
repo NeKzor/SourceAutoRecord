@@ -78,6 +78,7 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
 
                 this->features->AddFeature<TasTools>(&tasTools);
                 this->features->AddFeature<GhostPlayer>(&ghostPlayer);
+                this->features->AddFeature<NetworkGhostPlayer>(&networkGhostPlayer);
 
                 if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
                     this->features->AddFeature<Listener>(&listener);

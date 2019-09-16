@@ -10,6 +10,10 @@
 GhostEntity::GhostEntity()
     : positionList()
     , angleList()
+    , ID("")
+    , name()
+    , currentMap("")
+    , sameMap(false)
     , ghost_entity(nullptr)
     , startTick()
     , CMTime(0)
@@ -35,20 +39,24 @@ void GhostEntity::Stop()
     delete this->ghost_entity;
 }
 
-GhostEntity* GhostEntity::Spawn(bool instantPlay, bool playerPos)
+GhostEntity* GhostEntity::Spawn(bool instantPlay, bool playerPos, Vector position)
 {
     this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
     server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
     server->SetKeyValueChar(this->ghost_entity, "targetname", "ghost");
+
+    Vector pos;
     if (!playerPos) {
-        server->SetKeyValueVector(this->ghost_entity, "origin", this->positionList[(this->tickCount)]);
-    } else {
-        Vector pos = server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1));
+        pos = this->positionList[(this->tickCount)];
+    } else if (!playerPos && (position.x != 0 || position.y != 0 || position.z != 0)) {
+        pos = position;
+    } else if (playerPos) {
+        pos = server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1));
         pos.z += sar_ghost_height.GetFloat();
-        server->SetKeyValueVector(this->ghost_entity, "origin", pos);
     }
 
-    server->SetKeyValueChar(this->ghost_entity, "angles", "0 0 0");
+    this->SetPosAng(pos, Vector{ 0, 0, 0 });
+
     if (sar_ghost_transparency.GetFloat() <= 254) {
         server->SetKeyValueChar(this->ghost_entity, "rendermode", "1");
         server->SetKeyValueFloat(this->ghost_entity, "renderamt", sar_ghost_transparency.GetFloat());
@@ -86,16 +94,15 @@ void GhostEntity::Think()
     auto tick = session->GetTick();
     if ((engine->GetMaxClients() == 1 && tick == (this->startTick + (this->CMTime - this->demo.playbackTicks))) || (engine->GetMaxClients() > 1 && tick == this->startTick)) {
         this->Spawn();
-        if (sar_ghost_trail_lenght.GetFloat() > 0) {
+        /*if (sar_ghost_trail_lenght.GetFloat() > 0) {
             this->CreateTrail();
-        }
+        }*/
     }
 
     if (this->isPlaying) {
         Vector position = this->positionList[(this->tickCount)];
         position.z += sar_ghost_height.GetFloat();
-        server->SetKeyValueVector(this->ghost_entity, "origin", position);
-        server->SetKeyValueVector(this->ghost_entity, "angles", this->angleList[(this->tickCount)]);
+        this->SetPosAng(position, this->angleList[(this->tickCount)]);
 
         if (engine->GetMaxClients() == 1) {
             if (tick % 2 == 0) {
@@ -110,6 +117,13 @@ void GhostEntity::Think()
         this->Reset();
     }
 }
+
+/*void GhostEntity::NetworkThink()
+{
+    if (std::strcmp(this->currentMap, engine->m_szLevelName) && engine->GetMaxClients() == 1) {
+        this->Spawn();
+	}
+}*/
 
 int GhostEntity::GetStartDelay()
 {
@@ -126,7 +140,13 @@ void GhostEntity::ChangeModel(const char modelName[64])
     std::strncpy(this->modelName, modelName, sizeof(this->modelName));
 }
 
-void GhostEntity::CreateTrail()
+void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)
+{
+    server->SetKeyValueVector(this->ghost_entity, "origin", pos);
+    server->SetKeyValueVector(this->ghost_entity, "angles", ang);
+}
+
+/*void GhostEntity::CreateTrail()
 {
     this->trail = server->CreateEntityByName("env_spritetrail");
     server->SetKeyValueChar(this->trail, "spritename", "materials/sprites/laserbeam.vmt");
@@ -144,4 +164,4 @@ void GhostEntity::CreateTrail()
     server->SetKeyValueChar(this->trail, "endwidth", "1.05");
     server->DispatchSpawn(trail);
     engine->ExecuteCommand("ent_fire trail setparent ghost");
-}
+}*/

@@ -11,56 +11,103 @@ Variable sar_ghost_trail_transparency("sar_ghost_trail_transparency", "75", 0, 2
 GhostPlayer::GhostPlayer()
     : ghost()
     , enabled(false)
+    , isNetworking(false)
 {
     this->hasLoaded = true;
-    this->ghost = new GhostEntity();
 }
 
 bool GhostPlayer::IsReady()
 {
-    return this->ghost->IsReady();
+    for (auto it : this->ghost) {
+        if (!it->IsReady()) {
+            return false;
+		}
+    }
+    if (!this->enabled) {
+        return false;
+	}
+
+    return true;
 }
 
 void GhostPlayer::Run()
 {
-    this->ghost->Think();
+    for (auto it : this->ghost) {
+        it->Think();
+    }
 }
 
-void GhostPlayer::Stop()
+void GhostPlayer::StopAll()
 {
-    this->ghost->Stop();
+    for (auto it : this->ghost) {
+        it->Stop();
+    }
+}
+
+void GhostPlayer::StopByID(std::string ID)
+{
+    this->GetGhostFromID(ID)->Stop();
 }
 
 void GhostPlayer::ResetGhost()
 {
-    this->ghost->Reset();
+    for (auto it : this->ghost) {
+        it->Reset();
+    }
 }
 
 void GhostPlayer::ResetCoord()
 {
-    this->ghost->positionList.clear();
-    this->ghost->angleList.clear();
+    for (auto it : this->ghost) {
+        it->positionList.clear();
+        it->angleList.clear();
+    }
 }
 
-GhostEntity* GhostPlayer::GetGhost()
+void GhostPlayer::SetPosAng(std::string ID, Vector position, Vector angle)
 {
-    return this->ghost;
+    this->GetGhostFromID(ID)->SetPosAng(position, angle);
+}
+
+GhostEntity* GhostPlayer::GetFirstGhost()
+{
+    return this->ghost[0];
+}
+
+GhostEntity* GhostPlayer::GetGhostFromID(std::string ID)
+{
+    for (auto it : this->ghost) {
+        if (it->ID == ID) {
+            return it;
+        }
+    }
+    return nullptr;
+}
+
+void GhostPlayer::AddGhost(GhostEntity* ghost)
+{
+    this->ghost.push_back(ghost);
 }
 
 int GhostPlayer::GetStartTick()
 {
-    return this->ghost->startTick;
+    return this->GetFirstGhost()->startTick;
 }
 
 void GhostPlayer::SetStartTick(int startTick)
 {
-    this->ghost->startTick = startTick;
+    this->GetFirstGhost()->startTick = startTick;
 }
 
 void GhostPlayer::SetCoordList(std::vector<Vector> pos, std::vector<Vector> ang)
 {
-    this->ghost->positionList = pos;
-    this->ghost->angleList = ang;
+    this->GetFirstGhost()->positionList = pos;
+    this->GetFirstGhost()->angleList = ang;
+}
+
+bool GhostPlayer::IsNetworking()
+{
+    return this->isNetworking;
 }
 
 // Commands
@@ -70,6 +117,12 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
     if (args.ArgC() <= 1) {
         return console->Print(sar_ghost_set_demo.ThisPtr()->m_pszHelpString);
     }
+    if (ghostPlayer->ghost.empty()) {
+        return console->Print("sar_ghost_enable must be enabled before setting the demo.\n");
+    }
+    if (ghostPlayer->IsNetworking()) {
+        return console->Warning("Can't play ghost with demos when connected to a server !\n");
+	}
 
     std::string name;
     if (args[1][0] == '\0') {
@@ -89,8 +142,8 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
     auto dir = std::string(engine->GetGameDirectory()) + std::string("/") + name;
     if (parser.Parse(dir, &demo)) {
         parser.Adjust(&demo);
-        ghostPlayer->GetGhost()->SetCMTime(demo.playbackTime);
-        ghostPlayer->GetGhost()->demo = demo;
+        ghostPlayer->GetFirstGhost()->SetCMTime(demo.playbackTime);
+        ghostPlayer->GetFirstGhost()->demo = demo;
         console->Print("Ghost sucessfully created ! Final time of the ghost : %f\n", demo.playbackTime);
     } else {
         console->Print("Could not parse \"%s\"!\n", name.c_str());
@@ -102,10 +155,13 @@ CON_COMMAND(sar_ghost_set_prop_model, "Set the prop model. Example : models/prop
     if (args.ArgC() <= 1) {
         return console->Print(sar_ghost_set_prop_model.ThisPtr()->m_pszHelpString);
     }
+    if (ghostPlayer->ghost.empty()) {
+        return console->Print("sar_ghost_enable must be enabled before setting the demo.\n");
+    }
 
-    ghostPlayer->GetGhost()->ChangeModel(args[1]);
+    ghostPlayer->GetFirstGhost()->ChangeModel(args[1]);
     ghostPlayer->ResetGhost();
-    ghostPlayer->GetGhost()->Spawn(false, true);
+    ghostPlayer->GetFirstGhost()->Spawn(false, true);
 }
 
 CON_COMMAND(sar_ghost_time_offset, "In seconds. Start the ghost with a delay. Can be negative of positive.\n")
@@ -113,8 +169,12 @@ CON_COMMAND(sar_ghost_time_offset, "In seconds. Start the ghost with a delay. Ca
     if (args.ArgC() <= 1) {
         return console->Print(sar_ghost_time_offset.ThisPtr()->m_pszHelpString);
     }
+    if (ghostPlayer->ghost.empty()) {
+        return console->Print("sar_ghost_enable must be enabled before setting the demo.\n");
+    }
+
     float delay = static_cast<float>(std::atof(args[1]));
-    GhostEntity* ghost = ghostPlayer->GetGhost();
+    GhostEntity* ghost = ghostPlayer->GetFirstGhost();
 
     if (delay < 0) { //Asking for faster ghost
         if (delay * 60 > ghost->positionList.size()) { //Too fast
@@ -139,8 +199,9 @@ CON_COMMAND(sar_ghost_enable, "Start automatically the ghost playback when loadi
     bool enable = static_cast<bool>(std::atoi(args[1]));
     if (enable) {
         ghostPlayer->enabled = true;
+        //ghostPlayer->AddGhost(new GhostEntity);
     } else {
         ghostPlayer->enabled = false;
-        ghostPlayer->Stop();
+        ghostPlayer->StopAll();
     }
 }

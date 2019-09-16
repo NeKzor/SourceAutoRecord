@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "Features/Demo/GhostPlayer.hpp"
+#include "Features/Demo/NetworkGhostPlayer.hpp"
 #include "Features/OffsetFinder.hpp"
 #include "Features/Routing/EntityInspector.hpp"
 #include "Features/Session.hpp"
@@ -274,7 +275,7 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
-    if (simulating && ghostPlayer->IsReady()) {
+    if (simulating && ghostPlayer->IsReady() && !ghostPlayer->IsNetworking()) {
         ghostPlayer->Run();
     }
 

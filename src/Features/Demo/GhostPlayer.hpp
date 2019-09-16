@@ -6,22 +6,28 @@
 class GhostPlayer : public Feature {
 
 private:
-    GhostEntity* ghost;
 
 public:
     bool enabled;
+    bool isNetworking;
+    std::vector<GhostEntity*> ghost;
 
 public:
     GhostPlayer();
     void Run();
-    void Stop();
     bool IsReady();
+    void StopAll();
+    void StopByID(std::string ID);
+    GhostEntity* GetFirstGhost();
+    GhostEntity* GetGhostFromID(std::string ID);
+	void AddGhost(GhostEntity* ghost);
     void ResetGhost();
     void ResetCoord();
-    GhostEntity* GetGhost();
+    void SetPosAng(std::string ID, Vector position, Vector angle);
     void SetStartTick(int);
     int GetStartTick();
     void SetCoordList(std::vector<Vector> pos, std::vector<Vector> ang);
+    bool IsNetworking();
 };
 
 
