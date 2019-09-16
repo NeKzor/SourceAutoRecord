@@ -35,6 +35,10 @@ Variable sv_stopspeed;
 Variable sv_maxvelocity;
 Variable sv_gravity;
 
+Variable sar_record_at("sar_record_at", "0", 0, "Start recording a demo at the tick specified. Will use sar_record_at_demo_name.\n");
+Variable sar_record_at_demo_name("sar_record_at_demo_name", "test", "Name of the demo automatically recorded.\n");
+Variable sar_record_at_increment("sar_record_at_increment", "0", "Increment automatically the demo name.\n");
+
 REDECL(Server::CheckJumpButton);
 REDECL(Server::CheckJumpButtonBase);
 REDECL(Server::PlayerMove);
@@ -272,6 +276,11 @@ DETOUR(Server::GameFrame, bool simulating)
 {
     if (simulating && ghostPlayer->IsReady()) {
         ghostPlayer->Run();
+    }
+
+    if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
+        std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();
+        engine->ExecuteCommand(cmd.c_str());
     }
 
     if (!server->IsRestoring()) {
