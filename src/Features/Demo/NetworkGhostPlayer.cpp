@@ -58,6 +58,7 @@ NetworkGhostPlayer* networkGhostPlayer;
 NetworkGhostPlayer::NetworkGhostPlayer()
     : ip_server("localhost")
     , port_server(53000)
+    , name("FrenchSaves10Ticks")
     , networkGhosts()
     , runThread(false)
     , isConnected(false)
@@ -66,15 +67,15 @@ NetworkGhostPlayer::NetworkGhostPlayer()
     , disconnectThread()
 {
     this->hasLoaded = true;
-    //this->ip_client = sf::IpAddress::getPublicAddress();
-    this->ip_client = "localhost"; //Remove that after tests
-    socket.bind(sf::Socket::AnyPort, ip_client);
+    this->ip_client = sf::IpAddress::getPublicAddress();
+    //this->ip_client = "localhost"; //Remove that after tests
+    socket.bind(sf::Socket::AnyPort);
     socket.setBlocking(false);
 }
 
 NetworkDataPlayer NetworkGhostPlayer::CreateNetworkData()
 {
-    NetworkDataPlayer networkData{ HEADER::NONE, "Blenderiste09", this->ip_client.toString(), this->socket.getLocalPort() };
+    NetworkDataPlayer networkData{ HEADER::NONE, this->name, this->ip_client.toString(), this->socket.getLocalPort() };
     DataGhost dataGhost{ { 0, 0, 0 }, { 0, 0, 0 } };
     networkData.dataGhost = dataGhost;
 
@@ -114,7 +115,7 @@ void NetworkGhostPlayer::Disconnect(bool forced)
 
     this->runThread = false;
 
-    if (!forced) {
+    if (!forced) { //If didn't crashed
         NetworkDataPlayer confirmation = this->ReceiveNetworkData();
         console->Print(confirmation.message.c_str());
     }
@@ -151,9 +152,9 @@ NetworkDataPlayer NetworkGhostPlayer::ReceiveNetworkData()
     std::chrono::time_point<std::chrono::steady_clock> start, end;
     start = std::chrono::steady_clock::now();
     end = start + std::chrono::seconds(10);
-    bool ok = false;
 
-    while (std::chrono::steady_clock::now() < end && !ok) {
+    bool ok = false;
+    while (std::chrono::steady_clock::now() < end && !ok) { //Timeout
         if (this->socket.receive(packet, ip, port) == sf::Socket::Done) {
             ok = true;
         }
@@ -317,4 +318,13 @@ CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
 CON_COMMAND(sar_ghost_stop_server, "Stop the server\n")
 {
     networkGhostPlayer->StopServer();
+}
+
+CON_COMMAND(sar_ghost_name, "Name that will be displayed\n")
+{
+    if (args.ArgC() <= 1) {
+        console->Print(sar_ghost_name.ThisPtr()->m_pszHelpString);
+        return;
+    }
+    networkGhostPlayer->name = args[1];
 }

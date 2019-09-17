@@ -46,7 +46,7 @@ GhostEntity* GhostEntity::Spawn(bool instantPlay, bool playerPos, Vector positio
     server->SetKeyValueChar(this->ghost_entity, "targetname", "ghost");
 
     Vector pos;
-    if (!playerPos) {
+    if (!playerPos && (position.x == 0 || position.y == 0 || position.z == 0)) {
         pos = this->positionList[(this->tickCount)];
     } else if (!playerPos && (position.x != 0 || position.y != 0 || position.z != 0)) {
         pos = position;

@@ -43,6 +43,7 @@ private:
     bool isConnected;
 
 public:
+    std::string name;
     sf::IpAddress ip_server;
     sf::UdpSocket socket;
     std::thread networkThread;
@@ -53,7 +54,7 @@ public:
     sf::Thread connectThread;*/
 
 private:
-    void NetworkThink(bool &run);
+    void NetworkThink(bool& run);
 
 public:
     NetworkGhostPlayer();
@@ -81,3 +82,4 @@ extern Command sar_ghost_connect_to_server;
 extern Command sar_ghost_send;
 extern Command sar_ghost_disconnect;
 extern Command sar_ghost_stop_server;
+extern Command sar_ghost_name;
