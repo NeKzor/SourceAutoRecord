@@ -26,6 +26,7 @@ public:
     using _SetKeyValueChar = bool(__stdcall*)(void*, const char*, const char*);
     using _SetKeyValueFloat = bool(__stdcall*)(void*, const char*, float);
     using _SetKeyValueVector = bool(__stdcall*)(void*, const char*, const Vector&);
+    using _RemoveEntity = void(__thiscall*)(void*);
 
     _UTIL_PlayerByIndex UTIL_PlayerByIndex = nullptr;
     _GetAllServerClasses GetAllServerClasses = nullptr;
@@ -35,6 +36,7 @@ public:
     _SetKeyValueChar SetKeyValueChar = nullptr;
     _SetKeyValueFloat SetKeyValueFloat = nullptr;
     _SetKeyValueVector SetKeyValueVector = nullptr;
+    _RemoveEntity RemoveEntity = nullptr;
 
     CGlobalVars* gpGlobals = nullptr;
     CEntInfo* m_EntPtrArray = nullptr;
@@ -61,6 +63,7 @@ public:
     bool IsPlayer(void* entity);
     bool AllowsMovementChanges();
     int GetSplitScreenPlayerSlot(void* entity);
+    void SetParent(void* entity, void* pNewParent, int iAttachment = -1);
 
 public:
     // CGameMovement::ProcessMovement

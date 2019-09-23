@@ -106,6 +106,7 @@ extern int m_flMaxspeed;
 extern int m_flGravity;
 extern int S_m_vecViewOffset;
 extern int IsPlayer;
+extern int SetParent;
 
 // CBasePlayer
 extern int m_fFlags;
@@ -169,6 +170,7 @@ extern int DispatchSpawn;
 extern int SetKeyValueChar;
 extern int SetKeyValueFloat;
 extern int SetKeyValueVector;
+extern int RemoveEntity;
 
 // CVEngineServer
 extern int ClientCommand;

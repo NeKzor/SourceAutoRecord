@@ -121,8 +121,10 @@ void Portal2::LoadOffsets()
     SetKeyValueVector = 11; // CServerTools::SetKeyValue (const Vector &vecValue )
     CreateEntityByName = 14; //CServerTool::CreateEntityByName
     DispatchSpawn = 15; //CServerTool::DispatchSpawn
+    RemoveEntity = 21; //CServerTool::RemoveEntity
     ClientCommand = 39; // CVEngineServer
     IsPlayer = 85; // CBasePlayer
+    SetParent = 38; //CBaseEntity::SetParent
     m_pSurfaceData = 3868; // CGameMovement::CheckJumpButton
     jumpFactor = 68; // CGameMovement::CheckJumpButton
 

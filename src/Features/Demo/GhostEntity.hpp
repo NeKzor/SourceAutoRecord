@@ -25,8 +25,7 @@ public:
     int CMTime;
     char modelName[64];
     bool isPlaying;
-
-    void* trail;
+    bool hasFinished;
 
 public:
     GhostEntity();
@@ -39,5 +38,4 @@ public:
     int GetStartDelay();
     void SetStartDelay(int);
     void ChangeModel(const char modelName[64]);
-    void CreateTrail();
 };

@@ -18,7 +18,6 @@ GhostEntity::GhostEntity()
     , tickCount(0)
     , startDelay(0)
     , demo()
-    , trail(nullptr)
 {
 }
 
@@ -84,11 +83,8 @@ void GhostEntity::SetCMTime(float playbackTime)
 void GhostEntity::Think()
 {
     auto tick = session->GetTick();
-    if ((engine->GetMaxClients() == 1 && tick == (this->startTick + (this->CMTime - this->demo.playbackTicks))) || (engine->GetMaxClients() > 1 && tick == this->startTick)) {
+    if (this->ghost_entity == nullptr && !this->hasFinished && ((engine->GetMaxClients() == 1 && tick >= (this->startTick + (this->CMTime - this->demo.playbackTicks))) || (engine->GetMaxClients() > 1 && tick >= this->startTick))) {
         this->Spawn();
-        if (sar_ghost_trail_lenght.GetFloat() > 0) {
-            this->CreateTrail();
-        }
     }
 
     if (this->isPlaying) {
@@ -107,6 +103,7 @@ void GhostEntity::Think()
     }
     if (this->tickCount == this->positionList.size()) {
         console->Print("Ghost has finished.\n");
+        this->hasFinished = true;
         this->Reset();
     }
 }
@@ -124,24 +121,4 @@ void GhostEntity::SetStartDelay(int delay)
 void GhostEntity::ChangeModel(const char modelName[64])
 {
     std::strncpy(this->modelName, modelName, sizeof(this->modelName));
-}
-
-void GhostEntity::CreateTrail()
-{
-    this->trail = server->CreateEntityByName("env_spritetrail");
-    server->SetKeyValueChar(this->trail, "spritename", "materials/sprites/laserbeam.vmt");
-
-    Vector pos = this->positionList[(this->tickCount)];
-    pos.z += sar_ghost_height.GetFloat();
-    server->SetKeyValueVector(this->trail, "origin", pos);
-
-    server->SetKeyValueChar(this->trail, "targetname", "trail");
-    server->SetKeyValueChar(this->trail, "parentname", "ghost");
-    server->SetKeyValueChar(this->trail, "rendermode", "5");
-    server->SetKeyValueFloat(this->trail, "lifetime", sar_ghost_trail_lenght.GetFloat());
-    server->SetKeyValueFloat(this->trail, "renderamt", sar_ghost_trail_transparency.GetFloat());
-    server->SetKeyValueChar(this->trail, "startwidth", "9.5");
-    server->SetKeyValueChar(this->trail, "endwidth", "1.05");
-    server->DispatchSpawn(trail);
-    engine->ExecuteCommand("ent_fire trail setparent ghost");
 }

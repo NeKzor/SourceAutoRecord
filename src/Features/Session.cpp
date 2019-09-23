@@ -68,6 +68,7 @@ void Session::Start()
     }
 	
     engine->PrecacheModel(ghostPlayer->GetGhost()->modelName, true);
+    ghostPlayer->GetGhost()->hasFinished = false;
     auto tick = engine->GetTick();
 
     this->Rebase(tick);
