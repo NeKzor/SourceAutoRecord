@@ -5,8 +5,6 @@ GhostPlayer* ghostPlayer;
 
 Variable sar_ghost_height("sar_ghost_height", "16", -256, "Height of the ghost.\n");
 Variable sar_ghost_transparency("sar_ghost_transparency", "255", 0, 256, "Transparency of the ghost.\n");
-Variable sar_ghost_trail_lenght("sar_ghost_trail_lenght", "0", 0, "Lenght of the trail. 0 to deactivate the trail.\n");
-Variable sar_ghost_trail_transparency("sar_ghost_trail_transparency", "75", 0, 256, "Transparency of the trail.\n");
 
 GhostPlayer::GhostPlayer()
     : ghost()
@@ -23,7 +21,7 @@ bool GhostPlayer::IsReady()
             return false;
 		}
     }
-    if (!this->enabled) {
+    if (!this->enabled || this->ghost.empty()) {
         return false;
 	}
 
@@ -188,6 +186,10 @@ CON_COMMAND(sar_ghost_time_offset, "In seconds. Start the ghost with a delay. Ca
         ghost->SetStartDelay(0);
         ghost->SetCMTime(ghost->demo.playbackTime + delay);
         console->Print("Final time of the ghost : %f\n", ghost->demo.playbackTime + delay);
+    } else if (delay == 0) {
+        ghost->SetStartDelay(0);
+        ghost->SetCMTime(ghost->demo.playbackTime);
+        console->Print("Final time of the ghost : %f\n", ghost->demo.playbackTime);
     }
 }
 

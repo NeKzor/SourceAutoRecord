@@ -13,6 +13,7 @@
 
 enum HEADER {
     NONE,
+	PING,
     CONNECT,
     UPDATE,
     DISCONNECT,

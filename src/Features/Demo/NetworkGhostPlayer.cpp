@@ -67,8 +67,8 @@ NetworkGhostPlayer::NetworkGhostPlayer()
     , disconnectThread()
 {
     this->hasLoaded = true;
-    this->ip_client = sf::IpAddress::getPublicAddress();
-    //this->ip_client = "localhost"; //Remove that after tests
+    //this->ip_client = sf::IpAddress::getPublicAddress();
+    this->ip_client = "localhost"; //Remove that after tests
     socket.bind(sf::Socket::AnyPort);
     socket.setBlocking(false);
 }
@@ -84,6 +84,10 @@ NetworkDataPlayer NetworkGhostPlayer::CreateNetworkData()
 
 void NetworkGhostPlayer::ConnectToServer(sf::IpAddress ip, unsigned short port)
 {
+    if (this->IsConnected()) {
+        console->Warning("Already connected to the server !\n");
+        return;
+	}
     this->ip_server = ip;
     this->port_server = port;
     NetworkDataPlayer data = this->CreateNetworkData();
@@ -249,6 +253,8 @@ void NetworkGhostPlayer::NetworkThink(bool& run)
         if (!data.message.empty()) {
             console->Print(data.message.c_str());
         }
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(server->gpGlobals->frametime*1000)));
     }
 }
 

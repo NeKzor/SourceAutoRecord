@@ -29,6 +29,7 @@ public:
     int CMTime;
     char modelName[64];
     bool isPlaying;
+    bool hasFinished;
 
     void* trail;
 
@@ -40,10 +41,8 @@ public:
     bool IsReady();
     void SetCMTime(float);
     void Think();
-    void NetworkThink();
     int GetStartDelay();
     void SetStartDelay(int);
     void ChangeModel(const char modelName[64]);
     void SetPosAng(const Vector&, const Vector&);
-    //void CreateTrail();
 };

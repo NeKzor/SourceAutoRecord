@@ -227,6 +227,12 @@ CON_COMMAND(sar_rename, "Changes your name. Usage: sar_rename <name>\n")
 }
 CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloads the module.\n")
 {
+    if (networkGhostPlayer->runThread) {
+        networkGhostPlayer->runThread = false;
+        if (networkGhostPlayer->IsConnected()) {
+            networkGhostPlayer->Disconnect();
+		}
+	}
     if (sar.cheats) {
         sar.cheats->Shutdown();
     }

@@ -301,6 +301,9 @@
     <ClCompile Include="Features\Demo\GhostPlayer.cpp">
       <Filter>SourceAutoRecord\Features\Demo</Filter>
     </ClCompile>
+  <ClCompile Include="Features\Demo\NetworkGhostPlayer.cpp">
+      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\lib\minhook\buffer.h">
@@ -628,6 +631,9 @@
       <Filter>SourceAutoRecord\Features\Demo</Filter>
     </ClInclude>
     <ClInclude Include="Features\Demo\GhostPlayer.hpp">
+      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    </ClInclude>
+  <ClInclude Include="Features\Demo\NetworkGhostPlayer.hpp">
       <Filter>SourceAutoRecord\Features\Demo</Filter>
     </ClInclude>
   </ItemGroup>

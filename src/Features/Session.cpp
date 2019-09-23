@@ -69,6 +69,7 @@ void Session::Start()
 
     if (ghostPlayer->IsReady()) {
         engine->PrecacheModel(ghostPlayer->GetFirstGhost()->modelName, true);
+        ghostPlayer->GetFirstGhost()->hasFinished = false; //TODO : apply for all ghosts
     }
     auto tick = engine->GetTick();
 
