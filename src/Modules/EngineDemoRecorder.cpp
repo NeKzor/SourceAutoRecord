@@ -26,7 +26,7 @@ DETOUR(EngineDemoRecorder::SetSignonState, int state)
 {
     //SIGNONSTATE_FULL is set twice during first CM load. Using SINGONSTATE_SPAWN for demo number increase instead
     if (state == SIGNONSTATE_SPAWN) {
-        if (engine->demorecorder->isRecordingDemo || *engine->demorecorder->m_bRecording) {
+        if (engine->demorecorder->isRecordingDemo || *engine->demorecorder->m_bRecording || sar_record_at_increment.GetBool()) {
             engine->demorecorder->lastDemoNumber++;
         }
     }
@@ -61,6 +61,9 @@ DETOUR(EngineDemoRecorder::StopRecording)
     if (engine->demorecorder->isRecordingDemo && sar_autorecord.GetBool() && !engine->demorecorder->requestedStop) {
         *engine->demorecorder->m_nDemoNumber = engine->demorecorder->lastDemoNumber;
         *engine->demorecorder->m_bRecording = true;
+    } else if (sar_record_at_increment.GetBool()) {
+        *engine->demorecorder->m_nDemoNumber = engine->demorecorder->lastDemoNumber;
+        engine->demorecorder->isRecordingDemo = false;
     } else {
         engine->demorecorder->isRecordingDemo = false;
         engine->demorecorder->lastDemoNumber = 1;
