@@ -42,6 +42,7 @@ private:
     unsigned short port_server;
     std::vector<NetworkDataPlayer> networkGhosts;
     bool isConnected;
+    sf::SocketSelector selector;
 
 public:
     std::vector<GhostEntity*> ghostPool;
@@ -62,13 +63,13 @@ public:
     NetworkGhostPlayer();
 
 
-    void ConnectToServer(sf::IpAddress, unsigned short port);
-    void Disconnect(bool forced = false);
+    void ConnectToServer(std::string, unsigned short port);
+    void Disconnect(bool forced);
     void StopServer();
     bool IsConnected();
 
     void SendNetworkData(NetworkDataPlayer&);
-    sf::Packet ReceiveNetworkData(int timeout);
+    bool ReceiveNetworkData(sf::Packet& packet, int timeout);
 
     void StartThinking();
     void StopThinking();

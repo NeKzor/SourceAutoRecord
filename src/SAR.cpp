@@ -230,7 +230,7 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
     if (networkGhostPlayer->runThread) {
         networkGhostPlayer->runThread = false;
         if (networkGhostPlayer->IsConnected()) {
-            networkGhostPlayer->Disconnect();
+            networkGhostPlayer->Disconnect(false);
 		}
 	}
     if (sar.cheats) {
