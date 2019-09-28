@@ -159,34 +159,6 @@ bool NetworkGhostPlayer::ReceiveNetworkData(sf::Packet& packet, int timeout)
     sf::IpAddress ip;
     unsigned short port;
 
-    /*if (timeout > 0) {
-        std::chrono::time_point<std::chrono::steady_clock> start, end;
-        start = std::chrono::steady_clock::now();
-        end = start + std::chrono::seconds(10);
-
-        bool ok = false;
-        while (std::chrono::steady_clock::now() < end && !ok) { //Timeout
-            if (this->socket.receive(packet, ip, port) == sf::Socket::Done) { //TODO: Check ip and port ?
-                ok = true;
-            }
-        }
-        if (std::chrono::steady_clock::now() > end) {
-            NetworkDataPlayer data;
-            data.header = HEADER::NONE;
-            if (this->IsConnected()) {
-                data.message = "Error: Connexion to the server lost !\n";
-                this->Disconnect(true);
-            } else {
-                data.message = "Error: Timeout reached ! Can't connect to the server !\n";
-            }
-
-            sf::Packet problem;
-            problem << data;
-
-            return problem;
-        }
-    } else {*/
-
     if (selector.wait(sf::seconds(timeout))) {
         this->socket.receive(packet, ip, port);
     } else {
@@ -201,7 +173,6 @@ bool NetworkGhostPlayer::ReceiveNetworkData(sf::Packet& packet, int timeout)
 
         return false;
     }
-    //}
 
     return true;
 }
