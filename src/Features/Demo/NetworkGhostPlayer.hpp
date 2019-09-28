@@ -23,7 +23,7 @@ enum HEADER {
 struct DataGhost {
     QAngle position;
     QAngle view_angle;
-    char currentMap[64];
+    std::string currentMap;
 };
 
 struct NetworkDataPlayer {
@@ -44,12 +44,11 @@ private:
     bool isConnected;
 
 public:
+    std::vector<GhostEntity*> ghostPool;
     std::string name;
     sf::IpAddress ip_server;
     sf::UdpSocket socket;
     std::thread networkThread;
-    std::thread connectThread;
-    std::thread disconnectThread;
     bool runThread;
     /*sf::Thread networkThread;
     sf::Thread connectThread;*/
@@ -60,21 +59,23 @@ private:
 public:
     NetworkGhostPlayer();
 
-    NetworkDataPlayer CreateNetworkData();
 
     void ConnectToServer(sf::IpAddress, unsigned short port);
     void Disconnect(bool forced = false);
     void StopServer();
-
     bool IsConnected();
 
     void SendNetworkData(NetworkDataPlayer&);
-    NetworkDataPlayer ReceiveNetworkData();
+    sf::Packet ReceiveNetworkData(int timeout);
 
-    void Run();
-    void Run(bool force);
+    void StartThinking();
+    void StopThinking();
 
+    NetworkDataPlayer CreateNetworkData();
     DataGhost GetPlayerData();
+    GhostEntity* GetGhostByID(std::string &ID);
+    void SetPosAng(std::string ID, Vector position, Vector angle);
+    void UpdateCurrentMap();
 };
 
 extern NetworkGhostPlayer* networkGhostPlayer;

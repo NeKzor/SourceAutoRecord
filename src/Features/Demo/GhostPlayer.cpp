@@ -1,5 +1,6 @@
 #include "Features/Demo/GhostPlayer.hpp"
 #include "Features/Demo/DemoParser.hpp"
+#include "Features/Demo/NetworkGhostPlayer.hpp"
 
 GhostPlayer* ghostPlayer;
 
@@ -118,7 +119,7 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
     if (ghostPlayer->ghost.empty()) {
         return console->Print("sar_ghost_enable must be enabled before setting the demo.\n");
     }
-    if (ghostPlayer->IsNetworking()) {
+    if (networkGhostPlayer->IsConnected()) {
         return console->Warning("Can't play ghost with demos when connected to a server !\n");
 	}
 

@@ -12,6 +12,7 @@
 #include "Features/Tas/CommandQueuer.hpp"
 #include "Features/Timer/Timer.hpp"
 #include "Features/Demo/GhostPlayer.hpp"
+#include "Features/Demo/NetworkGhostPlayer.hpp"
 
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
@@ -70,7 +71,11 @@ void Session::Start()
     if (ghostPlayer->IsReady()) {
         engine->PrecacheModel(ghostPlayer->GetFirstGhost()->modelName, true);
         ghostPlayer->GetFirstGhost()->hasFinished = false; //TODO : apply for all ghosts
-    }
+    } else if (networkGhostPlayer->IsConnected()) {
+        engine->PrecacheModel(networkGhostPlayer->ghostPool[0]->modelName, true);
+        networkGhostPlayer->UpdateCurrentMap();
+        networkGhostPlayer->StartThinking();
+	}
     auto tick = engine->GetTick();
 
     this->Rebase(tick);
@@ -138,7 +143,12 @@ void Session::Ended()
     }
 
 	//Ghost
-    ghostPlayer->ResetGhost();
+    if (ghostPlayer->IsReady()) {
+        ghostPlayer->ResetGhost();
+    }
+    if (networkGhostPlayer->IsConnected()) {
+        networkGhostPlayer->StopThinking();
+    }
 
     auto tick = this->GetTick();
 

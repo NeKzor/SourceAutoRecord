@@ -21,7 +21,7 @@ public:
     std::vector<Vector> angleList;
     std::string ID;
     std::string name;
-    char currentMap[64];
+    std::string currentMap;
     bool sameMap;
     Demo demo;
     int startTick;
