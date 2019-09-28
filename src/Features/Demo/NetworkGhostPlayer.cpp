@@ -94,11 +94,7 @@ void NetworkGhostPlayer::ConnectToServer(sf::IpAddress ip, unsigned short port)
     for (sf::Uint32 i = 0; i < nbPlayer; ++i) {
         NetworkDataPlayer tmp_player;
         confirmation_packet >> tmp_player;
-        GhostEntity* tmp_ghost = new GhostEntity;
-        tmp_ghost->name = tmp_player.name;
-        tmp_ghost->ID = tmp_player.ip;
-        tmp_ghost->currentMap = tmp_player.dataGhost.currentMap;
-        this->ghostPool.push_back(tmp_ghost);
+        this->ghostPool.push_back(this->SetupGhost(tmp_player));
     }
 
     if (!confirmation.message.empty()) {
@@ -128,8 +124,6 @@ void NetworkGhostPlayer::Disconnect(bool forced)
         confirmation_packet >> confirmation;
         console->Print(confirmation.message.c_str());
     }
-
-    this->socket.unbind();
 }
 
 void NetworkGhostPlayer::StopServer()
@@ -260,10 +254,7 @@ void NetworkGhostPlayer::NetworkThink(bool& run)
 
     while (run) {
         //Send our position to server
-        NetworkDataPlayer data_client = this->CreateNetworkData();
-        data_client.dataGhost = this->GetPlayerData();
-        data_client.header = HEADER::UPDATE;
-        this->SendNetworkData(data_client);
+        this->UpdatePlayer();
 
         //Update other players
         sf::Packet data_packet = this->ReceiveNetworkData(0);
@@ -275,19 +266,13 @@ void NetworkGhostPlayer::NetworkThink(bool& run)
 
         if (data.header == HEADER::CONNECT) { //New player or echo of our connection
             if (data.ip != this->ip_client) {
-                GhostEntity* ghost = new GhostEntity;
-                ghost->name = data.name;
-                ghost->ID = data.ip;
-                ghost->currentMap = data.dataGhost.currentMap;
-                this->ghostPool.push_back(ghost);
+                this->ghostPool.push_back(this->SetupGhost(data));
             }
         } else if (data.header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
             auto ghost = this->GetGhostByID(data.ip);
-            if (ghost->currentMap != engine->m_szLevelName) {
-                //If on a different map
+            if (ghost->currentMap != engine->m_szLevelName) { //If on a different map
                 ghost->sameMap = false;
-            } else if (ghost->currentMap == engine->m_szLevelName && !ghost->sameMap) {
-                //If previously on a different map but now on the same one
+            } else if (ghost->currentMap == engine->m_szLevelName && !ghost->sameMap) { //If previously on a different map but now on the same one
                 ghost->sameMap = true;
                 ghost->Spawn(true, false, QAngleToVector(data.dataGhost.position));
             }
@@ -299,7 +284,12 @@ void NetworkGhostPlayer::NetworkThink(bool& run)
             if (data.ip != this->ip_client) {
                 console->Print("%s has disconnected !\n", data.name);
                 this->GetGhostByID(data.ip)->Stop();
-            }
+            } else { //Confirmation of our disconnection
+                this->socket.unbind();
+                for (auto& it : this->ghostPool) {
+                    it->Stop();
+                }
+			}
         } else if (data.header == HEADER::STOP_SERVER) {
             for (auto& it : this->ghostPool) {
                 it->Stop();
@@ -312,6 +302,23 @@ void NetworkGhostPlayer::NetworkThink(bool& run)
         /*int sleepTime = static_cast<int>(server->gpGlobals->frametime * 1000);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));*/
     }
+}
+
+GhostEntity* NetworkGhostPlayer::SetupGhost(NetworkDataPlayer& data)
+{
+    GhostEntity* tmp_ghost = new GhostEntity;
+    tmp_ghost->name = data.name;
+    tmp_ghost->ID = data.ip;
+    tmp_ghost->currentMap = data.dataGhost.currentMap;
+    return tmp_ghost;
+}
+
+void NetworkGhostPlayer::UpdatePlayer()
+{
+    NetworkDataPlayer data_client = this->CreateNetworkData();
+    data_client.dataGhost = this->GetPlayerData();
+    data_client.header = HEADER::UPDATE;
+    this->SendNetworkData(data_client);
 }
 
 //Commands
@@ -350,8 +357,6 @@ CON_COMMAND(sar_ghost_send, "Send data player\n")
 
 CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
 {
-    /*networkGhostPlayer->disconnectThread = std::thread(&NetworkGhostPlayer::Disconnect, networkGhostPlayer, false);
-    networkGhostPlayer->disconnectThread.detach();*/
     networkGhostPlayer->Disconnect(false);
 }
 

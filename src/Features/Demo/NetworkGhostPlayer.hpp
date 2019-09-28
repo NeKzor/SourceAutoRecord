@@ -55,6 +55,8 @@ public:
 
 private:
     void NetworkThink(bool& run);
+    GhostEntity* SetupGhost(NetworkDataPlayer&);
+    void UpdatePlayer();
 
 public:
     NetworkGhostPlayer();
