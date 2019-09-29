@@ -38,21 +38,22 @@ struct NetworkDataPlayer {
 class NetworkGhostPlayer : public Feature {
 
 private:
-    sf::IpAddress ip_client;
-    unsigned short port_server;
     std::vector<NetworkDataPlayer> networkGhosts;
     bool isConnected;
     sf::SocketSelector selector;
 
 public:
+    sf::IpAddress ip_client;
     std::vector<GhostEntity*> ghostPool;
     std::string name;
     sf::IpAddress ip_server;
+    unsigned short port_server;
     sf::UdpSocket socket;
+    sf::TcpSocket tcpSocket;
     std::thread networkThread;
     bool runThread;
-    /*sf::Thread networkThread;
-    sf::Thread connectThread;*/
+    std::chrono::steady_clock clock;
+	std::chrono::time_point<std::chrono::steady_clock> start;
 
 private:
     void NetworkThink(bool& run);

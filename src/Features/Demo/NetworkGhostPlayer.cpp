@@ -65,30 +65,43 @@ NetworkGhostPlayer::NetworkGhostPlayer()
     , isConnected(false)
     , networkThread()
     , ghostPool()
+    , tcpSocket()
 {
     this->hasLoaded = true;
-    //this->ip_client = sf::IpAddress::getPublicAddress(); //TODO: handle automatically local network
-    this->ip_client = sf::IpAddress::getLocalAddress();
-    socket.bind(sf::Socket::AnyPort);
-    selector.add(this->socket);
 }
 
 void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
 {
-    this->ip_server = ip;
-    this->port_server = port;
-    NetworkDataPlayer data = this->CreateNetworkData();
-    data.header = HEADER::CONNECT;
-    this->SendNetworkData(data);
-
-    sf::Packet confirmation_packet;
-    if (!this->ReceiveNetworkData(confirmation_packet, 5)) {
+    if (tcpSocket.connect(ip, port, sf::seconds(5)) != sf::Socket::Done) {
         console->Warning("Timeout reached ! Can't connect to the server %s:%d !\n", ip.c_str(), port);
         return;
     }
 
-    NetworkDataPlayer confirmation;
-    confirmation_packet >> confirmation;
+    this->socket.bind(sf::Socket::AnyPort);
+    this->selector.add(this->socket);
+
+    this->ip_server = ip;
+    this->port_server = port;
+    NetworkDataPlayer data = this->CreateNetworkData();
+    data.header = HEADER::CONNECT;
+
+    sf::Packet connection_packet;
+    connection_packet << data;
+    tcpSocket.send(connection_packet);
+
+    sf::SocketSelector tcpselector;
+    tcpselector.add(tcpSocket);
+
+    sf::Packet confirmation_packet;
+    if (tcpselector.wait()) {
+        if (tcpSocket.receive(confirmation_packet) != sf::Socket::Done) {
+            console->Warning("Error\n");
+            return;
+        }
+    } else {
+        console->Warning("Timeout reached ! Can't connect to the server %s:%d !\n", ip.c_str(), port);
+        return;
+    }
 
     sf::Uint32 nbPlayer;
     confirmation_packet >> nbPlayer;
@@ -98,12 +111,14 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
         this->ghostPool.push_back(this->SetupGhost(tmp_player));
     }
 
-    if (!confirmation.message.empty()) {
-        if (confirmation.message == "Error: Timeout reached ! Can't connect to the server !\n" || confirmation.message == "Error: Connexion to the server lost !\n") {
-            console->Warning(confirmation.message.c_str());
+    std::string message;
+    confirmation_packet >> message;
+    if (!message.empty()) {
+        if (message == "Error: Timeout reached ! Can't connect to the server !\n" || message == "Error: Connexion to the server lost !\n") {
+            console->Warning(message.c_str());
             return;
         } else {
-            console->Print(confirmation.message.c_str());
+            console->Print(message.c_str());
         }
 
         this->isConnected = true;
@@ -115,13 +130,15 @@ void NetworkGhostPlayer::Disconnect(bool forced)
 {
     NetworkDataPlayer data = this->CreateNetworkData();
     data.header = HEADER::DISCONNECT;
-    this->SendNetworkData(data);
+    sf::Packet packet;
+    packet << data;
+    this->tcpSocket.send(packet);
 
     this->runThread = false;
 
     if (!forced) { //If connection isn't lost
         sf::Packet confirmation_packet;
-        bool ok = this->ReceiveNetworkData(confirmation_packet, 5);
+        this->tcpSocket.receive(confirmation_packet);
         NetworkDataPlayer confirmation;
         confirmation_packet >> confirmation;
         console->Print(confirmation.message.c_str());
@@ -130,15 +147,28 @@ void NetworkGhostPlayer::Disconnect(bool forced)
     this->isConnected = false;
     this->selector.clear();
     this->socket.unbind();
+    this->tcpSocket.disconnect();
 }
 
 void NetworkGhostPlayer::StopServer()
 {
     NetworkDataPlayer data = this->CreateNetworkData();
     data.header = HEADER::STOP_SERVER;
-    this->SendNetworkData(data);
+    sf::Packet packet;
+    packet << data;
+    this->tcpSocket.send(packet);
+
+    sf::Packet confirmation_packet;
+    this->tcpSocket.receive(confirmation_packet);
+    NetworkDataPlayer confirmation;
+    confirmation_packet >> confirmation;
+    console->Print(confirmation.message.c_str());
 
     this->runThread = false;
+    this->isConnected = false;
+    this->selector.clear();
+    this->socket.unbind();
+    this->tcpSocket.disconnect();
 }
 
 bool NetworkGhostPlayer::IsConnected()
@@ -182,6 +212,7 @@ NetworkDataPlayer NetworkGhostPlayer::CreateNetworkData()
     NetworkDataPlayer networkData{ HEADER::NONE, this->name, this->ip_client.toString(), this->socket.getLocalPort() };
     DataGhost dataGhost{ { 0, 0, 0 }, { 0, 0, 0 }, engine->m_szLevelName };
     networkData.dataGhost = dataGhost;
+    networkData.message = "";
 
     return networkData;
 }
@@ -259,11 +290,7 @@ void NetworkGhostPlayer::NetworkThink(bool& run)
             return;
         }*/
 
-        if (data.header == HEADER::CONNECT) { //New player or echo of our connection
-            if (data.ip != this->ip_client) {
-                this->ghostPool.push_back(this->SetupGhost(data));
-            }
-        } else if (data.header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
+        if (data.header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
             auto ghost = this->GetGhostByID(data.ip);
             if (ghost->currentMap != engine->m_szLevelName) { //If on a different map
                 ghost->sameMap = false;
@@ -275,20 +302,10 @@ void NetworkGhostPlayer::NetworkThink(bool& run)
             if (ghost->sameMap && run) { //" && run" to verify the map is still loaded
                 this->SetPosAng(data.ip, QAngleToVector(data.dataGhost.position), QAngleToVector(data.dataGhost.view_angle));
             }
-        } else if (data.header == HEADER::DISCONNECT) { //Ask for disconnection
-            if (data.ip != this->ip_client) {
-                console->Print("%s has disconnected !\n", data.name);
-                this->GetGhostByID(data.ip)->Stop();
-            } else { //Confirmation of our disconnection
-                this->socket.unbind();
-                for (auto& it : this->ghostPool) {
-                    it->Stop();
-                }
-            }
-        } else if (data.header == HEADER::STOP_SERVER) {
-            for (auto& it : this->ghostPool) {
-                it->Stop();
-            }
+        } else if (data.header == HEADER::PING) {
+            auto stop = this->clock.now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
+            console->Print("Ping returned in %lld ms\n", elapsed.count());
         }
 
         if (!data.message.empty()) {
@@ -316,7 +333,7 @@ void NetworkGhostPlayer::UpdatePlayer()
 
 //Commands
 
-CON_COMMAND(sar_ghost_connect_to_server, "Connect to the server : <ip address> <port> :\n"
+CON_COMMAND(sar_ghost_connect_to_server, "Connect to the server : <ip address> <port> [local] :\n"
                                          "ex: 'localhost 53000' - '127.0.0.1 53000' - 89.10.20.20 53000'.")
 {
     if (args.ArgC() <= 2) {
@@ -327,6 +344,14 @@ CON_COMMAND(sar_ghost_connect_to_server, "Connect to the server : <ip address> <
     if (networkGhostPlayer->IsConnected()) {
         console->Warning("Already connected to the server !\n");
         return;
+    }
+
+    if (args.ArgC() == 4) {
+        if (std::atoi(args[3]) != 0) { //If local network
+            networkGhostPlayer->ip_client = sf::IpAddress::getLocalAddress();
+        } else { //If extern
+            networkGhostPlayer->ip_client = sf::IpAddress::getPublicAddress();
+        }
     }
 
     networkGhostPlayer->ConnectToServer(args[1], std::atoi(args[2]));
@@ -355,6 +380,18 @@ CON_COMMAND(sar_ghost_send, "Send data player\n")
                    "Position : %.3f %.3f %.3f\n"
                    "View angle : %.3f %.3f %.3f\n",
         data_server.ip.c_str(), data_server.port, data_server.name.c_str(), data_server.dataGhost.position.x, data_server.dataGhost.position.y, data_server.dataGhost.position.z, data_server.dataGhost.view_angle.x, data_server.dataGhost.view_angle.y, data_server.dataGhost.view_angle.z);
+}
+
+CON_COMMAND(sar_ghost_ping, "Send ping\n")
+{
+
+    sf::Packet packet;
+    NetworkDataPlayer data = networkGhostPlayer->CreateNetworkData();
+    data.header = HEADER::PING;
+    packet << data;
+
+    networkGhostPlayer->start = networkGhostPlayer->clock.now();
+    networkGhostPlayer->socket.send(packet, networkGhostPlayer->ip_server, networkGhostPlayer->port_server);
 }
 
 CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
