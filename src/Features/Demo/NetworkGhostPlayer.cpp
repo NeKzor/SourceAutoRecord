@@ -98,7 +98,7 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     tcpselector.add(tcpSocket);
 
     sf::Packet confirmation_packet;
-    if (tcpselector.wait()) {
+    if (tcpselector.wait(sf::seconds(30))) {
         if (tcpSocket.receive(confirmation_packet) != sf::Socket::Done) {
             console->Warning("Error\n");
             return;
@@ -128,49 +128,55 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
 
         this->isConnected = true;
         this->StartThinking();
-        this->pauseThread = false;
-        this->TCPThread = std::thread(&NetworkGhostPlayer::CheckConnection, this);
-        this->TCPThread.detach();
     }
 }
 
 void NetworkGhostPlayer::Disconnect(bool forced)
 {
-    this->tcpSocket.setBlocking(true);
+    this->runThread = false;
+    this->waitForPaused.notify_one(); //runThread being false will make the thread stopping no matter if pauseThread is true or false
+
     NetworkDataPlayer data = this->CreateNetworkData();
     data.header = HEADER::DISCONNECT;
     sf::Packet packet;
     packet << data;
     this->tcpSocket.send(packet);
-	
-    this->runThread = false;
-    this->waitForPaused.notify_one(); //runThread being false will make the thread stopping no matter if pauseThread is true or false
 
+    for (auto& it : this->ghostPool) {
+        it->Stop();
+    }
+    this->ghostPool.clear();
     this->isConnected = false;
     this->selector.clear();
     this->socket.unbind();
     this->tcpSocket.disconnect();
-    while (this->networkThread.joinable());
-    console->Print("You have been disconnected !\n");
+    while (this->networkThread.joinable()); //Check if the thread is dead
 }
 
 void NetworkGhostPlayer::StopServer()
 {
-    this->tcpSocket.setBlocking(true);
+    this->runThread = false;
+    this->waitForPaused.notify_one(); //runThread being false will make the thread stopping no matter if pauseThread is true or false
+
     NetworkDataPlayer data = this->CreateNetworkData();
     data.header = HEADER::STOP_SERVER;
     sf::Packet packet;
     packet << data;
     this->tcpSocket.send(packet);
 
-    sf::Packet confirmation_packet;
-    this->tcpSocket.receive(confirmation_packet);
     NetworkDataPlayer confirmation;
-    confirmation_packet >> confirmation;
+    this->tcpSocket.setBlocking(true);
+    while (confirmation.ip != this->ip_client) {
+        sf::Packet confirmation_packet;
+        this->tcpSocket.receive(confirmation_packet);
+        confirmation_packet >> confirmation;
+    }
     console->Print(confirmation.message.c_str());
 
-    this->runThread = false;
-    this->waitForPaused.notify_one(); //runThread being false will make the thread stopping no matter if pauseThread is true or false
+    for (auto& it : this->ghostPool) {
+        it->Stop();
+    }
+    this->ghostPool.clear();
     this->isConnected = false;
     this->selector.clear();
     this->socket.unbind();
@@ -225,11 +231,8 @@ NetworkDataPlayer NetworkGhostPlayer::CreateNetworkData()
 
 DataGhost NetworkGhostPlayer::GetPlayerData()
 {
-    QAngle pos = VectorToQAngle(server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1)));
-    //pos.x += 64;
     DataGhost data = {
-        //VectorToQAngle(server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1))),
-        pos,
+        VectorToQAngle(server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1))),
         server->GetAbsAngles(server->GetPlayer(GET_SLOT() + 1))
     };
     data.currentMap = engine->m_szLevelName;
@@ -259,21 +262,22 @@ void NetworkGhostPlayer::UpdateCurrentMap()
 
 void NetworkGhostPlayer::StartThinking()
 {
-    if (this->runThread) {
+    if (this->runThread) { //Already running (level change, load save)
         this->pauseThread = false;
         this->waitForPaused.notify_one();
-    } else {
+    } else { //First time we connect
         this->runThread = true;
         this->pauseThread = false;
         this->waitForPaused.notify_one();
         this->networkThread = std::thread(&NetworkGhostPlayer::NetworkThink, this);
         this->networkThread.detach();
+        this->TCPThread = std::thread(&NetworkGhostPlayer::CheckConnection, this);
+        this->TCPThread.detach();
     }
 }
 
-void NetworkGhostPlayer::StopThinking()
+void NetworkGhostPlayer::PauseThinking()
 {
-    //this->runThread = false;
     this->pauseThread = true;
 }
 
@@ -314,24 +318,23 @@ void NetworkGhostPlayer::NetworkThink()
 
         NetworkDataPlayer data;
         data_packet >> data;
-        /*if (data.ip == this->ip_client) {
-            return;
-        }*/
 
         if (data.header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
-            auto ghost = this->GetGhostByID(data.ip);
-            if (ghost != nullptr && data.ip != this->ip_client) {
-                ghost->currentMap = data.dataGhost.currentMap;
+            if (data.ip == this->ip_client) {
+                auto ghost = this->GetGhostByID(data.ip);
+                if (ghost != nullptr) {
+                    ghost->currentMap = data.dataGhost.currentMap;
 
-                if (ghost->currentMap != engine->m_szLevelName) { //If on a different map
-                    ghost->sameMap = false;
-                } else if (ghost->currentMap == engine->m_szLevelName && !ghost->sameMap) { //If previously on a different map but now on the same one
-                    ghost->sameMap = true;
-                    ghost->Spawn(true, false, QAngleToVector(data.dataGhost.position));
-                }
+                    if (ghost->currentMap != engine->m_szLevelName) { //If on a different map
+                        ghost->sameMap = false;
+                    } else if (ghost->currentMap == engine->m_szLevelName && !ghost->sameMap) { //If previously on a different map but now on the same one
+                        ghost->sameMap = true;
+                        ghost->Spawn(true, false, QAngleToVector(data.dataGhost.position));
+                    }
 
-                if (ghost->sameMap && !pauseThread) { //" && run" to verify the map is still loaded
-                    this->SetPosAng(data.ip, QAngleToVector(data.dataGhost.position), QAngleToVector(data.dataGhost.view_angle));
+                    if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
+                        this->SetPosAng(data.ip, QAngleToVector(data.dataGhost.position), QAngleToVector(data.dataGhost.view_angle));
+                    }
                 }
             }
         } else if (data.header == HEADER::PING) {
@@ -345,7 +348,7 @@ void NetworkGhostPlayer::NetworkThink()
         }
     }
 
-	this->ghostPool.clear();
+    this->ghostPool.clear();
 }
 
 void NetworkGhostPlayer::CheckConnection()
@@ -367,6 +370,15 @@ void NetworkGhostPlayer::CheckConnection()
                     }
                 }
                 console->Print("Player %s has connected !\n", data.name.c_str());
+            } else if (data.header == HEADER::DISCONNECT) {
+                int id = 0;
+                for (; id < this->ghostPool.size(); ++id) {
+                    if (this->ghostPool[id]->ID == data.ip) {
+                        break;
+                    }
+                    this->ghostPool[id]->Stop();
+                    this->ghostPool.erase(this->ghostPool.begin() + id);
+                }
             }
         }
     }
@@ -435,6 +447,7 @@ CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
     }
 
     networkGhostPlayer->Disconnect(false);
+    console->Print("You have successfully been disconnected !\n");
 }
 
 CON_COMMAND(sar_ghost_stop_server, "Stop the server\n")

@@ -78,7 +78,7 @@ public:
     bool ReceiveNetworkData(sf::Packet& packet, int timeout);
 
     void StartThinking();
-    void StopThinking();
+    void PauseThinking();
 
     NetworkDataPlayer CreateNetworkData();
     DataGhost GetPlayerData();
