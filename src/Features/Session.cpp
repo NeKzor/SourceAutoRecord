@@ -150,7 +150,7 @@ void Session::Ended()
     }
     if (networkGhostPlayer->IsConnected()) {
         //networkGhostPlayer->pauseThread = true;
-        networkGhostPlayer->StopThinking();
+        networkGhostPlayer->PauseThinking();
     }
 
     auto tick = this->GetTick();
