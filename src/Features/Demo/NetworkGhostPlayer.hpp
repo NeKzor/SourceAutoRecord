@@ -10,10 +10,12 @@
 #include <SFML/Network.hpp>
 #include <thread>
 #include <vector>
+#include <mutex>
+#include <atomic>
 
 enum HEADER {
     NONE,
-	PING,
+    PING,
     CONNECT,
     UPDATE,
     DISCONNECT,
@@ -41,9 +43,10 @@ private:
     std::vector<NetworkDataPlayer> networkGhosts;
     bool isConnected;
     sf::SocketSelector selector;
+    std::condition_variable waitForPaused;
+    //std::mutex mutex;
 
-public:
-    sf::IpAddress ip_client;
+    public : sf::IpAddress ip_client;
     std::vector<GhostEntity*> ghostPool;
     std::string name;
     sf::IpAddress ip_server;
@@ -51,18 +54,20 @@ public:
     sf::UdpSocket socket;
     sf::TcpSocket tcpSocket;
     std::thread networkThread;
-    bool runThread;
+    std::thread TCPThread;
+    std::atomic<bool> runThread;
+    std::atomic<bool> pauseThread;
     std::chrono::steady_clock clock;
-	std::chrono::time_point<std::chrono::steady_clock> start;
+    std::chrono::time_point<std::chrono::steady_clock> start;
 
 private:
-    void NetworkThink(bool& run);
+    void NetworkThink();
+    void CheckConnection();
     GhostEntity* SetupGhost(NetworkDataPlayer&);
     void UpdatePlayer();
 
 public:
     NetworkGhostPlayer();
-
 
     void ConnectToServer(std::string, unsigned short port);
     void Disconnect(bool forced);
@@ -77,7 +82,7 @@ public:
 
     NetworkDataPlayer CreateNetworkData();
     DataGhost GetPlayerData();
-    GhostEntity* GetGhostByID(std::string &ID);
+    GhostEntity* GetGhostByID(std::string& ID);
     void SetPosAng(std::string ID, Vector position, Vector angle);
     void UpdateCurrentMap();
 };
@@ -85,7 +90,6 @@ public:
 extern NetworkGhostPlayer* networkGhostPlayer;
 
 extern Command sar_ghost_connect_to_server;
-extern Command sar_ghost_send;
 extern Command sar_ghost_disconnect;
 extern Command sar_ghost_stop_server;
 extern Command sar_ghost_name;
