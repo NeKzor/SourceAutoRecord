@@ -130,7 +130,7 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
         this->StartThinking();
         this->pauseThread = false;
         this->TCPThread = std::thread(&NetworkGhostPlayer::CheckConnection, this);
-        this->networkThread.detach();
+        this->TCPThread.detach();
     }
 }
 
@@ -267,7 +267,8 @@ void NetworkGhostPlayer::StartThinking()
         this->pauseThread = false;
         this->waitForPaused.notify_one();
         this->networkThread = std::thread(&NetworkGhostPlayer::NetworkThink, this);
-	}
+        this->networkThread.detach();
+    }
 }
 
 void NetworkGhostPlayer::StopThinking()
