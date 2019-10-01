@@ -320,7 +320,7 @@ void NetworkGhostPlayer::NetworkThink()
         data_packet >> data;
 
         if (data.header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
-            if (data.ip == this->ip_client) {
+            if (data.ip != this->ip_client) {
                 auto ghost = this->GetGhostByID(data.ip);
                 if (ghost != nullptr) {
                     ghost->currentMap = data.dataGhost.currentMap;
