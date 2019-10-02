@@ -17,13 +17,13 @@ public:
     void Run();
     bool IsReady();
     void StopAll();
-    void StopByID(std::string ID);
+    void StopByID(sf::Uint32 &ID);
     GhostEntity* GetFirstGhost();
-    GhostEntity* GetGhostFromID(std::string ID);
+    GhostEntity* GetGhostFromID(sf::Uint32& ID);
 	void AddGhost(GhostEntity* ghost);
     void ResetGhost();
     void ResetCoord();
-    void SetPosAng(std::string ID, Vector position, Vector angle);
+    void SetPosAng(sf::Uint32& ID, Vector position, Vector angle);
     void SetStartTick(int);
     int GetStartTick();
     void SetCoordList(std::vector<Vector> pos, std::vector<Vector> ang);

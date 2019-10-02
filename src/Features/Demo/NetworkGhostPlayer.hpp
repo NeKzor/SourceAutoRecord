@@ -17,9 +17,10 @@ enum HEADER {
     NONE,
     PING,
     CONNECT,
-    UPDATE,
     DISCONNECT,
-    STOP_SERVER
+    STOP_SERVER,
+    MESSAGE,
+    UPDATE,
 };
 
 struct DataGhost {
@@ -28,23 +29,12 @@ struct DataGhost {
     std::string currentMap;
 };
 
-struct NetworkDataPlayer {
-    HEADER header;
-    std::string name;
-    std::string ip;
-    unsigned short port;
-    DataGhost dataGhost;
-    std::string message;
-};
-
 class NetworkGhostPlayer : public Feature {
 
 private:
-    std::vector<NetworkDataPlayer> networkGhosts;
     bool isConnected;
     sf::SocketSelector selector;
     std::condition_variable waitForPaused;
-    //std::mutex mutex;
 
     public : sf::IpAddress ip_client;
     std::vector<GhostEntity*> ghostPool;
@@ -63,7 +53,7 @@ private:
 private:
     void NetworkThink();
     void CheckConnection();
-    GhostEntity* SetupGhost(NetworkDataPlayer&);
+    GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&);
     void UpdatePlayer();
 
 public:
@@ -74,16 +64,14 @@ public:
     void StopServer();
     bool IsConnected();
 
-    void SendNetworkData(NetworkDataPlayer&);
-    bool ReceiveNetworkData(sf::Packet& packet, int timeout);
+    bool ReceivePacket(sf::Packet& packet, int timeout);
 
     void StartThinking();
     void PauseThinking();
 
-    NetworkDataPlayer CreateNetworkData();
     DataGhost GetPlayerData();
-    GhostEntity* GetGhostByID(std::string& ID);
-    void SetPosAng(std::string ID, Vector position, Vector angle);
+    GhostEntity* GetGhostByID(sf::Uint32& ID);
+    void SetPosAng(sf::Uint32& ID, Vector position, Vector angle);
     void UpdateCurrentMap();
 };
 

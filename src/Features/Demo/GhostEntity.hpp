@@ -7,6 +7,7 @@
 #include "Features/Demo/Demo.hpp"
 #include "Utils/SDK.hpp"
 #include "Variable.hpp"
+#include "SFML/Network.hpp"
 
 #include <vector>
 
@@ -19,7 +20,7 @@ private:
 public:
     std::vector<Vector> positionList;
     std::vector<Vector> angleList;
-    std::string ID;
+    sf::Uint32 ID; //TODO: Check if can use unsigned int instead of sfml
     std::string name;
     std::string currentMap;
     bool sameMap;

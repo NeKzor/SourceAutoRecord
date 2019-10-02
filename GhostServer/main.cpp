@@ -16,24 +16,16 @@ enum HEADER {
     NONE,
     PING,
     CONNECT,
-    UPDATE,
     DISCONNECT,
-    STOP_SERVER
+    STOP_SERVER,
+    MESSAGE,
+    UPDATE,
 };
 
 struct DataGhost {
     QAngle position;
     QAngle view_angle;
     std::string currentMap;
-};
-
-struct NetworkDataPlayer {
-    HEADER header;
-    std::string name;
-    std::string ip;
-    unsigned short port;
-    DataGhost dataGhost;
-    std::string message;
 };
 
 //DataGhost
@@ -58,7 +50,7 @@ sf::Packet& operator<<(sf::Packet& packet, const DataGhost& dataGhost)
     return packet << dataGhost.position << dataGhost.view_angle << dataGhost.currentMap;
 }
 
-//COMMAND
+//HEADER
 
 sf::Packet& operator>>(sf::Packet& packet, HEADER& header)
 {
@@ -73,28 +65,12 @@ sf::Packet& operator<<(sf::Packet& packet, const HEADER& header)
     return packet << static_cast<sf::Uint8>(header);
 }
 
-//DataPlayer
-
-sf::Packet& operator>>(sf::Packet& packet, NetworkDataPlayer& data_player)
-{
-    return packet >> data_player.header >> data_player.name >> data_player.ip >> data_player.port >> data_player.dataGhost >> data_player.message;
-}
-
-sf::Packet& operator<<(sf::Packet& packet, const NetworkDataPlayer& data_player)
-{
-    return packet << data_player.header << data_player.name << data_player.ip << data_player.port << data_player.dataGhost << data_player.message;
-}
-
-std::ostream& operator<<(std::ostream& out, const QAngle angle)
-{
-    return out << "x : " << angle.x << "; y : " << angle.y << "; z : " << angle.z;
-}
-
 //PlayerInfo
 struct PlayerInfo {
     sf::IpAddress ip;
     unsigned short int port;
     std::string name;
+    DataGhost dataGhost;
 };
 
 //Functions
@@ -105,22 +81,24 @@ Return the packet received
 */
 bool ReceivePacket(sf::Packet& packet, sf::UdpSocket& socket, sf::IpAddress& ip_sender, unsigned short& port_sender, sf::SocketSelector& selector);
 
-
 //Send the packet specified to the client
 void SendPacket(sf::UdpSocket& socket, sf::Packet& packet, const sf::IpAddress& ip_client, const unsigned short& port);
 //void SendPacket(const sf::TcpSocket& socket, const sf::Packet& packet);
 
 //Listen for a specific port and manage connections and disconnections
-void TCPcheck(bool& run, std::map<sf::IpAddress, NetworkDataPlayer>& player_pool);
+void TCPcheck(bool& run, std::vector<std::shared_ptr<sf::TcpSocket>>& socketpool, std::map<sf::IpAddress, PlayerInfo>& player_pool);
 
 //Listen for a client to connect and add the player to the player pool
-void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, NetworkDataPlayer>& player_pool, sf::SocketSelector& selector);
+void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool, sf::SocketSelector& selector);
 
 //Disconnect a player
-void Disconnect(const NetworkDataPlayer& data, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, NetworkDataPlayer>& player_pool);
+void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool);
 
 //Stop the server
-void StopServer(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, NetworkDataPlayer>& player_pool, sf::Packet& packet);
+void StopServer(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool);
+
+//Retransmit message to every players
+void SendMessage(const sf::Uint32& ID, const std::string& message, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool);
 
 std::mutex mutex;
 std::mutex mutex2;
@@ -132,31 +110,55 @@ std::atomic<bool> threadFinished = false;
 
 /*
 Manage multiple Portal 2 clients
-Packets form :
+Packets contains :
 	HEADER : Information about the packet received
 	{
-		NONE / CONNECT / UPDATE / DISCONNECT / STOP_SERVER / MESSAGE
+		NONE / PING / CONNECT / UPDATE / DISCONNECT / STOP_SERVER / MESSAGE
 	}
 
-	NetworkDataPlayer : Network informations + ghost infos
+	DataGhost      -> ghost infos
 	{
-		HEADER header
-		std::string    -> name
-		std::string   -> ip adress
-		unsigned short -> port
-		DataGhost      -> ghost infos
-		{
-			QAngle         -> position
-			QAngle         -> view angle
-			char[64]       -> current map
-		}
+		QAngle         -> position
+		QAngle         -> view angle
+		char[64]       -> current map
 	}
+
+	PlayerInfo
+	{
+		sf::IpAddress		-> ip address
+		unsigned short int  -> port
+		std::string name	-> player name
+	}
+
+	 if HEADER == CONNECT :
+	 Server receive : TCPpacket << HEADER << sf::Uint16 UDP port << std::string name << DataGhost data
+	 Server send confirmation : TCPpacket << sf::Uint32 nb_player << sf::Uint32 id << std::string name << DataGhost data : id, name and data of every player connected
+	 Server send to other : TCPpacket << HEADER << sf::Uint32 ID << std::string name << DataGhost data
+	 sf::Uint32 ID is just the ip address converted to sf::Uint32
+
+	 if HEADER == DISCONNECT :
+	 Server receive :TCPpacket << HEADER
+	 Server send : TCPpacket << HEADER << sf::Uint32 ID
+
+	 if HEADER == STOP_SERVER :
+	 Server receive and send : TCPpacket << HEADER
+
+	 if HEADER == MESSAGE :
+	 Server receive : TCPpacket << HEADER << std::string message
+	 Server send : TCPpacket << HEADER << sf::Uint32 ID << std::string message
+
+	 if HEADER == UPDATE :
+	 Server receive : UDPpacket << HEADER << DataGhost
+	 Server send : UDPpacket << HEADER << sf::Uint32 ID << DataGhost
+
+	 if HEADER == PING :
+	 Server receive and send : UDPpacket << HEADER
 */
 int main()
 {
 
     //UDP
-    std::map<sf::IpAddress, NetworkDataPlayer> player_pool;
+    std::map<sf::IpAddress, PlayerInfo> player_pool;
 
     unsigned short int port = 53000;
     sf::UdpSocket UDPsocket;
@@ -173,12 +175,11 @@ int main()
     std::cout << "Server started on <" << sf::IpAddress::getPublicAddress() << "> (Local : " << sf::IpAddress::getLocalAddress() << ") ; Port: " << UDPsocket.getLocalPort() << ">" << std::endl;
 
     //TCP
-
+    std::vector<std::shared_ptr<sf::TcpSocket>> socket_pool;
     bool stopServer = true;
-    std::thread TCPthread(TCPcheck, std::ref(stopServer), std::ref(player_pool));
+    std::thread TCPthread(TCPcheck, std::ref(stopServer), std::ref(socket_pool), std::ref(player_pool));
     TCPthread.detach();
 
-    int size = 0;
     while (stopServer) {
         sf::IpAddress ip_sender;
         unsigned short port_sender;
@@ -196,29 +197,30 @@ int main()
         mainFinished = false;
 
         if (receivedData) {
-            NetworkDataPlayer data;
-            if (packet >> data) {
-                if (data.header == HEADER::UPDATE) {
-                    NetworkDataPlayer confirmation = data;
-                    confirmation.message = "lol";
-                    packet << confirmation;
-                    for (auto& player_it : player_pool) {
-                        SendPacket(UDPsocket, packet, player_it.second.ip, player_it.second.port); //Send update to other clients
-                    }
-                } else if (data.header == HEADER::PING) {
-                    SendPacket(UDPsocket, packet, ip_sender, port_sender);
-                    NetworkDataPlayer data;
+            HEADER header;
+            if (packet >> header) {
+                if (header == HEADER::UPDATE) {
+                    DataGhost data;
                     packet >> data;
-                    std::cout << "Ping from " + data.name + " !" << std::endl;
-                }
-
-                if (!data.message.empty()) {
-                    std::cout << data.name << " says : \"" << data.message << "\"" << std::endl;
+                    sf::Packet update_packet;
+                    update_packet << header << ip_sender.toInteger() << data;
+                    for (auto& player_it : player_pool) {
+                        if (player_it.first != ip_sender) {
+                            SendPacket(UDPsocket, update_packet, player_it.first, player_it.second.port); //Send update to other clients
+                        }
+                    }
+                } else if (header == HEADER::PING) {
+                    SendPacket(UDPsocket, packet, ip_sender, port_sender);
+                    std::cout << "Ping from " + player_pool[ip_sender].name + " !" << std::endl;
                 }
             }
         }
         mainFinished = true;
         mainFinishedCondVar.notify_one();
+    }
+
+    for (auto& it : socket_pool) {
+        it->disconnect();
     }
 
     std::getchar();
@@ -247,11 +249,10 @@ void SendPacket(sf::UdpSocket& socket, sf::Packet& packet, const sf::IpAddress& 
     }
 }
 
-void TCPcheck(bool& stopServer, std::map<sf::IpAddress, NetworkDataPlayer>& player_pool)
+void TCPcheck(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool)
 {
     //TCP
     sf::SocketSelector selector;
-    std::vector<std::shared_ptr<sf::TcpSocket>> socket_pool;
     sf::TcpListener listener;
     listener.setBlocking(false);
 
@@ -269,12 +270,21 @@ void TCPcheck(bool& stopServer, std::map<sf::IpAddress, NetworkDataPlayer>& play
                 if (selector.isReady(*socket)) {
                     sf::Packet packet;
                     socket->receive(packet);
-                    NetworkDataPlayer data;
-                    packet >> data;
-                    if (data.header == HEADER::DISCONNECT) {
-                        Disconnect(data, socket_pool, player_pool);
-                    } else if (data.header == HEADER::STOP_SERVER) {
-                        StopServer(stopServer, socket_pool, player_pool, packet);
+                    HEADER header;
+                    packet >> header;
+                    if (header == HEADER::DISCONNECT) {
+                        sf::Uint32 ID = socket->getRemoteAddress().toInteger();
+                        Disconnect(ID, socket_pool, player_pool);
+                    } else if (header == HEADER::STOP_SERVER) {
+                        std::cout << "STOP_SERVER received. Server will stop ! Press Enter to quit ..." << std::endl;
+                        StopServer(stopServer, socket_pool);
+                    } else if (header == HEADER::MESSAGE) {
+                        std::string message;
+                        packet >> message;
+                        std::cout << player_pool[socket->getRemoteAddress()].name << " : " << message << std::endl;
+
+                        sf::Uint32 ID = socket->getRemoteAddress().toInteger();
+                        SendMessage(ID, message, socket_pool);
                     }
                 }
             }
@@ -282,7 +292,7 @@ void TCPcheck(bool& stopServer, std::map<sf::IpAddress, NetworkDataPlayer>& play
     }
 }
 
-void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, NetworkDataPlayer>& player_pool, sf::SocketSelector& selector)
+void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool, sf::SocketSelector& selector)
 {
 
     std::shared_ptr<sf::TcpSocket> client(new sf::TcpSocket);
@@ -291,72 +301,70 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
         return;
     }
 
+    selector.add(*client);
     sf::Packet connection_packet;
     client->receive(connection_packet);
-
-    NetworkDataPlayer connect_data;
-    connection_packet >> connect_data;
-
-    sf::IpAddress ip_sender = client->getRemoteAddress();
-    selector.add(*client);
 
     std::unique_lock<std::mutex> lck(mutex3);
     mainFinishedCondVar.wait(lck, [] { return mainFinished.load(); }); //Wait for the main function to finish updating ghosts
     threadFinished = false;
 
-    player_pool.insert({ ip_sender, connect_data });
+    HEADER header;
+    sf::Uint16 port_sender;
+    std::string name;
+    DataGhost data;
+    connection_packet >> header >> port_sender >> name >> data;
+
+    sf::IpAddress ip_sender = client->getRemoteAddress();
+
+    player_pool.insert({ ip_sender, { ip_sender, port_sender, name, data } });
     socket_pool.push_back(client);
 
     threadFinished = true;
     threadFinishedCondVar.notify_one();
 
-    std::cout << "New player connected: Hello <" << client->getRemoteAddress() << "; "
-              << client->getRemotePort() << "; "
-              << connect_data.name << "> !" << std::endl;
+    std::cout << "New player connected: Hello <" << ip_sender << "; "
+              << port_sender << "; "
+              << name << "> !" << std::endl;
 
-    for (int i = 0; i < socket_pool.size(); ++i) {
-        if (socket_pool[i]->getRemoteAddress() == ip_sender) { //Send confirmation
+    for (auto& socket : socket_pool) {
+        if (socket->getRemoteAddress() == ip_sender) { //Send confirmation
 
             sf::Packet confirm_packet;
             confirm_packet << static_cast<sf::Uint32>(socket_pool.size());
-            for (auto& it : player_pool) {
-                confirm_packet << it.second; //Send every player connected informations
+            for (auto& player : player_pool) {
+                confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost; //Send every player connected informations
             }
-            std::string message = "You have been succesfully connected to the server !\n Players connected : "
-                + std::to_string(socket_pool.size()) + "\n";
-            confirm_packet << message;
+            socket->send(confirm_packet);
 
-            socket_pool[i]->send(confirm_packet);
         } else { //Update other players
-            NetworkDataPlayer confirmation = connect_data;
-            confirmation.message = "New player connected ! Say hello to :" + player_pool[ip_sender].name + " !\n";
-
             sf::Packet confirm_packet;
-            confirm_packet << confirmation;
-            socket_pool[i]->send(confirm_packet); //Send new player to other clients
+            confirm_packet << header << ip_sender.toInteger() << name << data;
+            socket->send(confirm_packet); //Send new player to other clients
         }
     }
 }
 
-void Disconnect(const NetworkDataPlayer& data, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, NetworkDataPlayer>& player_pool)
+void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool)
 {
-    std::cout << "Player " << data.name << " has disconnected !" << std::endl;
+    sf::IpAddress ip_sender = sf::IpAddress(ID);
+    std::cout << "Player " << player_pool[ip_sender].name << " has disconnected !" << std::endl;
     int id = 0;
     for (int i = 0; i < socket_pool.size(); ++i) {
         //Update other players
-        NetworkDataPlayer confirmation = data;
-        confirmation.message = "Player " + data.name + " has disconnected !\n";
-
         sf::Packet confirm_packet;
-        confirm_packet << confirmation;
+        confirm_packet << HEADER::DISCONNECT << ID;
         socket_pool[i]->send(confirm_packet); //Send disconnection to other clients
+        if (socket_pool[i]->getRemoteAddress() == ip_sender) {
+            id = i;
+        }
     }
 
     std::unique_lock<std::mutex> lck(mutex2);
     mainFinishedCondVar.wait(lck, [] { return mainFinished.load(); }); //Wait for the main function to finish updating ghosts
     threadFinished = false;
 
-    player_pool.erase(data.ip);
+    player_pool.erase(ip_sender);
     socket_pool[id]->disconnect();
     socket_pool.erase(socket_pool.begin() + id);
 
@@ -364,10 +372,20 @@ void Disconnect(const NetworkDataPlayer& data, std::vector<std::shared_ptr<sf::T
     threadFinishedCondVar.notify_one();
 }
 
-void StopServer(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, NetworkDataPlayer>& player_pool, sf::Packet& packet)
+void StopServer(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool)
 {
-    std::cout << "STOP_SERVER received. Server will stop ! Press Enter to quit ..." << std::endl;
     stopServer = false;
+    sf::Packet packet;
+    packet << HEADER::STOP_SERVER;
+    for (auto& it : socket_pool) {
+        it->send(packet); //Send disconnection to other clients
+    }
+}
+
+void SendMessage(const sf::Uint32& ID, const std::string& message, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool)
+{
+    sf::Packet packet;
+    packet << HEADER::MESSAGE << ID << message;
     for (auto& it : socket_pool) {
         it->send(packet); //Send disconnection to other clients
     }

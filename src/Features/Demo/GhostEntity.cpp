@@ -10,7 +10,7 @@
 GhostEntity::GhostEntity()
     : positionList()
     , angleList()
-    , ID("")
+    , ID()
     , name()
     , currentMap()
     , sameMap(false)

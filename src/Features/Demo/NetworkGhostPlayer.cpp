@@ -43,18 +43,6 @@ sf::Packet& operator<<(sf::Packet& packet, const HEADER& header)
     return packet << static_cast<sf::Uint8>(header);
 }
 
-//DataPlayer
-
-sf::Packet& operator>>(sf::Packet& packet, NetworkDataPlayer& data_player)
-{
-    return packet >> data_player.header >> data_player.name >> data_player.ip >> data_player.port >> data_player.dataGhost >> data_player.message;
-}
-
-sf::Packet& operator<<(sf::Packet& packet, const NetworkDataPlayer& data_player)
-{
-    return packet << data_player.header << data_player.name << data_player.ip << data_player.port << data_player.dataGhost << data_player.message;
-}
-
 NetworkGhostPlayer* networkGhostPlayer;
 
 std::mutex mutex;
@@ -63,7 +51,6 @@ NetworkGhostPlayer::NetworkGhostPlayer()
     : ip_server("localhost")
     , port_server(53000)
     , name("FrenchSaves10Ticks")
-    , networkGhosts()
     , runThread(false)
     , pauseThread(true)
     , isConnected(false)
@@ -87,11 +74,9 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
 
     this->ip_server = ip;
     this->port_server = port;
-    NetworkDataPlayer data = this->CreateNetworkData();
-    data.header = HEADER::CONNECT;
 
     sf::Packet connection_packet;
-    connection_packet << data;
+    connection_packet << HEADER::CONNECT << this->socket.getLocalPort() << this->name << this->GetPlayerData();
     tcpSocket.send(connection_packet);
 
     sf::SocketSelector tcpselector;
@@ -108,27 +93,21 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
         return;
     }
 
+    //Add every player connected to the ghostPool
     sf::Uint32 nbPlayer;
     confirmation_packet >> nbPlayer;
     for (sf::Uint32 i = 0; i < nbPlayer; ++i) {
-        NetworkDataPlayer tmp_player;
-        confirmation_packet >> tmp_player;
-        this->ghostPool.push_back(this->SetupGhost(tmp_player));
+        sf::Uint32 ID;
+        std::string name;
+        DataGhost data;
+        confirmation_packet >> ID >> name >> data;
+        this->ghostPool.push_back(this->SetupGhost(ID, name, data));
     }
 
-    std::string message;
-    confirmation_packet >> message;
-    if (!message.empty()) {
-        if (message == "Error: Timeout reached ! Can't connect to the server !\n" || message == "Error: Connexion to the server lost !\n") {
-            console->Warning(message.c_str());
-            return;
-        } else {
-            console->Print(message.c_str());
-        }
+    console->Print("Successfully connected to the server !\n%d player connected\n", nbPlayer);
 
-        this->isConnected = true;
-        this->StartThinking();
-    }
+    this->isConnected = true;
+    this->StartThinking();
 }
 
 void NetworkGhostPlayer::Disconnect(bool forced)
@@ -136,10 +115,8 @@ void NetworkGhostPlayer::Disconnect(bool forced)
     this->runThread = false;
     this->waitForPaused.notify_one(); //runThread being false will make the thread stopping no matter if pauseThread is true or false
 
-    NetworkDataPlayer data = this->CreateNetworkData();
-    data.header = HEADER::DISCONNECT;
     sf::Packet packet;
-    packet << data;
+    packet << HEADER::DISCONNECT;
     this->tcpSocket.send(packet);
 
     for (auto& it : this->ghostPool) {
@@ -158,20 +135,19 @@ void NetworkGhostPlayer::StopServer()
     this->runThread = false;
     this->waitForPaused.notify_one(); //runThread being false will make the thread stopping no matter if pauseThread is true or false
 
-    NetworkDataPlayer data = this->CreateNetworkData();
-    data.header = HEADER::STOP_SERVER;
     sf::Packet packet;
-    packet << data;
+    packet << HEADER::STOP_SERVER;
     this->tcpSocket.send(packet);
 
-    NetworkDataPlayer confirmation;
+    HEADER header = HEADER::NONE;
     this->tcpSocket.setBlocking(true);
-    while (confirmation.ip != this->ip_client) {
+    while (header != HEADER::STOP_SERVER) {
         sf::Packet confirmation_packet;
         this->tcpSocket.receive(confirmation_packet);
-        confirmation_packet >> confirmation;
+        confirmation_packet >> header;
     }
-    console->Print(confirmation.message.c_str());
+
+    console->Print("Server will stop !\n");
 
     for (auto& it : this->ghostPool) {
         it->Stop();
@@ -188,15 +164,7 @@ bool NetworkGhostPlayer::IsConnected()
     return this->isConnected;
 }
 
-void NetworkGhostPlayer::SendNetworkData(NetworkDataPlayer& data)
-{
-    sf::Packet packet;
-    packet << data;
-
-    this->socket.send(packet, this->ip_server, this->port_server);
-}
-
-bool NetworkGhostPlayer::ReceiveNetworkData(sf::Packet& packet, int timeout)
+bool NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, int timeout)
 {
     sf::IpAddress ip;
     unsigned short port;
@@ -204,29 +172,17 @@ bool NetworkGhostPlayer::ReceiveNetworkData(sf::Packet& packet, int timeout)
     if (selector.wait(sf::seconds(timeout))) {
         this->socket.receive(packet, ip, port);
     } else {
-        NetworkDataPlayer data;
-        data.header = HEADER::NONE;
+        packet << HEADER::NONE;
         if (this->IsConnected()) {
-            data.message = "Error: Connexion to the server lost !\n";
-            this->Disconnect(true);
+            packet << "Error: Connexion to the server lost ! You are now disconnected !\n";
         } else {
-            data.message = "Error: Timeout reached ! Can't connect to the server !\n";
+            packet << "Error: Timeout reached ! You are now disconnected !\n";
         }
 
         return false;
     }
 
     return true;
-}
-
-NetworkDataPlayer NetworkGhostPlayer::CreateNetworkData()
-{
-    NetworkDataPlayer networkData{ HEADER::NONE, this->name, this->ip_client.toString(), this->socket.getLocalPort() };
-    DataGhost dataGhost{ { 0, 0, 0 }, { 0, 0, 0 }, engine->m_szLevelName };
-    networkData.dataGhost = dataGhost;
-    networkData.message = "";
-
-    return networkData;
 }
 
 DataGhost NetworkGhostPlayer::GetPlayerData()
@@ -240,7 +196,7 @@ DataGhost NetworkGhostPlayer::GetPlayerData()
     return data;
 }
 
-GhostEntity* NetworkGhostPlayer::GetGhostByID(std::string& ID)
+GhostEntity* NetworkGhostPlayer::GetGhostByID(sf::Uint32& ID)
 {
     for (auto it : this->ghostPool) {
         if (it->ID == ID) {
@@ -250,7 +206,7 @@ GhostEntity* NetworkGhostPlayer::GetGhostByID(std::string& ID)
     return nullptr;
 }
 
-void NetworkGhostPlayer::SetPosAng(std::string ID, Vector position, Vector angle)
+void NetworkGhostPlayer::SetPosAng(sf::Uint32& ID, Vector position, Vector angle)
 {
     this->GetGhostByID(ID)->SetPosAng(position, angle);
 }
@@ -298,7 +254,7 @@ void NetworkGhostPlayer::NetworkThink()
 
     while (this->runThread || !this->pauseThread) {
         {
-            std::unique_lock<std::mutex> lck(mutex); //Wait for the sesion to restart
+            std::unique_lock<std::mutex> lck(mutex); //Wait for the session to restart
             waitForPaused.wait(lck, [] { return (networkGhostPlayer->runThread) ? !networkGhostPlayer->pauseThread.load() : true; });
         }
         if (!this->runThread) { //If needs to stop the thread (game quit, disconnect)
@@ -310,41 +266,41 @@ void NetworkGhostPlayer::NetworkThink()
 
         //Update other players
         sf::Packet data_packet;
-        if (!this->ReceiveNetworkData(data_packet, 30)) {
+        if (!this->ReceivePacket(data_packet, 30)) {
+            std::string message;
+            data_packet >> message;
+            console->Warning(message.c_str());
             this->Disconnect(true);
-            console->Warning("Connection to the server lost ! You're now disconnected !\n");
             return;
         }
 
-        NetworkDataPlayer data;
-        data_packet >> data;
-
-        if (data.header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
-            if (data.ip != this->ip_client) {
-                auto ghost = this->GetGhostByID(data.ip);
-                if (ghost != nullptr) {
-                    ghost->currentMap = data.dataGhost.currentMap;
+        HEADER header;
+        data_packet >> header;
+        if (header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
+            sf::Uint32 ID;
+            DataGhost data;
+            data_packet >> ID >> data;
+            auto ghost = this->GetGhostByID(ID);
+            if (ID != this->ip_client.toInteger()) { //Remember ID == IP.toInteger
+                if (ghost != nullptr && ghost->ghost_entity != nullptr) {
+                    ghost->currentMap = data.currentMap;
 
                     if (ghost->currentMap != engine->m_szLevelName) { //If on a different map
                         ghost->sameMap = false;
                     } else if (ghost->currentMap == engine->m_szLevelName && !ghost->sameMap) { //If previously on a different map but now on the same one
                         ghost->sameMap = true;
-                        ghost->Spawn(true, false, QAngleToVector(data.dataGhost.position));
+                        ghost->Spawn(true, false, QAngleToVector(data.position));
                     }
 
                     if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
-                        this->SetPosAng(data.ip, QAngleToVector(data.dataGhost.position), QAngleToVector(data.dataGhost.view_angle));
+                        this->SetPosAng(ID, QAngleToVector(data.position), QAngleToVector(data.view_angle));
                     }
                 }
             }
-        } else if (data.header == HEADER::PING) {
+        } else if (header == HEADER::PING) {
             auto stop = this->clock.now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
             console->Print("Ping returned in %lld ms\n", elapsed.count());
-        }
-
-        if (!data.message.empty()) {
-            console->Print(data.message.c_str());
         }
     }
 
@@ -359,21 +315,27 @@ void NetworkGhostPlayer::CheckConnection()
         sf::Packet packet;
         if (tcpSelector.wait(sf::milliseconds(500))) {
             this->tcpSocket.receive(packet);
-            NetworkDataPlayer data;
-            packet >> data;
-            if (data.header == HEADER::CONNECT) {
-                this->ghostPool.push_back(this->SetupGhost(data));
+            HEADER header;
+            packet >> header;
+            if (header == HEADER::CONNECT) {
+                sf::Uint32 ID;
+                std::string name;
+                DataGhost data;
+                packet >> ID >> name >> data;
+                this->ghostPool.push_back(this->SetupGhost(ID, name, data));
                 if (this->runThread) {
-                    auto ghost = this->GetGhostByID(data.ip);
+                    auto ghost = this->GetGhostByID(ID);
                     if (ghost->sameMap) {
                         ghost->Spawn(true, false, { 1, 1, 1 });
                     }
                 }
-                console->Print("Player %s has connected !\n", data.name.c_str());
-            } else if (data.header == HEADER::DISCONNECT) {
+                console->Print("Player %s has connected !\n", name.c_str());
+            } else if (header == HEADER::DISCONNECT) {
+                sf::Uint32 ID;
+                packet >> ID;
                 int id = 0;
                 for (; id < this->ghostPool.size(); ++id) {
-                    if (this->ghostPool[id]->ID == data.ip) {
+                    if (this->ghostPool[id]->ID == ID) {
                         break;
                     }
                     this->ghostPool[id]->Stop();
@@ -384,22 +346,23 @@ void NetworkGhostPlayer::CheckConnection()
     }
 }
 
-GhostEntity* NetworkGhostPlayer::SetupGhost(NetworkDataPlayer& data)
+GhostEntity* NetworkGhostPlayer::SetupGhost(sf::Uint32& ID, std::string name, DataGhost& data)
 {
     GhostEntity* tmp_ghost = new GhostEntity;
-    tmp_ghost->name = data.name;
-    tmp_ghost->ID = data.ip;
-    tmp_ghost->currentMap = data.dataGhost.currentMap;
-    tmp_ghost->sameMap = (data.dataGhost.currentMap == engine->m_szLevelName);
+    tmp_ghost->name = name;
+    tmp_ghost->ID = ID;
+    tmp_ghost->currentMap = data.currentMap;
+    tmp_ghost->sameMap = (data.currentMap == engine->m_szLevelName);
     return tmp_ghost;
 }
 
 void NetworkGhostPlayer::UpdatePlayer()
 {
-    NetworkDataPlayer data_client = this->CreateNetworkData();
-    data_client.dataGhost = this->GetPlayerData();
-    data_client.header = HEADER::UPDATE;
-    this->SendNetworkData(data_client);
+    HEADER header = HEADER::UPDATE;
+    DataGhost dataGhost = this->GetPlayerData();
+    sf::Packet packet;
+    packet << header << dataGhost;
+    this->socket.send(packet, this->ip_server, this->port_server);
 }
 
 //Commands
@@ -430,9 +393,7 @@ CON_COMMAND(sar_ghost_ping, "Send ping\n")
 {
 
     sf::Packet packet;
-    NetworkDataPlayer data = networkGhostPlayer->CreateNetworkData();
-    data.header = HEADER::PING;
-    packet << data;
+    packet << HEADER::PING;
 
     networkGhostPlayer->start = networkGhostPlayer->clock.now();
     networkGhostPlayer->socket.send(packet, networkGhostPlayer->ip_server, networkGhostPlayer->port_server);
