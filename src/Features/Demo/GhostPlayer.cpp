@@ -154,8 +154,10 @@ CON_COMMAND(sar_ghost_set_prop_model, "Set the prop model. Example : models/prop
     if (args.ArgC() <= 1) {
         return console->Print(sar_ghost_set_prop_model.ThisPtr()->m_pszHelpString);
     }
+    networkGhostPlayer->modelName = args[1];
+
     if (ghostPlayer->ghost.empty()) {
-        return console->Print("sar_ghost_enable must be enabled before setting the demo.\n");
+        return;
     }
 
     ghostPlayer->GetFirstGhost()->ChangeModel(args[1]);

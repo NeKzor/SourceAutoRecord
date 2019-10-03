@@ -36,9 +36,11 @@ private:
     sf::SocketSelector selector;
     std::condition_variable waitForPaused;
 
-    public : sf::IpAddress ip_client;
+    public:
+	sf::IpAddress ip_client;
     std::vector<GhostEntity*> ghostPool;
     std::string name;
+    std::string modelName;
     sf::IpAddress ip_server;
     unsigned short port_server;
     sf::UdpSocket socket;
@@ -53,7 +55,7 @@ private:
 private:
     void NetworkThink();
     void CheckConnection();
-    GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&, std::string&);
+    GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&, std::string&, std::string& modelName);
     void UpdatePlayer();
 
 public:

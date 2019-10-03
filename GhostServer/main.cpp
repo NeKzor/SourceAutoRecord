@@ -73,6 +73,7 @@ struct PlayerInfo {
     DataGhost dataGhost;
     std::string currentMap;
     unsigned int socketID; //To handle crash
+    std::string modelName;
 };
 
 //Functions
@@ -135,9 +136,9 @@ Packets contains :
 	}
 
 	 if HEADER == CONNECT :
-	 Server receive : TCPpacket << HEADER << sf::Uint16 UDP port << std::string name << DataGhost data << std::string currentMap
-	 Server send confirmation : TCPpacket << sf::Uint32 nb_player << sf::Uint32 id << std::string name << DataGhost data  << std::string currentMap : id, name and data of every player connected
-	 Server send to other : TCPpacket << HEADER << sf::Uint32 ID << std::string name << DataGhost data << std::string currentMap
+	 Server receive : TCPpacket << HEADER << sf::Uint16 UDP port << std::string name << DataGhost data << std::string currentMap << std::string modelName
+	 Server send confirmation : TCPpacket << sf::Uint32 nb_player << sf::Uint32 id << std::string name << DataGhost data  << std::string currentMap << std::string modelName : id, name, data, currentMap, and modelName of every player connected
+	 Server send to other : TCPpacket << HEADER << sf::Uint32 ID << std::string name << DataGhost data << std::string currentMap << std::string modelName
 	 sf::Uint32 ID is just the ip address converted to sf::Uint32
 
 	 if HEADER == DISCONNECT :
@@ -340,9 +341,10 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
     std::string name;
     DataGhost data;
     std::string currentMap;
-    connection_packet >> header >> port_sender >> name >> data >> currentMap;
+    std::string modelName;
+    connection_packet >> header >> port_sender >> name >> data >> currentMap >> modelName;
 
-    player_pool.insert({ ip_sender, { ip_sender, port_sender, name, data, currentMap, socket_pool.size() } });
+    player_pool.insert({ ip_sender, { ip_sender, port_sender, name, data, currentMap, socket_pool.size(), modelName } });
     socket_pool.push_back(client);
 
     threadFinished = true;
@@ -357,13 +359,13 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
             sf::Packet confirm_packet;
             confirm_packet << static_cast<sf::Uint32>(socket_pool.size());
             for (auto& player : player_pool) {
-                confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost << player.second.currentMap; //Send every player connected informations
+                confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost << player.second.currentMap << player.second.modelName; //Send every player connected informations
             }
             socket->send(confirm_packet);
 
         } else { //Update other players
             sf::Packet confirm_packet;
-            confirm_packet << header << ip_sender.toInteger() << name << data << currentMap;
+            confirm_packet << header << ip_sender.toInteger() << name << data << currentMap << modelName;
             socket->send(confirm_packet); //Send new player to other clients
         }
     }
