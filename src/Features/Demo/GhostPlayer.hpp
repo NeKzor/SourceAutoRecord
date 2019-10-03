@@ -23,7 +23,7 @@ public:
 	void AddGhost(GhostEntity* ghost);
     void ResetGhost();
     void ResetCoord();
-    void SetPosAng(sf::Uint32& ID, Vector position, Vector angle);
+    void SetPosAng(unsigned int& ID, Vector position, Vector angle);
     void SetStartTick(int);
     int GetStartTick();
     void SetCoordList(std::vector<Vector> pos, std::vector<Vector> ang);

@@ -20,7 +20,7 @@ private:
 public:
     std::vector<Vector> positionList;
     std::vector<Vector> angleList;
-    sf::Uint32 ID; //TODO: Check if can use unsigned int instead of sfml
+    unsigned int ID;
     std::string name;
     std::string currentMap;
     bool sameMap;

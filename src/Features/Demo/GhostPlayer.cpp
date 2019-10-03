@@ -43,7 +43,7 @@ void GhostPlayer::StopAll()
     }
 }
 
-void GhostPlayer::StopByID(sf::Uint32& ID)
+void GhostPlayer::StopByID(unsigned int& ID)
 {
     this->GetGhostFromID(ID)->Stop();
 }
@@ -63,7 +63,7 @@ void GhostPlayer::ResetCoord()
     }
 }
 
-void GhostPlayer::SetPosAng(sf::Uint32& ID, Vector position, Vector angle)
+void GhostPlayer::SetPosAng(unsigned int& ID, Vector position, Vector angle)
 {
     this->GetGhostFromID(ID)->SetPosAng(position, angle);
 }
@@ -73,7 +73,7 @@ GhostEntity* GhostPlayer::GetFirstGhost()
     return this->ghost[0];
 }
 
-GhostEntity* GhostPlayer::GetGhostFromID(sf::Uint32& ID)
+GhostEntity* GhostPlayer::GetGhostFromID(unsigned int& ID)
 {
     for (auto it : this->ghost) {
         if (it->ID == ID) {
