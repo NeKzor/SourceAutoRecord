@@ -82,3 +82,4 @@ extern Command sar_ghost_connect_to_server;
 extern Command sar_ghost_disconnect;
 extern Command sar_ghost_stop_server;
 extern Command sar_ghost_name;
+//extern Command sar_ghost_message;

@@ -79,11 +79,11 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     connection_packet << HEADER::CONNECT << this->socket.getLocalPort() << this->name << this->GetPlayerData() << std::string(engine->m_szLevelName);
     tcpSocket.send(connection_packet);
 
-    sf::SocketSelector tcpselector;
-    tcpselector.add(tcpSocket);
+    sf::SocketSelector tcpSelector;
+    tcpSelector.add(tcpSocket);
 
     sf::Packet confirmation_packet;
-    if (tcpselector.wait(sf::seconds(30))) {
+    if (tcpSelector.wait(sf::seconds(30))) {
         if (tcpSocket.receive(confirmation_packet) != sf::Socket::Done) {
             console->Warning("Error\n");
             return;
@@ -324,47 +324,54 @@ void NetworkGhostPlayer::CheckConnection()
     while (this->runThread) {
         sf::Packet packet;
         if (tcpSelector.wait(sf::milliseconds(500))) {
-            this->tcpSocket.receive(packet);
-            HEADER header;
-            packet >> header;
-            if (header == HEADER::CONNECT) {
-                sf::Uint32 ID;
-                std::string name;
-                DataGhost data;
-                std::string currentMap;
-                packet >> ID >> name >> data >> currentMap;
-                this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap));
-                if (this->runThread) {
+            if (this->tcpSocket.receive(packet) == sf::Socket::Done) {
+                HEADER header;
+                packet >> header;
+                if (header == HEADER::CONNECT) {
+                    sf::Uint32 ID;
+                    std::string name;
+                    DataGhost data;
+                    std::string currentMap;
+                    packet >> ID >> name >> data >> currentMap;
+                    this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap));
+                    if (this->runThread) {
+                        auto ghost = this->GetGhostByID(ID);
+                        if (ghost->sameMap) {
+                            ghost->Spawn(true, false, { 1, 1, 1 });
+                        }
+                    }
+                    console->Print("Player %s has connected !\n", name.c_str());
+                } else if (header == HEADER::DISCONNECT) {
+                    sf::Uint32 ID;
+                    packet >> ID;
+                    int id = 0;
+                    for (; id < this->ghostPool.size(); ++id) {
+                        if (this->ghostPool[id]->ID == ID) {
+                            break;
+                        }
+                        this->ghostPool[id]->Stop();
+                        this->ghostPool.erase(this->ghostPool.begin() + id);
+                    }
+                } else if (header == HEADER::STOP_SERVER) {
+                    this->StopServer();
+                } else if (header == HEADER::MAP_CHANGE) {
+                    sf::Uint32 ID;
+                    std::string newMap;
+                    packet >> ID >> newMap;
                     auto ghost = this->GetGhostByID(ID);
-                    if (ghost->sameMap) {
-                        ghost->Spawn(true, false, { 1, 1, 1 });
+                    if (newMap == engine->m_szLevelName) {
+                        ghost->sameMap = true;
+                    } else {
+                        ghost->sameMap = false;
                     }
+                    ghost->currentMap = newMap;
+                } else if (header == HEADER::MESSAGE) {
+                    sf::Uint32 ID;
+                    std::string message;
+                    packet >> ID >> message;
+                    std::string cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
+                    engine->ExecuteCommand(cmd.c_str());
                 }
-                console->Print("Player %s has connected !\n", name.c_str());
-            } else if (header == HEADER::DISCONNECT) {
-                sf::Uint32 ID;
-                packet >> ID;
-                int id = 0;
-                for (; id < this->ghostPool.size(); ++id) {
-                    if (this->ghostPool[id]->ID == ID) {
-                        break;
-                    }
-                    this->ghostPool[id]->Stop();
-                    this->ghostPool.erase(this->ghostPool.begin() + id);
-                }
-            } else if (header == HEADER::STOP_SERVER) {
-                this->StopServer();
-            } else if (header == HEADER::MAP_CHANGE) {
-                sf::Uint32 ID;
-                std::string newMap;
-                packet >> ID >> newMap;
-                auto ghost = this->GetGhostByID(ID);
-                if (newMap == engine->m_szLevelName) {
-                    ghost->sameMap = true;
-                } else {
-                    ghost->sameMap = false;
-                }
-                ghost->currentMap = newMap;
             }
         }
     }
@@ -453,3 +460,20 @@ CON_COMMAND(sar_ghost_name, "Name that will be displayed\n")
     }
     networkGhostPlayer->name = args[1];
 }
+
+//Cause crash at sar_exit
+/*CON_COMMAND(sar_ghost_message, "Send a message toother players\n")
+{
+    if (args.ArgC() <= 1) {
+        console->Print(sar_ghost_message.ThisPtr()->m_pszHelpString);
+        return;
+    }
+    sf::Packet packet;
+    packet << HEADER::MESSAGE;
+    std::string message = "";
+    for (int i = 1; i < args.ArgC(); ++i) {
+        message += args[i];
+    }
+    packet << message;
+    networkGhostPlayer->tcpSocket.send(packet);
+}*/
