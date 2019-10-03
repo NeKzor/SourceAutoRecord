@@ -19,6 +19,7 @@ enum HEADER {
     CONNECT,
     DISCONNECT,
     STOP_SERVER,
+	MAP_CHANGE,
     MESSAGE,
     UPDATE,
 };
@@ -26,7 +27,6 @@ enum HEADER {
 struct DataGhost {
     QAngle position;
     QAngle view_angle;
-    std::string currentMap;
 };
 
 class NetworkGhostPlayer : public Feature {
@@ -53,7 +53,7 @@ private:
 private:
     void NetworkThink();
     void CheckConnection();
-    GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&);
+    GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&, std::string&);
     void UpdatePlayer();
 
 public:
@@ -70,9 +70,10 @@ public:
     void PauseThinking();
 
     DataGhost GetPlayerData();
-    GhostEntity* GetGhostByID(sf::Uint32& ID);
+    GhostEntity* GetGhostByID(const sf::Uint32& ID);
     void SetPosAng(sf::Uint32& ID, Vector position, Vector angle);
     void UpdateCurrentMap();
+    void UpdateGhostsCurrentMap();
 };
 
 extern NetworkGhostPlayer* networkGhostPlayer;

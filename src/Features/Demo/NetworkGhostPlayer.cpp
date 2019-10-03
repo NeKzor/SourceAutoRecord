@@ -15,7 +15,7 @@ sf::Packet& operator>>(sf::Packet& packet, QAngle& angle)
 
 sf::Packet& operator>>(sf::Packet& packet, DataGhost& dataGhost)
 {
-    return packet >> dataGhost.position >> dataGhost.view_angle >> dataGhost.currentMap;
+    return packet >> dataGhost.position >> dataGhost.view_angle;
 }
 
 sf::Packet& operator<<(sf::Packet& packet, const QAngle& angle)
@@ -25,7 +25,7 @@ sf::Packet& operator<<(sf::Packet& packet, const QAngle& angle)
 
 sf::Packet& operator<<(sf::Packet& packet, const DataGhost& dataGhost)
 {
-    return packet << dataGhost.position << dataGhost.view_angle << dataGhost.currentMap;
+    return packet << dataGhost.position << dataGhost.view_angle;
 }
 
 //HEADER
@@ -76,7 +76,7 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     this->port_server = port;
 
     sf::Packet connection_packet;
-    connection_packet << HEADER::CONNECT << this->socket.getLocalPort() << this->name << this->GetPlayerData();
+    connection_packet << HEADER::CONNECT << this->socket.getLocalPort() << this->name << this->GetPlayerData() << std::string(engine->m_szLevelName);
     tcpSocket.send(connection_packet);
 
     sf::SocketSelector tcpselector;
@@ -100,8 +100,9 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
         sf::Uint32 ID;
         std::string name;
         DataGhost data;
-        confirmation_packet >> ID >> name >> data;
-        this->ghostPool.push_back(this->SetupGhost(ID, name, data));
+        std::string currentMap;
+        confirmation_packet >> ID >> name >> data >> currentMap;
+        this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap));
     }
 
     console->Print("Successfully connected to the server !\n%d player connected\n", nbPlayer);
@@ -191,12 +192,11 @@ DataGhost NetworkGhostPlayer::GetPlayerData()
         VectorToQAngle(server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1))),
         server->GetAbsAngles(server->GetPlayer(GET_SLOT() + 1))
     };
-    data.currentMap = engine->m_szLevelName;
 
     return data;
 }
 
-GhostEntity* NetworkGhostPlayer::GetGhostByID(sf::Uint32& ID)
+GhostEntity* NetworkGhostPlayer::GetGhostByID(const sf::Uint32& ID)
 {
     for (auto it : this->ghostPool) {
         if (it->ID == ID) {
@@ -211,9 +211,25 @@ void NetworkGhostPlayer::SetPosAng(sf::Uint32& ID, Vector position, Vector angle
     this->GetGhostByID(ID)->SetPosAng(position, angle);
 }
 
+//Update other players
+void NetworkGhostPlayer::UpdateGhostsCurrentMap()
+{
+    this->GetGhostByID(this->ip_client.toInteger())->currentMap = engine->m_szLevelName;
+    for (auto& it : this->ghostPool) {
+        if (engine->m_szLevelName == it->currentMap) {
+            it->sameMap = true;
+        } else {
+            it->sameMap = false;
+		}
+	}
+}
+
+//Notify network of map change
 void NetworkGhostPlayer::UpdateCurrentMap()
 {
-    this->ghostPool[0]->currentMap = engine->m_szLevelName;
+    sf::Packet packet;
+    packet << HEADER::MAP_CHANGE << std::string(engine->m_szLevelName);
+    this->tcpSocket.send(packet);
 }
 
 void NetworkGhostPlayer::StartThinking()
@@ -283,15 +299,6 @@ void NetworkGhostPlayer::NetworkThink()
             auto ghost = this->GetGhostByID(ID);
             if (ID != this->ip_client.toInteger()) { //Remember ID == IP.toInteger
                 if (ghost != nullptr && ghost->ghost_entity != nullptr) {
-                    ghost->currentMap = data.currentMap;
-
-                    if (ghost->currentMap != engine->m_szLevelName) { //If on a different map
-                        ghost->sameMap = false;
-                    } else if (ghost->currentMap == engine->m_szLevelName && !ghost->sameMap) { //If previously on a different map but now on the same one
-                        ghost->sameMap = true;
-                        ghost->Spawn(true, false, QAngleToVector(data.position));
-                    }
-
                     if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
                         this->SetPosAng(ID, QAngleToVector(data.position), QAngleToVector(data.view_angle));
                     }
@@ -341,18 +348,31 @@ void NetworkGhostPlayer::CheckConnection()
                     this->ghostPool[id]->Stop();
                     this->ghostPool.erase(this->ghostPool.begin() + id);
                 }
-            }
+            } else if (header == HEADER::STOP_SERVER) {
+                this->StopServer();
+            } else if (header == HEADER::MAP_CHANGE) {
+                sf::Uint32 ID;
+                std::string newMap;
+                packet >> ID >> newMap;
+                auto ghost = this->GetGhostByID(ID);
+                if (newMap == engine->m_szLevelName) {
+                    ghost->sameMap = true;
+                } else {
+                    ghost->sameMap = false;
+                }
+                ghost->currentMap = newMap;
+			}
         }
     }
 }
 
-GhostEntity* NetworkGhostPlayer::SetupGhost(sf::Uint32& ID, std::string name, DataGhost& data)
+GhostEntity* NetworkGhostPlayer::SetupGhost(sf::Uint32& ID, std::string name, DataGhost& data, std::string& currentMap)
 {
     GhostEntity* tmp_ghost = new GhostEntity;
     tmp_ghost->name = name;
     tmp_ghost->ID = ID;
-    tmp_ghost->currentMap = data.currentMap;
-    tmp_ghost->sameMap = (data.currentMap == engine->m_szLevelName);
+    tmp_ghost->currentMap = currentMap;
+    tmp_ghost->sameMap = (currentMap == engine->m_szLevelName);
     return tmp_ghost;
 }
 

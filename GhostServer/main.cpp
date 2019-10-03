@@ -18,6 +18,7 @@ enum HEADER {
     CONNECT,
     DISCONNECT,
     STOP_SERVER,
+    MAP_CHANGE,
     MESSAGE,
     UPDATE,
 };
@@ -25,7 +26,6 @@ enum HEADER {
 struct DataGhost {
     QAngle position;
     QAngle view_angle;
-    std::string currentMap;
 };
 
 //DataGhost
@@ -37,7 +37,7 @@ sf::Packet& operator>>(sf::Packet& packet, QAngle& angle)
 
 sf::Packet& operator>>(sf::Packet& packet, DataGhost& dataGhost)
 {
-    return packet >> dataGhost.position >> dataGhost.view_angle >> dataGhost.currentMap;
+    return packet >> dataGhost.position >> dataGhost.view_angle;
 }
 
 sf::Packet& operator<<(sf::Packet& packet, const QAngle& angle)
@@ -47,7 +47,7 @@ sf::Packet& operator<<(sf::Packet& packet, const QAngle& angle)
 
 sf::Packet& operator<<(sf::Packet& packet, const DataGhost& dataGhost)
 {
-    return packet << dataGhost.position << dataGhost.view_angle << dataGhost.currentMap;
+    return packet << dataGhost.position << dataGhost.view_angle;
 }
 
 //HEADER
@@ -71,6 +71,7 @@ struct PlayerInfo {
     unsigned short int port;
     std::string name;
     DataGhost dataGhost;
+    std::string currentMap;
 };
 
 //Functions
@@ -97,6 +98,9 @@ void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>
 //Stop the server
 void StopServer(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool);
 
+//Signal map change
+void ChangeMap(const sf::Uint32& ID, const std::string& map, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool);
+
 //Retransmit message to every players
 void SendMessage(const sf::Uint32& ID, const std::string& message, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool);
 
@@ -113,14 +117,13 @@ Manage multiple Portal 2 clients
 Packets contains :
 	HEADER : Information about the packet received
 	{
-		NONE / PING / CONNECT / UPDATE / DISCONNECT / STOP_SERVER / MESSAGE
+		NONE / PING / CONNECT / UPDATE / DISCONNECT / STOP_SERVER / MAP_CHANGE / MESSAGE
 	}
 
 	DataGhost      -> ghost infos
 	{
 		QAngle         -> position
 		QAngle         -> view angle
-		char[64]       -> current map
 	}
 
 	PlayerInfo
@@ -131,9 +134,9 @@ Packets contains :
 	}
 
 	 if HEADER == CONNECT :
-	 Server receive : TCPpacket << HEADER << sf::Uint16 UDP port << std::string name << DataGhost data
-	 Server send confirmation : TCPpacket << sf::Uint32 nb_player << sf::Uint32 id << std::string name << DataGhost data : id, name and data of every player connected
-	 Server send to other : TCPpacket << HEADER << sf::Uint32 ID << std::string name << DataGhost data
+	 Server receive : TCPpacket << HEADER << sf::Uint16 UDP port << std::string name << DataGhost data << std::string currentMap
+	 Server send confirmation : TCPpacket << sf::Uint32 nb_player << sf::Uint32 id << std::string name << DataGhost data  << std::string currentMap : id, name and data of every player connected
+	 Server send to other : TCPpacket << HEADER << sf::Uint32 ID << std::string name << DataGhost data << std::string currentMap
 	 sf::Uint32 ID is just the ip address converted to sf::Uint32
 
 	 if HEADER == DISCONNECT :
@@ -142,6 +145,10 @@ Packets contains :
 
 	 if HEADER == STOP_SERVER :
 	 Server receive and send : TCPpacket << HEADER
+
+	 if HEADER == CHANGE_MAP :
+	 Server receive : TCPpacket << HEADER << std::string currentMap
+	 Server send : TCPpacket << HEADER << sf::Uint32 ID << std::string currentMap
 
 	 if HEADER == MESSAGE :
 	 Server receive : TCPpacket << HEADER << std::string message
@@ -267,24 +274,30 @@ void TCPcheck(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& soc
 
         if (selector.wait(sf::seconds(5))) {
             for (auto& socket : socket_pool) {
-                if (selector.isReady(*socket)) {
-                    sf::Packet packet;
-                    socket->receive(packet);
-                    HEADER header;
-                    packet >> header;
-                    if (header == HEADER::DISCONNECT) {
-                        sf::Uint32 ID = socket->getRemoteAddress().toInteger();
-                        Disconnect(ID, socket_pool, player_pool);
-                    } else if (header == HEADER::STOP_SERVER) {
-                        std::cout << "STOP_SERVER received. Server will stop ! Press Enter to quit ..." << std::endl;
-                        StopServer(stopServer, socket_pool);
-                    } else if (header == HEADER::MESSAGE) {
-                        std::string message;
-                        packet >> message;
-                        std::cout << player_pool[socket->getRemoteAddress()].name << " : " << message << std::endl;
+                if (socket->getRemoteAddress() != sf::IpAddress::None) {
+                    if (selector.isReady(*socket)) {
+                        sf::Packet packet;
+                        socket->receive(packet);
+                        HEADER header;
+                        packet >> header;
+                        if (header == HEADER::DISCONNECT) {
+                            sf::Uint32 ID = socket->getRemoteAddress().toInteger();
+                            Disconnect(ID, socket_pool, player_pool);
+                        } else if (header == HEADER::STOP_SERVER) {
+                            std::cout << "STOP_SERVER received. Server will stop ! Press Enter to quit ..." << std::endl;
+                            StopServer(stopServer, socket_pool);
+                        } else if (header == HEADER::MAP_CHANGE) {
+                            std::string newMap;
+                            packet >> newMap;
+                            ChangeMap(socket->getRemoteAddress().toInteger(), newMap, socket_pool, player_pool);
+                        } else if (header == HEADER::MESSAGE) {
+                            std::string message;
+                            packet >> message;
+                            std::cout << player_pool[socket->getRemoteAddress()].name << " : " << message << std::endl;
 
-                        sf::Uint32 ID = socket->getRemoteAddress().toInteger();
-                        SendMessage(ID, message, socket_pool);
+                            sf::Uint32 ID = socket->getRemoteAddress().toInteger();
+                            SendMessage(ID, message, socket_pool);
+                        }
                     }
                 }
             }
@@ -313,11 +326,12 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
     sf::Uint16 port_sender;
     std::string name;
     DataGhost data;
-    connection_packet >> header >> port_sender >> name >> data;
+    std::string currentMap;
+    connection_packet >> header >> port_sender >> name >> data >> currentMap;
 
     sf::IpAddress ip_sender = client->getRemoteAddress();
 
-    player_pool.insert({ ip_sender, { ip_sender, port_sender, name, data } });
+    player_pool.insert({ ip_sender, { ip_sender, port_sender, name, data, currentMap } });
     socket_pool.push_back(client);
 
     threadFinished = true;
@@ -329,17 +343,16 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
 
     for (auto& socket : socket_pool) {
         if (socket->getRemoteAddress() == ip_sender) { //Send confirmation
-
             sf::Packet confirm_packet;
             confirm_packet << static_cast<sf::Uint32>(socket_pool.size());
             for (auto& player : player_pool) {
-                confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost; //Send every player connected informations
+                confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost << player.second.currentMap; //Send every player connected informations
             }
             socket->send(confirm_packet);
 
         } else { //Update other players
             sf::Packet confirm_packet;
-            confirm_packet << header << ip_sender.toInteger() << name << data;
+            confirm_packet << header << ip_sender.toInteger() << name << data << currentMap;
             socket->send(confirm_packet); //Send new player to other clients
         }
     }
@@ -380,6 +393,15 @@ void StopServer(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& s
     for (auto& it : socket_pool) {
         it->send(packet); //Send disconnection to other clients
     }
+}
+
+void ChangeMap(const sf::Uint32& ID, const std::string& map, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool)
+{
+    sf::Packet packet;
+    packet << HEADER::MAP_CHANGE << ID << map;
+    for (auto& socket : socket_pool) {
+        socket->send(packet);
+	}
 }
 
 void SendMessage(const sf::Uint32& ID, const std::string& message, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool)

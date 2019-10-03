@@ -74,8 +74,7 @@ void Session::Start()
     } else if (networkGhostPlayer->IsConnected()) {
         engine->PrecacheModel(networkGhostPlayer->ghostPool[0]->modelName, true);
         networkGhostPlayer->UpdateCurrentMap();
-        /*networkGhostPlayer->pauseThread = false;
-		networkGhostPlayer->wai*/
+        networkGhostPlayer->UpdateGhostsCurrentMap();
         networkGhostPlayer->StartThinking();
 	}
     auto tick = engine->GetTick();
@@ -149,7 +148,6 @@ void Session::Ended()
         ghostPlayer->ResetGhost();
     }
     if (networkGhostPlayer->IsConnected()) {
-        //networkGhostPlayer->pauseThread = true;
         networkGhostPlayer->PauseThinking();
     }
 
