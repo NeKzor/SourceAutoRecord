@@ -162,10 +162,10 @@ void NetworkGhostPlayer::StopServer()
 
 bool NetworkGhostPlayer::IsConnected()
 {
-    return this->isConnected;
+    return (this->tcpSocket.getRemoteAddress() == sf::IpAddress::None) ? false : true;
 }
 
-bool NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, int timeout)
+int NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, int timeout)
 {
     sf::IpAddress ip;
     unsigned short port;
@@ -174,16 +174,15 @@ bool NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, int timeout)
         this->socket.receive(packet, ip, port);
     } else {
         packet << HEADER::NONE;
-        if (this->IsConnected()) {
-            packet << "Error: Connexion to the server lost ! You are now disconnected !\n";
-        } else {
+        if (!this->IsConnected()) {
             packet << "Error: Timeout reached ! You are now disconnected !\n";
+            return -1; //Not connected anymore
         }
 
-        return false;
+        return 0; //Connected but don't receive packets (ex: 1 player online)
     }
 
-    return true;
+    return 1; //Received packet
 }
 
 DataGhost NetworkGhostPlayer::GetPlayerData()
@@ -220,8 +219,8 @@ void NetworkGhostPlayer::UpdateGhostsCurrentMap()
             it->sameMap = true;
         } else {
             it->sameMap = false;
-		}
-	}
+        }
+    }
 }
 
 //Notify network of map change
@@ -282,32 +281,36 @@ void NetworkGhostPlayer::NetworkThink()
 
         //Update other players
         sf::Packet data_packet;
-        if (!this->ReceivePacket(data_packet, 30)) {
+        int success = this->ReceivePacket(data_packet, 30);
+        if (success == -1) {
             std::string message;
             data_packet >> message;
             console->Warning(message.c_str());
             this->Disconnect(true);
             return;
-        }
-
-        HEADER header;
-        data_packet >> header;
-        if (header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
-            sf::Uint32 ID;
-            DataGhost data;
-            data_packet >> ID >> data;
-            auto ghost = this->GetGhostByID(ID);
-            if (ID != this->ip_client.toInteger()) { //Remember ID == IP.toInteger
-                if (ghost != nullptr && ghost->ghost_entity != nullptr) {
-                    if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
-                        this->SetPosAng(ID, QAngleToVector(data.position), QAngleToVector(data.view_angle));
+        } else if (success == 1) {
+            HEADER header;
+            data_packet >> header;
+            if (header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
+                sf::Uint32 ID;
+                DataGhost data;
+                data_packet >> ID >> data;
+                auto ghost = this->GetGhostByID(ID);
+                if (ID != this->ip_client.toInteger()) { //Remember ID == IP.toInteger
+                    if (ghost != nullptr) {
+                        if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
+                            if (ghost->ghost_entity == nullptr) {
+                                ghost->Spawn(true, false, QAngleToVector(data.position));
+                            }
+                            this->SetPosAng(ID, QAngleToVector(data.position), QAngleToVector(data.view_angle));
+                        }
                     }
                 }
+            } else if (header == HEADER::PING) {
+                auto stop = this->clock.now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
+                console->Print("Ping returned in %lld ms\n", elapsed.count());
             }
-        } else if (header == HEADER::PING) {
-            auto stop = this->clock.now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
-            console->Print("Ping returned in %lld ms\n", elapsed.count());
         }
     }
 
@@ -328,8 +331,9 @@ void NetworkGhostPlayer::CheckConnection()
                 sf::Uint32 ID;
                 std::string name;
                 DataGhost data;
-                packet >> ID >> name >> data;
-                this->ghostPool.push_back(this->SetupGhost(ID, name, data));
+                std::string currentMap;
+                packet >> ID >> name >> data >> currentMap;
+                this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap));
                 if (this->runThread) {
                     auto ghost = this->GetGhostByID(ID);
                     if (ghost->sameMap) {
@@ -361,7 +365,7 @@ void NetworkGhostPlayer::CheckConnection()
                     ghost->sameMap = false;
                 }
                 ghost->currentMap = newMap;
-			}
+            }
         }
     }
 }

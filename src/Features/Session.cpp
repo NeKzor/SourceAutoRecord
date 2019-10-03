@@ -72,7 +72,9 @@ void Session::Start()
         engine->PrecacheModel(ghostPlayer->GetFirstGhost()->modelName, true);
         ghostPlayer->GetFirstGhost()->hasFinished = false; //TODO : apply for all ghosts
     } else if (networkGhostPlayer->IsConnected()) {
-        engine->PrecacheModel(networkGhostPlayer->ghostPool[0]->modelName, true);
+        if (networkGhostPlayer->ghostPool.size() > 0) {
+            engine->PrecacheModel(networkGhostPlayer->ghostPool[0]->modelName, true);
+        }
         networkGhostPlayer->UpdateCurrentMap();
         networkGhostPlayer->UpdateGhostsCurrentMap();
         networkGhostPlayer->StartThinking();

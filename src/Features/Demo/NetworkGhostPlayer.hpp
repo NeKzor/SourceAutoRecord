@@ -64,7 +64,7 @@ public:
     void StopServer();
     bool IsConnected();
 
-    bool ReceivePacket(sf::Packet& packet, int timeout);
+    int ReceivePacket(sf::Packet& packet, int timeout);
 
     void StartThinking();
     void PauseThinking();
