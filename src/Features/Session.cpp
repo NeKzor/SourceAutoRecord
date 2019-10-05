@@ -78,6 +78,7 @@ void Session::Start()
         networkGhostPlayer->UpdateCurrentMap();
         networkGhostPlayer->UpdateGhostsCurrentMap();
         networkGhostPlayer->StartThinking();
+        networkGhostPlayer->isInLevel = true;
 	}
     auto tick = engine->GetTick();
 
@@ -152,6 +153,7 @@ void Session::Ended()
     if (networkGhostPlayer->IsConnected()) {
         networkGhostPlayer->PauseThinking();
         networkGhostPlayer->ClearGhosts();
+        networkGhostPlayer->isInLevel = false;
     }
 
     auto tick = this->GetTick();

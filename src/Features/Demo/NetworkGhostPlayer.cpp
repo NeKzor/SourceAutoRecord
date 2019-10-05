@@ -59,6 +59,8 @@ NetworkGhostPlayer::NetworkGhostPlayer()
     , ghostPool()
     , tcpSocket()
     , tickrate(30)
+    , isInLevel(false)
+    , pausedByServer(false)
 {
     this->hasLoaded = true;
     this->socket.setBlocking(false);
@@ -111,6 +113,7 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     console->Print("Successfully connected to the server !\n%d player connected\n", nbPlayer);
 
     this->isConnected = true;
+    this->isInLevel = true;
     this->StartThinking();
 }
 
@@ -131,6 +134,7 @@ void NetworkGhostPlayer::Disconnect(bool forced)
     this->selector.clear();
     this->socket.unbind();
     this->tcpSocket.disconnect();
+    this->isInLevel = false;
     while (this->networkThread.joinable()); //Check if the thread is dead
 }
 
@@ -161,6 +165,7 @@ void NetworkGhostPlayer::StopServer()
     this->selector.clear();
     this->socket.unbind();
     this->tcpSocket.disconnect();
+    this->isInLevel = false;
 }
 
 bool NetworkGhostPlayer::IsConnected()

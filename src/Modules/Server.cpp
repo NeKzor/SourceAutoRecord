@@ -279,6 +279,13 @@ DETOUR(Server::GameFrame, bool simulating)
         ghostPlayer->Run();
     }
 
+    if (simulating && networkGhostPlayer->pausedByServer && networkGhostPlayer->isInLevel && networkGhostPlayer->runThread) {
+        networkGhostPlayer->StartThinking();
+        networkGhostPlayer->pausedByServer = false;
+    } else if (!simulating && !networkGhostPlayer->pausedByServer && networkGhostPlayer->isInLevel && networkGhostPlayer->runThread) {
+        networkGhostPlayer->PauseThinking();
+        networkGhostPlayer->pausedByServer = true;
+    }
     if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
         std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();
         engine->ExecuteCommand(cmd.c_str());

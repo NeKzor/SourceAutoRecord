@@ -24,11 +24,6 @@ enum HEADER {
     UPDATE,
 };
 
-struct DataGhost {
-    QAngle position;
-    QAngle view_angle;
-};
-
 class NetworkGhostPlayer : public Feature {
 
 private:
@@ -52,6 +47,8 @@ private:
     std::chrono::steady_clock clock;
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::milliseconds tickrate;
+    bool isInLevel;
+    bool pausedByServer;
 
 private:
     void NetworkThink();
