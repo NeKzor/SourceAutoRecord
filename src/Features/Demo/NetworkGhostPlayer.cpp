@@ -76,7 +76,7 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     this->port_server = port;
 
     sf::Packet connection_packet;
-    connection_packet << HEADER::CONNECT << this->socket.getLocalPort() << this->name << this->GetPlayerData() << std::string(engine->m_szLevelName) << this->modelName;
+    connection_packet << HEADER::CONNECT << this->socket.getLocalPort() << this->name << this->GetPlayerData() << std::string(engine->m_szLevelName); // << this->modelName;
     tcpSocket.send(connection_packet);
 
     sf::SocketSelector tcpSelector;
@@ -102,8 +102,8 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
         DataGhost data;
         std::string currentMap;
         std::string ghostModelName;
-        confirmation_packet >> ID >> name >> data >> currentMap >> ghostModelName;
-        this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap, ghostModelName));
+        confirmation_packet >> ID >> name >> data >> currentMap; // >> ghostModelName;
+        this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap)); //, ghostModelName));
     }
 
     console->Print("Successfully connected to the server !\n%d player connected\n", nbPlayer);
@@ -214,7 +214,6 @@ void NetworkGhostPlayer::SetPosAng(sf::Uint32& ID, Vector position, Vector angle
 //Update other players
 void NetworkGhostPlayer::UpdateGhostsCurrentMap()
 {
-    this->GetGhostByID(this->ip_client.toInteger())->currentMap = engine->m_szLevelName;
     for (auto& it : this->ghostPool) {
         if (engine->m_szLevelName == it->currentMap) {
             it->sameMap = true;
@@ -334,8 +333,8 @@ void NetworkGhostPlayer::CheckConnection()
                     DataGhost data;
                     std::string currentMap;
                     std::string ghostModelName;
-                    packet >> ID >> name >> data >> currentMap >> ghostModelName;
-                    this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap, ghostModelName));
+                    packet >> ID >> name >> data >> currentMap; //                    >> ghostModelName;
+                    this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap)); //, ghostModelName));
                     if (this->runThread) {
                         auto ghost = this->GetGhostByID(ID);
                         if (ghost->sameMap) {
@@ -379,14 +378,14 @@ void NetworkGhostPlayer::CheckConnection()
     }
 }
 
-GhostEntity* NetworkGhostPlayer::SetupGhost(sf::Uint32& ID, std::string name, DataGhost& data, std::string& currentMap, std::string& modelName)
+GhostEntity* NetworkGhostPlayer::SetupGhost(sf::Uint32& ID, std::string name, DataGhost& data, std::string& currentMap) //, std::string& modelName)
 {
     GhostEntity* tmp_ghost = new GhostEntity;
     tmp_ghost->name = name;
     tmp_ghost->ID = ID;
     tmp_ghost->currentMap = currentMap;
     tmp_ghost->sameMap = (currentMap == engine->m_szLevelName);
-    tmp_ghost->ChangeModel(modelName.c_str());
+    //tmp_ghost->ChangeModel(modelName.c_str());
     return tmp_ghost;
 }
 
@@ -397,6 +396,13 @@ void NetworkGhostPlayer::UpdatePlayer()
     sf::Packet packet;
     packet << header << dataGhost;
     this->socket.send(packet, this->ip_server, this->port_server);
+}
+
+void NetworkGhostPlayer::ClearGhosts()
+{
+    for (auto& ghost : this->ghostPool) {
+        ghost->Stop();
+	}
 }
 
 //Commands
