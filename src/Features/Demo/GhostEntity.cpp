@@ -23,6 +23,8 @@ GhostEntity::GhostEntity()
     , tickCount(0)
     , startDelay(0)
     , demo()
+    , newPos({{ 1, 1, 1 }, { 1, 1, 1 }})
+    , oldPos({ { 1, 1, 1 }, { 1, 1, 1 } })
 {
 }
 
@@ -69,6 +71,7 @@ GhostEntity* GhostEntity::Spawn(bool instantPlay, bool playerPos, Vector positio
 
     if (this->ghost_entity != nullptr) {
         console->Print("Say 'Hi !' to Jonnil !\n");
+        this->lastUpdate = this->clock.now();
         return this;
     }
 
@@ -135,4 +138,19 @@ void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)
 {
     server->SetKeyValueVector(this->ghost_entity, "origin", pos);
     server->SetKeyValueVector(this->ghost_entity, "angles", ang);
+}
+
+void GhostEntity::Lerp(DataGhost& oldPosition, DataGhost& targetPosition, float time)
+{
+    Vector newPos;
+    newPos.x = (1 - time) * oldPosition.position.x + time * targetPosition.position.x;
+    newPos.y = (1 - time) * oldPosition.position.y + time * targetPosition.position.y;
+    newPos.z = (1 - time) * oldPosition.position.z + time * targetPosition.position.z;
+
+    Vector newAngle;
+    newAngle.x = (1 - time) * oldPosition.view_angle.x + time * targetPosition.view_angle.x;
+    newAngle.y = (1 - time) * oldPosition.view_angle.y + time * targetPosition.view_angle.y;
+    newAngle.z = 0;
+
+	this->SetPosAng(newPos, newAngle);
 }

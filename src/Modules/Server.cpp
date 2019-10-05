@@ -286,6 +286,16 @@ DETOUR(Server::GameFrame, bool simulating)
         networkGhostPlayer->PauseThinking();
         networkGhostPlayer->pausedByServer = true;
     }
+
+    if (!networkGhostPlayer->pausedByServer) {
+        for (auto& ghost : networkGhostPlayer->ghostPool) {
+            if (ghost->ghost_entity != nullptr) {
+                auto time = std::chrono::duration_cast<std::chrono::milliseconds>(networkGhostPlayer->clock.now() - ghost->lastUpdate).count();
+                ghost->Lerp(ghost->oldPos, ghost->newPos, ((float)time / networkGhostPlayer->tickrate.count()));
+            }
+        }
+	}
+
     if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
         std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();
         engine->ExecuteCommand(cmd.c_str());

@@ -4,6 +4,9 @@
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
 #include "Utils/SDK.hpp"
+
+#include "GhostPlayer.hpp"
+
 #include <chrono>
 
 //DataGhost
@@ -321,7 +324,10 @@ void NetworkGhostPlayer::NetworkThink()
                             if (ghost->ghost_entity == nullptr) {
                                 ghost->Spawn(true, false, QAngleToVector(data.position));
                             }
-                            this->SetPosAng(ID, QAngleToVector(data.position), QAngleToVector(data.view_angle));
+                            //this->SetPosAng(ID, QAngleToVector({ data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }), QAngleToVector(data.view_angle));
+                            ghost->oldPos = ghost->newPos;
+                            ghost->newPos = { {data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat()}, {data.view_angle.x, data.view_angle.y, data.view_angle.z }};
+                            ghost->lastUpdate = this->clock.now();
                         }
                     }
             } else if (header == HEADER::PING) {
