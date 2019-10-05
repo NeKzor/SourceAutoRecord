@@ -296,7 +296,6 @@ void NetworkGhostPlayer::NetworkThink()
                 DataGhost data;
                 data_packet >> ID >> data;
                 auto ghost = this->GetGhostByID(ID);
-                if (ID != this->ip_client.toInteger()) { //Remember ID == IP.toInteger
                     if (ghost != nullptr) {
                         if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
                             if (ghost->ghost_entity == nullptr) {
@@ -305,7 +304,6 @@ void NetworkGhostPlayer::NetworkThink()
                             this->SetPosAng(ID, QAngleToVector(data.position), QAngleToVector(data.view_angle));
                         }
                     }
-                }
             } else if (header == HEADER::PING) {
                 auto stop = this->clock.now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);

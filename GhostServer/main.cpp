@@ -359,7 +359,9 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
             sf::Packet confirm_packet;
             confirm_packet << static_cast<sf::Uint32>(socket_pool.size());
             for (auto& player : player_pool) {
+                if (player.first != ip_sender) {
                     confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost << player.second.currentMap; // << player.second.modelName; //Send every player connected informations
+                }
             }
             socket->send(confirm_packet);
 
@@ -444,7 +446,9 @@ void ChangeMap(const sf::Uint32& ID, const std::string& map, std::vector<std::sh
     sf::Packet packet;
     packet << HEADER::MAP_CHANGE << ID << map;
     for (auto& socket : socket_pool) {
+        if (socket->getRemoteAddress().toInteger() != ID) {
         socket->send(packet);
+		}
     }
 }
 
