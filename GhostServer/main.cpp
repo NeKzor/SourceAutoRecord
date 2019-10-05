@@ -357,7 +357,7 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
     for (auto& socket : socket_pool) {
         if (socket->getRemoteAddress() == ip_sender) { //Send confirmation
             sf::Packet confirm_packet;
-            confirm_packet << static_cast<sf::Uint32>(socket_pool.size());
+            confirm_packet << static_cast<sf::Uint32>(socket_pool.size() - 1);
             for (auto& player : player_pool) {
                 if (player.first != ip_sender) {
                     confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost << player.second.currentMap; // << player.second.modelName; //Send every player connected informations
