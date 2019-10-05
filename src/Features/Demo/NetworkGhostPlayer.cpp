@@ -434,7 +434,7 @@ void NetworkGhostPlayer::ClearGhosts()
 
 //Commands
 
-CON_COMMAND(sar_ghost_connect_to_server, "Connect to the server : <ip address> <port> [local] :\n"
+CON_COMMAND(sar_ghost_connect_to_server, "Connect to the server : <ip address> <port> :\n"
                                          "ex: 'localhost 53000' - '127.0.0.1 53000' - 89.10.20.20 53000'.")
 {
     if (args.ArgC() <= 2) {
@@ -447,11 +447,22 @@ CON_COMMAND(sar_ghost_connect_to_server, "Connect to the server : <ip address> <
         return;
     }
 
-    if (args.ArgC() == 4) {
+    std::string ip = args[1];
+    if (ip.find("10.") == 0 || ip.find("192.168.") == 0) { //If local
         networkGhostPlayer->ip_client = sf::IpAddress::getLocalAddress();
-    } else { //If extern
-        networkGhostPlayer->ip_client = sf::IpAddress::getPublicAddress();
-    }
+    } else {
+        int local = false;
+        for (int i = 16; i < 32; ++i) {
+            if (ip.find("172." + std::to_string(i)) == 0) {
+                networkGhostPlayer->ip_client = sf::IpAddress::getLocalAddress();
+                local = true;
+                break;
+			}
+		}
+        if (local == false) {
+            networkGhostPlayer->ip_client = sf::IpAddress::getPublicAddress();
+		}
+	}
 
     networkGhostPlayer->ConnectToServer(args[1], std::atoi(args[2]));
 }
