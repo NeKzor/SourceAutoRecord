@@ -51,6 +51,7 @@ private:
     std::atomic<bool> pauseThread;
     std::chrono::steady_clock clock;
     std::chrono::time_point<std::chrono::steady_clock> start;
+    std::chrono::milliseconds tickrate;
 
 private:
     void NetworkThink();
@@ -66,7 +67,7 @@ public:
     void StopServer();
     bool IsConnected();
 
-    int ReceivePacket(sf::Packet& packet, int timeout);
+    int ReceivePacket(sf::Packet& packet, sf::IpAddress&, int timeout);
 
     void StartThinking();
     void PauseThinking();
@@ -76,6 +77,7 @@ public:
     void SetPosAng(sf::Uint32& ID, Vector position, Vector angle);
     void UpdateCurrentMap();
     void UpdateGhostsCurrentMap();
+    void ClearGhosts();
 };
 
 extern NetworkGhostPlayer* networkGhostPlayer;
@@ -84,4 +86,5 @@ extern Command sar_ghost_connect_to_server;
 extern Command sar_ghost_disconnect;
 extern Command sar_ghost_stop_server;
 extern Command sar_ghost_name;
+extern Command sar_ghost_tickrate;
 //extern Command sar_ghost_message;

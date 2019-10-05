@@ -58,8 +58,10 @@ NetworkGhostPlayer::NetworkGhostPlayer()
     , TCPThread()
     , ghostPool()
     , tcpSocket()
+    , tickrate(30)
 {
     this->hasLoaded = true;
+    this->socket.setBlocking(false);
 }
 
 void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
@@ -166,12 +168,11 @@ bool NetworkGhostPlayer::IsConnected()
     return (this->tcpSocket.getRemoteAddress() == sf::IpAddress::None) ? false : true;
 }
 
-int NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, int timeout)
+int NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, sf::IpAddress& ip, int timeout)
 {
-    sf::IpAddress ip;
     unsigned short port;
 
-    if (selector.wait(sf::seconds(timeout))) {
+    /*if (selector.wait(sf::milliseconds(timeout))) {
         this->socket.receive(packet, ip, port);
     } else {
         packet << HEADER::NONE;
@@ -183,7 +184,13 @@ int NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, int timeout)
         return 0; //Connected but don't receive packets (ex: 1 player online)
     }
 
-    return 1; //Received packet
+    return 1; //Received packet*/
+
+    if (this->socket.receive(packet, ip, port) == sf::Socket::Done) {
+        return 1;
+    } else {
+        return 0;
+	}
 }
 
 DataGhost NetworkGhostPlayer::GetPlayerData()
@@ -267,6 +274,8 @@ void NetworkGhostPlayer::NetworkThink()
         }
     }
 
+    std::map<unsigned int, sf::Packet> packet_queue;
+
     while (this->runThread || !this->pauseThread) {
         {
             std::unique_lock<std::mutex> lck(mutex); //Wait for the session to restart
@@ -280,21 +289,27 @@ void NetworkGhostPlayer::NetworkThink()
         this->UpdatePlayer();
 
         //Update other players
-        sf::Packet data_packet;
-        int success = this->ReceivePacket(data_packet, 30);
-        if (success == -1) {
+        int success = 1;
+        while (success != 0) { //Stack every packets received
+            sf::Packet packet;
+            sf::IpAddress ip;
+            success = this->ReceivePacket(packet, ip, 50);
+            packet_queue.insert({ip.toInteger(), packet});
+        }
+        /*if (success == -1) {
             std::string message;
             data_packet >> message;
             console->Warning(message.c_str());
             this->Disconnect(true);
             return;
-        } else if (success == 1) {
+        } else {*/
+        for (auto& data_packet : packet_queue) {
             HEADER header;
-            data_packet >> header;
+            data_packet.second >> header;
             if (header == HEADER::UPDATE) { //Received new pos/ang or echo of our update
                 sf::Uint32 ID;
                 DataGhost data;
-                data_packet >> ID >> data;
+                data_packet.second >> ID >> data;
                 auto ghost = this->GetGhostByID(ID);
                     if (ghost != nullptr) {
                         if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
@@ -310,6 +325,8 @@ void NetworkGhostPlayer::NetworkThink()
                 console->Print("Ping returned in %lld ms\n", elapsed.count());
             }
         }
+        packet_queue.clear();
+        std::this_thread::sleep_for(std::chrono::milliseconds(this->tickrate));
     }
 
     this->ghostPool.clear();
@@ -321,7 +338,7 @@ void NetworkGhostPlayer::CheckConnection()
     tcpSelector.add(this->tcpSocket);
     while (this->runThread) {
         sf::Packet packet;
-        if (tcpSelector.wait(sf::milliseconds(500))) {
+        if (tcpSelector.wait(sf::milliseconds(2000))) {
             if (this->tcpSocket.receive(packet) == sf::Socket::Done) {
                 HEADER header;
                 packet >> header;
@@ -358,6 +375,7 @@ void NetworkGhostPlayer::CheckConnection()
                     std::string newMap;
                     packet >> ID >> newMap;
                     auto ghost = this->GetGhostByID(ID);
+                    console->Print("Player %s is now on %s\n", ghost->name.c_str(), newMap.c_str());
                     if (newMap == engine->m_szLevelName) {
                         ghost->sameMap = true;
                     } else {
@@ -466,6 +484,15 @@ CON_COMMAND(sar_ghost_name, "Name that will be displayed\n")
         return;
     }
     networkGhostPlayer->name = args[1];
+}
+
+CON_COMMAND(sar_ghost_tickrate, "Adjust the tickrate\n")
+{
+    if (args.ArgC() <= 1) {
+        console->Print(sar_ghost_tickrate.ThisPtr()->m_pszHelpString);
+        return;
+    }
+    networkGhostPlayer->tickrate = std::chrono::milliseconds(std::atoi(args[1]));
 }
 
 //Cause crash at sar_exit
