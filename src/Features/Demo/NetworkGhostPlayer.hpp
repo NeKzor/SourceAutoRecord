@@ -21,6 +21,7 @@ enum HEADER {
     STOP_SERVER,
 	MAP_CHANGE,
     MESSAGE,
+    COUNTDOWN,
     UPDATE,
 };
 
@@ -49,6 +50,8 @@ private:
     std::chrono::milliseconds tickrate;
     bool isInLevel;
     bool pausedByServer;
+    int countdown;
+    std::chrono::time_point<std::chrono::steady_clock> startCountDown;
 
 private:
     void NetworkThink();
@@ -84,4 +87,5 @@ extern Command sar_ghost_disconnect;
 extern Command sar_ghost_stop_server;
 extern Command sar_ghost_name;
 extern Command sar_ghost_tickrate;
+extern Command sar_ghost_countdown;
 //extern Command sar_ghost_message;

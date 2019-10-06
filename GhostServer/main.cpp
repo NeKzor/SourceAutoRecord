@@ -20,6 +20,7 @@ enum HEADER {
     STOP_SERVER,
     MAP_CHANGE,
     MESSAGE,
+	COUNTDOWN,
     UPDATE,
 };
 
@@ -155,6 +156,9 @@ Packets contains :
 	 if HEADER == MESSAGE :
 	 Server receive : TCPpacket << HEADER << std::string message
 	 Server send : TCPpacket << HEADER << sf::Uint32 ID << std::string message
+
+	 if HEADER == COUNTDOWN :
+	 Server receive and send : TCPpacket << HEADER
 
 	 if HEADER == UPDATE :
 	 Server receive : UDPpacket << HEADER << DataGhost
@@ -300,6 +304,12 @@ void TCPcheck(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& soc
 
                             sf::Uint32 ID = socket_pool[id]->getRemoteAddress().toInteger();
                             SendMessage(ID, message, socket_pool);
+                        } else if (header == HEADER::COUNTDOWN) {
+                            sf::Packet countdown_packet;
+                            countdown_packet << HEADER::COUNTDOWN;
+                            for (auto& socket : socket_pool) {
+                                socket->send(packet);
+							}
                         }
                     }
                 } else {

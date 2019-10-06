@@ -64,6 +64,7 @@ NetworkGhostPlayer::NetworkGhostPlayer()
     , tickrate(30)
     , isInLevel(false)
     , pausedByServer(false)
+    , countdown(-1)
 {
     this->hasLoaded = true;
     this->socket.setBlocking(false);
@@ -399,6 +400,8 @@ void NetworkGhostPlayer::CheckConnection()
                     packet >> ID >> message;
                     std::string cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
                     engine->ExecuteCommand(cmd.c_str());
+                } else if (header == HEADER::COUNTDOWN) {
+                    this->countdown = 3;
                 }
             }
         }
@@ -517,6 +520,13 @@ CON_COMMAND(sar_ghost_tickrate, "Adjust the tickrate\n")
     networkGhostPlayer->tickrate = std::chrono::milliseconds(std::atoi(args[1]));
 }
 
+CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
+{
+    sf::Packet packet;
+    packet << HEADER::COUNTDOWN;
+    networkGhostPlayer->tcpSocket.send(packet);
+}
+
 //Cause crash at sar_exit
 /*CON_COMMAND(sar_ghost_message, "Send a message toother players\n")
 {
@@ -532,4 +542,4 @@ CON_COMMAND(sar_ghost_tickrate, "Adjust the tickrate\n")
     }
     packet << message;
     networkGhostPlayer->tcpSocket.send(packet);
-}*/
+}*/}*/
