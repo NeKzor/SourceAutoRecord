@@ -74,7 +74,7 @@ struct PlayerInfo {
     DataGhost dataGhost;
     std::string currentMap;
     unsigned int socketID; //To handle crash
-    //std::string modelName;
+    std::string modelName;
 };
 
 //Functions
@@ -352,9 +352,9 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
     DataGhost data;
     std::string currentMap;
     std::string modelName;
-    connection_packet >> header >> port_sender >> name >> data >> currentMap; // >> modelName;
+    connection_packet >> header >> port_sender >> name >> data >> currentMap >> modelName;
 
-    player_pool.insert({ ip_sender, { ip_sender, port_sender, name, data, currentMap, socket_pool.size()}}); //, modelName } });
+    player_pool.insert({ ip_sender, { ip_sender, port_sender, name, data, currentMap, socket_pool.size(), modelName } });
     socket_pool.push_back(client);
 
     threadFinished = true;
@@ -370,14 +370,14 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
             confirm_packet << static_cast<sf::Uint32>(socket_pool.size() - 1);
             for (auto& player : player_pool) {
                 if (player.first != ip_sender) {
-                    confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost << player.second.currentMap; // << player.second.modelName; //Send every player connected informations
+                    confirm_packet << player.first.toInteger() << player.second.name << player.second.dataGhost << player.second.currentMap << player.second.modelName; //Send every player connected informations
                 }
             }
             socket->send(confirm_packet);
 
         } else { //Update other players
             sf::Packet confirm_packet;
-            confirm_packet << header << ip_sender.toInteger() << name << data << currentMap; // << modelName;
+            confirm_packet << header << ip_sender.toInteger() << name << data << currentMap << modelName;
             socket->send(confirm_packet); //Send new player to other clients
         }
     }

@@ -56,7 +56,7 @@ public:
 private:
     void NetworkThink();
     void CheckConnection();
-    GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&, std::string&); //, std::string& modelName);
+    GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&, std::string&, std::string& modelName);
     void UpdatePlayer();
 
 public:

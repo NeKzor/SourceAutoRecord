@@ -55,7 +55,7 @@ public:
     void Think();
     int GetStartDelay();
     void SetStartDelay(int);
-    void ChangeModel(const char modelName[64]);
+    void ChangeModel(std::string modelName);
     void SetPosAng(const Vector&, const Vector&);
     void Lerp(DataGhost& oldPosition, DataGhost& targetPosition, float time);
 };

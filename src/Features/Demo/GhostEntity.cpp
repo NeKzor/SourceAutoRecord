@@ -129,9 +129,10 @@ void GhostEntity::SetStartDelay(int delay)
     this->startDelay = delay;
 }
 
-void GhostEntity::ChangeModel(const char modelName[64])
+void GhostEntity::ChangeModel(std::string modelName)
 {
-    std::strncpy(this->modelName, modelName, sizeof(this->modelName));
+    std::copy(modelName.begin(), modelName.end(), this->modelName);
+    this->modelName[sizeof(this->modelName)] = '\0';
 }
 
 void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)
