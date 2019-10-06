@@ -299,12 +299,17 @@ void NetworkGhostPlayer::NetworkThink()
 
         //Update other players
         int success = 1;
-        while (success != 0) { //Stack every packets received
-            sf::Packet packet;
-            sf::IpAddress ip;
-            success = this->ReceivePacket(packet, ip, 50);
-            packet_queue.insert({ip.toInteger(), packet});
+        if (this->selector.wait()) {
+            while (success != 0) {
+                sf::Packet packet;
+                sf::IpAddress ip;
+                success = this->ReceivePacket(packet, ip, 50);
+                if (success == 1) {
+                    packet_queue.insert({ ip.toInteger(), packet });
+                }
+            }
         }
+
         /*if (success == -1) {
             std::string message;
             data_packet >> message;
