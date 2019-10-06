@@ -96,7 +96,7 @@ void TCPcheck(bool& run, std::vector<std::shared_ptr<sf::TcpSocket>>& socketpool
 void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool, sf::SocketSelector& selector);
 
 //Disconnect a player
-void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool, bool hasCrashed = false);
+void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool, sf::SocketSelector& selector, bool hasCrashed = false);
 
 //Stop the server
 void StopServer(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool);
@@ -289,7 +289,7 @@ void TCPcheck(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& soc
                         packet >> header;
                         if (header == HEADER::DISCONNECT) {
                             sf::Uint32 ID = socket_pool[id]->getRemoteAddress().toInteger();
-                            Disconnect(ID, socket_pool, player_pool);
+                            Disconnect(ID, socket_pool, player_pool, selector);
                         } else if (header == HEADER::STOP_SERVER) {
                             std::cout << "STOP_SERVER received. Server will stop ! Press Enter to quit ..." << std::endl;
                             StopServer(stopServer, socket_pool);
@@ -319,7 +319,7 @@ void TCPcheck(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& soc
         }
 
         if (crashed != -1) {
-            Disconnect(crashed, socket_pool, player_pool, true);
+            Disconnect(crashed, socket_pool, player_pool, selector, true);
         }
     }
 }
@@ -383,10 +383,10 @@ void CheckNewConnection(sf::TcpListener& listener, std::vector<std::shared_ptr<s
     }
 }
 
-void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool, bool hasCrashed)
+void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>>& socket_pool, std::map<sf::IpAddress, PlayerInfo>& player_pool, sf::SocketSelector& selector, bool hasCrashed)
 {
+    sf::IpAddress ip_sender = sf::IpAddress(ID);
     if (!hasCrashed) {
-        sf::IpAddress ip_sender = sf::IpAddress(ID);
         {
             std::unique_lock<std::mutex> lck(mutex2);
             std::cout << "Player " << player_pool[ip_sender].name << " has disconnected !" << std::endl;
@@ -407,6 +407,7 @@ void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>
         threadFinished = false;
 
         player_pool.erase(ip_sender);
+        selector.remove(*socket_pool[id]);
         socket_pool[id]->disconnect();
         socket_pool.erase(socket_pool.begin() + id);
 
@@ -417,6 +418,13 @@ void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>
         mainFinishedCondVar.wait(lck, [] { return mainFinished.load(); }); //Wait for the main function to finish updating ghosts
         threadFinished = false;
 
+		int id = 0;
+        for (int i = 0; i < socket_pool.size(); ++i) {
+            if (socket_pool[i]->getRemoteAddress() == ip_sender) {
+                id = i;
+            }
+        }
+        selector.remove(*socket_pool[id]);
         socket_pool.erase(socket_pool.begin() + ID);
         auto playerID = player_pool.begin();
         for (auto player = player_pool.begin(); player != player_pool.end(); ++player) {
@@ -426,7 +434,6 @@ void Disconnect(const sf::Uint32& ID, std::vector<std::shared_ptr<sf::TcpSocket>
             }
         }
         std::cout << "Player " << playerID->second.name << " has disconnected !" << std::endl;
-        int id = 0;
         sf::Packet confirm_packet;
         confirm_packet << HEADER::DISCONNECT << playerID->first.toInteger();
         for (auto& socket : socket_pool) {

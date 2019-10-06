@@ -8,10 +8,10 @@
 #include "Variable.hpp"
 
 #include <SFML/Network.hpp>
+#include <atomic>
+#include <mutex>
 #include <thread>
 #include <vector>
-#include <mutex>
-#include <atomic>
 
 enum HEADER {
     NONE,
@@ -19,7 +19,7 @@ enum HEADER {
     CONNECT,
     DISCONNECT,
     STOP_SERVER,
-	MAP_CHANGE,
+    MAP_CHANGE,
     MESSAGE,
     COUNTDOWN,
     UPDATE,
@@ -32,8 +32,8 @@ private:
     sf::SocketSelector selector;
     std::condition_variable waitForPaused;
 
-    public:
-	sf::IpAddress ip_client;
+public:
+    sf::IpAddress ip_client;
     std::vector<GhostEntity*> ghostPool;
     std::string name;
     std::string modelName;
@@ -63,7 +63,7 @@ public:
     NetworkGhostPlayer();
 
     void ConnectToServer(std::string, unsigned short port);
-    void Disconnect(bool forced);
+    void Disconnect();
     void StopServer();
     bool IsConnected();
 

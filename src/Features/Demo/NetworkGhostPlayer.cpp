@@ -121,7 +121,7 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     this->StartThinking();
 }
 
-void NetworkGhostPlayer::Disconnect(bool forced)
+void NetworkGhostPlayer::Disconnect()
 {
     this->runThread = false;
     this->waitForPaused.notify_one(); //runThread being false will make the thread stopping no matter if pauseThread is true or false
@@ -199,7 +199,7 @@ int NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, sf::IpAddress& ip, int
         return 1;
     } else {
         return 0;
-	}
+    }
 }
 
 DataGhost NetworkGhostPlayer::GetPlayerData()
@@ -350,8 +350,9 @@ void NetworkGhostPlayer::CheckConnection()
     tcpSelector.add(this->tcpSocket);
     while (this->runThread) {
         sf::Packet packet;
-        if (tcpSelector.wait(sf::milliseconds(2000))) {
-            if (this->tcpSocket.receive(packet) == sf::Socket::Done) {
+        if (tcpSelector.wait(sf::seconds(2))) {
+            sf::Socket::Status status = this->tcpSocket.receive(packet);
+            if (status == sf::Socket::Done) {
                 HEADER header;
                 packet >> header;
                 if (header == HEADER::CONNECT) {
@@ -403,6 +404,9 @@ void NetworkGhostPlayer::CheckConnection()
                 } else if (header == HEADER::COUNTDOWN) {
                     this->countdown = 3;
                 }
+            } else if (status == sf::Socket::Disconnected) {
+                console->Warning("Connexion has been interrupted ! You have been disconnected !\n");
+                this->Disconnect();
             }
         }
     }
@@ -488,7 +492,7 @@ CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
         return;
     }
 
-    networkGhostPlayer->Disconnect(false);
+    networkGhostPlayer->Disconnect();
     console->Print("You have successfully been disconnected !\n");
 }
 
