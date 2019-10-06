@@ -157,6 +157,9 @@ Packets contains :
 	 Server receive : TCPpacket << HEADER << std::string message
 	 Server send : TCPpacket << HEADER << sf::Uint32 ID << std::string message
 
+	 if HEADER == PING :
+	 Server receive and send : TCPpacket << HEADER
+
 	 if HEADER == COUNTDOWN :
 	 Server receive and send : TCPpacket << HEADER
 
@@ -164,8 +167,6 @@ Packets contains :
 	 Server receive : UDPpacket << HEADER << DataGhost
 	 Server send : UDPpacket << HEADER << sf::Uint32 ID << DataGhost
 
-	 if HEADER == PING :
-	 Server receive and send : UDPpacket << HEADER
 */
 int main()
 {
@@ -222,9 +223,6 @@ int main()
                             SendPacket(UDPsocket, update_packet, player_it.first, player_it.second.port); //Send update to other clients
                         }
                     }
-                } else if (header == HEADER::PING) {
-                    SendPacket(UDPsocket, packet, ip_sender, port_sender);
-                    std::cout << "Ping from " + player_pool[ip_sender].name + " !" << std::endl;
                 }
             }
         }
@@ -304,6 +302,11 @@ void TCPcheck(bool& stopServer, std::vector<std::shared_ptr<sf::TcpSocket>>& soc
 
                             sf::Uint32 ID = socket_pool[id]->getRemoteAddress().toInteger();
                             SendMessage(ID, message, socket_pool);
+                        } else if (header == HEADER::PING) {
+                            sf::Packet packet_ping;
+                            packet_ping << HEADER::PING;
+                            socket_pool[id]->send(packet_ping);
+                            std::cout << "Ping from " + player_pool[socket_pool[id]->getRemoteAddress()].name + " !" << std::endl;
                         } else if (header == HEADER::COUNTDOWN) {
                             sf::Packet countdown_packet;
                             countdown_packet << HEADER::COUNTDOWN;

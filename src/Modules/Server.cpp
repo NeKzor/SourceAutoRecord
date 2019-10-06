@@ -290,8 +290,8 @@ DETOUR(Server::GameFrame, bool simulating)
     if (!networkGhostPlayer->pausedByServer) {
         for (auto& ghost : networkGhostPlayer->ghostPool) {
             if (ghost->ghost_entity != nullptr) {
-                auto time = std::chrono::duration_cast<std::chrono::milliseconds>(networkGhostPlayer->clock.now() - ghost->lastUpdate).count();
-                ghost->Lerp(ghost->oldPos, ghost->newPos, ((float)time / networkGhostPlayer->tickrate.count()));
+                auto time = std::chrono::duration_cast<std::chrono::milliseconds>(server->clock.now() - ghost->lastUpdate).count();
+                ghost->Lerp(ghost->oldPos, ghost->newPos, ((float)time / (ghost->loopTime)));
             }
         }
 	}

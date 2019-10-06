@@ -45,7 +45,6 @@ public:
     std::thread TCPThread;
     std::atomic<bool> runThread;
     std::atomic<bool> pauseThread;
-    std::chrono::steady_clock clock;
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::milliseconds tickrate;
     bool isInLevel;

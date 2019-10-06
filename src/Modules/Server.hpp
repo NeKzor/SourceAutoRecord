@@ -6,6 +6,8 @@
 #include "Utils.hpp"
 #include "Variable.hpp"
 
+#include <chrono>
+
 #ifdef _WIN32
 #define AirMove_Mid_Offset 679
 #define AirMove_Signature "F3 0F 10 50 40"
@@ -38,6 +40,8 @@ public:
 
     CGlobalVars* gpGlobals = nullptr;
     CEntInfo* m_EntPtrArray = nullptr;
+
+    std::chrono::steady_clock clock;
 
 private:
     bool jumpedLastTime = false;

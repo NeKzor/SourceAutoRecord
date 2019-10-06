@@ -42,6 +42,7 @@ public:
     DataGhost oldPos;
     DataGhost newPos;
     std::chrono::time_point<std::chrono::steady_clock> lastUpdate;
+    long long loopTime;
 
     void* trail;
 

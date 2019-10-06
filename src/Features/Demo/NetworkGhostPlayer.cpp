@@ -320,21 +320,18 @@ void NetworkGhostPlayer::NetworkThink()
                 DataGhost data;
                 data_packet.second >> ID >> data;
                 auto ghost = this->GetGhostByID(ID);
-                    if (ghost != nullptr) {
-                        if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
-                            if (ghost->ghost_entity == nullptr) {
-                                ghost->Spawn(true, false, QAngleToVector(data.position));
-                            }
-                            //this->SetPosAng(ID, QAngleToVector({ data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }), QAngleToVector(data.view_angle));
-                            ghost->oldPos = ghost->newPos;
-                            ghost->newPos = { {data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat()}, {data.view_angle.x, data.view_angle.y, data.view_angle.z }};
-                            ghost->lastUpdate = this->clock.now();
+                if (ghost != nullptr) {
+                    if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
+                        if (ghost->ghost_entity == nullptr) {
+                            ghost->Spawn(true, false, QAngleToVector(data.position));
                         }
+                        //this->SetPosAng(ID, QAngleToVector({ data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }), QAngleToVector(data.view_angle));
+                        ghost->oldPos = ghost->newPos;
+                        ghost->newPos = { { data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }, { data.view_angle.x, data.view_angle.y, data.view_angle.z } };
+                        ghost->loopTime = std::chrono::duration_cast<std::chrono::milliseconds>(server->clock.now() - ghost->lastUpdate).count();
+                        ghost->lastUpdate = server->clock.now();
                     }
-            } else if (header == HEADER::PING) {
-                auto stop = this->clock.now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
-                console->Print("Ping returned in %lld ms\n", elapsed.count());
+                }
             }
         }
         packet_queue.clear();
@@ -401,6 +398,10 @@ void NetworkGhostPlayer::CheckConnection()
                     packet >> ID >> message;
                     std::string cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
                     engine->ExecuteCommand(cmd.c_str());
+                } else if (header == HEADER::PING) {
+                    auto stop = server->clock.now();
+                    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
+                    console->Print("Ping returned in %lld ms\n", elapsed.count());
                 } else if (header == HEADER::COUNTDOWN) {
                     this->countdown = 3;
                 }
@@ -476,12 +477,11 @@ CON_COMMAND(sar_ghost_connect_to_server, "Connect to the server : <ip address> <
 
 CON_COMMAND(sar_ghost_ping, "Send ping\n")
 {
-
     sf::Packet packet;
     packet << HEADER::PING;
 
-    networkGhostPlayer->start = networkGhostPlayer->clock.now();
-    networkGhostPlayer->socket.send(packet, networkGhostPlayer->ip_server, networkGhostPlayer->port_server);
+    networkGhostPlayer->start = server->clock.now();
+    networkGhostPlayer->tcpSocket.send(packet);
 }
 
 CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
