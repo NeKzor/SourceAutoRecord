@@ -442,7 +442,7 @@ void NetworkGhostPlayer::ClearGhosts()
 {
     for (auto& ghost : this->ghostPool) {
         ghost->Stop();
-	}
+    }
 }
 
 //Commands
@@ -470,12 +470,12 @@ CON_COMMAND(sar_ghost_connect_to_server, "Connect to the server : <ip address> <
                 networkGhostPlayer->ip_client = sf::IpAddress::getLocalAddress();
                 local = true;
                 break;
-			}
-		}
+            }
+        }
         if (local == false) {
             networkGhostPlayer->ip_client = sf::IpAddress::getPublicAddress();
-		}
-	}
+        }
+    }
 
     networkGhostPlayer->ConnectToServer(args[1], std::atoi(args[2]));
 }
@@ -551,4 +551,4 @@ CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
     }
     packet << message;
     networkGhostPlayer->tcpSocket.send(packet);
-}*/}*/
+}*/

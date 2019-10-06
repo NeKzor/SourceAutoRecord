@@ -17,9 +17,9 @@ public:
     void Run();
     bool IsReady();
     void StopAll();
-    void StopByID(sf::Uint32 &ID);
+    void StopByID(unsigned int& ID);
     GhostEntity* GetFirstGhost();
-    GhostEntity* GetGhostFromID(sf::Uint32& ID);
+    GhostEntity* GetGhostFromID(unsigned int& ID);
 	void AddGhost(GhostEntity* ghost);
     void ResetGhost();
     void ResetCoord();
