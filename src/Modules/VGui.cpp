@@ -327,7 +327,7 @@ bool VGui::Init()
 
     this->huds.push_back(inputHud = new InputHud());
     this->huds2.push_back(inputHud2 = new InputHud());
-    this->ghostHud.push_back(ghostInputHud = new InputHud());
+    this->ghostHuds.push_back(ghostInputHud = new InputHud());
     this->huds.push_back(inspectionHud = new InspectionHud());
 
     if (sar.game->Is(SourceGame_Portal2Game | SourceGame_Portal)) {
