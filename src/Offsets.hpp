@@ -158,6 +158,7 @@ extern int IsRunningSimulation;
 
 // CIVDebugOverlay
 extern int ScreenPosition;
+extern int AddScreenTextOverlay;
 
 // CCommandBuffer
 extern int m_bWaitEnabled;

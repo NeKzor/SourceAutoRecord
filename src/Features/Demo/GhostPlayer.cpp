@@ -6,6 +6,8 @@ GhostPlayer* ghostPlayer;
 
 Variable sar_ghost_height("sar_ghost_height", "16", -256, "Height of the ghost.\n");
 Variable sar_ghost_transparency("sar_ghost_transparency", "255", 0, 256, "Transparency of the ghost.\n");
+Variable sar_ghost_show_name("sar_ghost_text", "0", "Display the name of the ghost over it\n");
+Variable sar_ghost_name_offset("sar_ghost_text_offset", "20", -1024, "Offset of the name over the ghost.\n");
 
 GhostPlayer::GhostPlayer()
     : ghost()

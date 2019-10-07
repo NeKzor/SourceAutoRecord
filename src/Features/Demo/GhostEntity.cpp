@@ -139,6 +139,7 @@ void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)
 {
     server->SetKeyValueVector(this->ghost_entity, "origin", pos);
     server->SetKeyValueVector(this->ghost_entity, "angles", ang);
+    this->currentPos = pos;
 }
 
 void GhostEntity::Lerp(DataGhost& oldPosition, DataGhost& targetPosition, float time)

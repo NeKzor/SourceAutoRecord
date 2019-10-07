@@ -41,6 +41,7 @@ public:
 
     DataGhost oldPos;
     DataGhost newPos;
+    Vector currentPos;
     std::chrono::time_point<std::chrono::steady_clock> lastUpdate;
     long long loopTime;
 

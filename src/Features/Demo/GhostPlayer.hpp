@@ -20,7 +20,7 @@ public:
     void StopByID(unsigned int& ID);
     GhostEntity* GetFirstGhost();
     GhostEntity* GetGhostFromID(unsigned int& ID);
-	void AddGhost(GhostEntity* ghost);
+    void AddGhost(GhostEntity* ghost);
     void ResetGhost();
     void ResetCoord();
     void SetPosAng(unsigned int& ID, Vector position, Vector angle);
@@ -39,3 +39,5 @@ extern Command sar_ghost_time_offset;
 extern Command sar_ghost_enable;
 extern Variable sar_ghost_height;
 extern Variable sar_ghost_transparency;
+extern Variable sar_ghost_show_name;
+extern Variable sar_ghost_name_offset;

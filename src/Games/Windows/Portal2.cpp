@@ -71,6 +71,7 @@ void Portal2::LoadOffsets()
     Frame = 5; // CEngine
     m_bLoadGame = 448; // CGameClient::ActivatePlayer/CBaseServer::m_szLevelName
     ScreenPosition = 12; // CIVDebugOverlay
+    AddScreenTextOverlay = 7; // CIVDebugOverlay
     MAX_SPLITSCREEN_PLAYERS = 2; // maxplayers
     OnGameOverlayActivated = 144; // CSteam3Client
 

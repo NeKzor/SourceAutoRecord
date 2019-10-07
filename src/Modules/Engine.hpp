@@ -40,6 +40,7 @@ public:
     using _GetActiveSplitScreenPlayerSlot = int (*)();
     using _ScreenPosition = int(__stdcall*)(const Vector& point, Vector& screen);
     using _ConPrintEvent = int(__stdcall*)(IGameEvent* ev);
+    using _AddScreenTextOverlay = void(__stdcall*)(float flXPos, float flYPos, float flDuration, int r, int g, int b, int a, const char* text);
 #else
     using _GetScreenSize = int(__cdecl*)(void* thisptr, int& width, int& height);
     using _GetActiveSplitScreenPlayerSlot = int (*)(void* thisptr);
@@ -60,6 +61,7 @@ public:
     _Cbuf_AddText Cbuf_AddText = nullptr;
     _AddText AddText = nullptr;
     _ScreenPosition ScreenPosition = nullptr;
+    _AddScreenTextOverlay AddScreenTextOverlay = nullptr;
     _ConPrintEvent ConPrintEvent = nullptr;
     _ClientCommand ClientCommand = nullptr;
     _GetLocalClient GetLocalClient = nullptr;
