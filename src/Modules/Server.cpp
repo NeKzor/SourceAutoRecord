@@ -294,23 +294,23 @@ DETOUR(Server::GameFrame, bool simulating)
                 ghost->Lerp(ghost->oldPos, ghost->newPos, ((float)time / (ghost->loopTime)));
             }
         }
-	}
+    }
 
-	if (networkGhostPlayer->countdown >= 0) {
-            if (std::chrono::duration_cast<std::chrono::seconds>(server->clock.now() - networkGhostPlayer->startCountDown).count() >= 1) {
-                if (networkGhostPlayer->countdown == 3) {
-                    engine->ExecuteCommand("say Countdown started ! : 3 ...");
-                } else if (networkGhostPlayer->countdown == 2) {
-                    engine->ExecuteCommand("say 2 ...");
-                } else if (networkGhostPlayer->countdown == 1) {
-                    engine->ExecuteCommand("say 1 ...");
-                } else if (networkGhostPlayer->countdown == 0) {
-                    engine->ExecuteCommand("say GO !!");
-                }
-                networkGhostPlayer->startCountDown = server->clock.now();
-                networkGhostPlayer->countdown--;
-			}
-	}
+    if (networkGhostPlayer->countdown >= 0) {
+        if (std::chrono::duration_cast<std::chrono::seconds>(server->clock.now() - networkGhostPlayer->startCountDown).count() >= 1) {
+            if (networkGhostPlayer->countdown == 3) {
+                engine->ExecuteCommand("say Countdown started ! : 3 ...");
+            } else if (networkGhostPlayer->countdown == 2) {
+                engine->ExecuteCommand("say 2 ...");
+            } else if (networkGhostPlayer->countdown == 1) {
+                engine->ExecuteCommand("say 1 ...");
+            } else if (networkGhostPlayer->countdown == 0) {
+                engine->ExecuteCommand("say GO !!");
+            }
+            networkGhostPlayer->startCountDown = server->clock.now();
+            networkGhostPlayer->countdown--;
+        }
+    }
 
     if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
         std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();
