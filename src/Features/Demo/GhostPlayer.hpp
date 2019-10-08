@@ -41,3 +41,5 @@ extern Variable sar_ghost_height;
 extern Variable sar_ghost_transparency;
 extern Variable sar_ghost_show_name;
 extern Variable sar_ghost_name_offset;
+extern Variable sar_ghost_show_distance;
+extern Variable sar_ghost_show_crouched;

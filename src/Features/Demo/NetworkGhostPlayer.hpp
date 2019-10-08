@@ -32,6 +32,7 @@ private:
     sf::SocketSelector selector;
     std::condition_variable waitForPaused;
 
+
 public:
     sf::IpAddress ip_client;
     std::vector<GhostEntity*> ghostPool;
@@ -83,7 +84,7 @@ extern NetworkGhostPlayer* networkGhostPlayer;
 
 extern Command sar_ghost_connect_to_server;
 extern Command sar_ghost_disconnect;
-extern Command sar_ghost_stop_server;
+//extern Command sar_ghost_stop_server;
 extern Command sar_ghost_name;
 extern Command sar_ghost_tickrate;
 extern Command sar_ghost_countdown;

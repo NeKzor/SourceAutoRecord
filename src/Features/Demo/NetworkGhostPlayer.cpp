@@ -174,7 +174,7 @@ void NetworkGhostPlayer::StopServer()
 
 bool NetworkGhostPlayer::IsConnected()
 {
-    return (this->tcpSocket.getRemoteAddress() == sf::IpAddress::None) ? false : true;
+    return this->isConnected;
 }
 
 int NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, sf::IpAddress& ip, int timeout)
@@ -271,18 +271,6 @@ void NetworkGhostPlayer::PauseThinking()
 //Called on another thread
 void NetworkGhostPlayer::NetworkThink()
 {
-    for (auto& it : this->ghostPool) {
-        if (it->currentMap != engine->m_szLevelName) { //If on a different map
-            it->sameMap = false;
-        } else if (it->currentMap == engine->m_szLevelName && !it->sameMap) { //If previously on a different map but now on the same one
-            it->sameMap = true;
-        }
-
-        if (it->sameMap) {
-            it->Spawn(true, false, { 1, 1, 1 });
-        }
-    }
-
     std::map<unsigned int, sf::Packet> packet_queue;
 
     while (this->runThread || !this->pauseThread) {
@@ -501,7 +489,7 @@ CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
     console->Print("You have successfully been disconnected !\n");
 }
 
-CON_COMMAND(sar_ghost_stop_server, "Stop the server\n")
+/*CON_COMMAND(sar_ghost_stop_server, "Stop the server\n")
 {
     if (!networkGhostPlayer->IsConnected()) {
         console->Warning("You are not connected to a server !\n");
@@ -509,7 +497,7 @@ CON_COMMAND(sar_ghost_stop_server, "Stop the server\n")
     }
 
     networkGhostPlayer->StopServer();
-}
+}*/
 
 CON_COMMAND(sar_ghost_name, "Name that will be displayed\n")
 {

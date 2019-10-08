@@ -6,8 +6,10 @@ GhostPlayer* ghostPlayer;
 
 Variable sar_ghost_height("sar_ghost_height", "16", -256, "Height of the ghost.\n");
 Variable sar_ghost_transparency("sar_ghost_transparency", "255", 0, 256, "Transparency of the ghost.\n");
-Variable sar_ghost_show_name("sar_ghost_text", "0", "Display the name of the ghost over it\n");
+Variable sar_ghost_show_name("sar_ghost_text", "1", "Display the name of the ghost over it\n");
 Variable sar_ghost_name_offset("sar_ghost_text_offset", "20", -1024, "Offset of the name over the ghost.\n");
+Variable sar_ghost_show_distance("sar_ghost_show_distance", "0", "Display the distance of the ghost from you\n");
+Variable sar_ghost_show_crouched("sar_ghost_show_crouched", "0", "Display the crouched state of the ghost\n");
 
 GhostPlayer::GhostPlayer()
     : ghost()
@@ -22,11 +24,11 @@ bool GhostPlayer::IsReady()
     for (auto it : this->ghost) {
         if (!it->IsReady()) {
             return false;
-		}
+        }
     }
     if (!this->enabled || this->ghost.empty()) {
         return false;
-	}
+    }
 
     return true;
 }
@@ -123,7 +125,7 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
     }
     if (networkGhostPlayer->IsConnected()) {
         return console->Warning("Can't play ghost with demos when connected to a server !\n");
-	}
+    }
 
     std::string name;
     if (args[1][0] == '\0') {

@@ -87,7 +87,7 @@ DETOUR(VGui::Paint, int mode)
         ++elements;
     };
 
-	auto DrawGhostNames = [font, fontSize, spacing, textColor, &elements](const float xPos, const float yPos, const char* fmt, ...) {
+    auto DrawGhostNames = [font, fontSize, spacing, textColor, &elements](const float xPos, const float yPos, const char* fmt, ...) {
         va_list argptr;
         va_start(argptr, fmt);
         char data[1024];
@@ -103,13 +103,21 @@ DETOUR(VGui::Paint, int mode)
         ++elements;
     };
 
-	if (sar_ghost_show_name.GetBool()) {
-        for (auto& ghost : networkGhostPlayer->ghostPool) {
-            Vector screenPos;
-            engine->PointToScreen(ghost->currentPos, screenPos);
-            DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
+    //Ghosts
+    if (sar_ghost_show_name.GetBool()) {
+        auto player = client->GetPlayer(slot + 1);
+        if (player) {
+            auto pos = client->GetAbsOrigin(player);
+            for (auto& ghost : networkGhostPlayer->ghostPool) {
+                Vector screenPos;
+                engine->PointToScreen(ghost->currentPos, screenPos);
+                DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
+                if (sar_ghost_show_distance.GetBool()) {
+                    DrawGhostNames(screenPos.x, screenPos.y, "Dist: %.3f", Math::Distance(pos, ghost->currentPos));
+                }
+            }
         }
-	}
+    }
 
     // cl_showpos replacement
     if (sar_hud_text.GetString()[0] != '\0') {
