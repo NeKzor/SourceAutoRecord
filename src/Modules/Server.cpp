@@ -36,7 +36,7 @@ Variable sv_maxvelocity;
 Variable sv_gravity;
 
 Variable sar_record_at("sar_record_at", "0", 0, "Start recording a demo at the tick specified. Will use sar_record_at_demo_name.\n");
-Variable sar_record_at_demo_name("sar_record_at_demo_name", "test", "Name of the demo automatically recorded.\n");
+Variable sar_record_at_demo_name("sar_record_at_demo_name", "chamber", "Name of the demo automatically recorded.\n", 0);
 Variable sar_record_at_increment("sar_record_at_increment", "0", "Increment automatically the demo name.\n");
 
 REDECL(Server::CheckJumpButton);
