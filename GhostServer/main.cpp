@@ -1,46 +1,16 @@
+#include "NetworkManager.h"
 #include <SFML/Network.hpp>
-#include <atomic>
-#include <chrono>
-#include <iostream>
-#include <map>
-#include <mutex>
-#include <thread>
-
-struct QAngle {
-    float x;
-    float y;
-    float z;
-};
-
-enum HEADER {
-    NONE,
-    PING,
-    CONNECT,
-    DISCONNECT,
-    STOP_SERVER,
-    MAP_CHANGE,
-    MESSAGE,
-	COUNTDOWN,
-    UPDATE,
-};
-
-struct DataGhost {
-    QAngle position;
-    QAngle view_angle;
-};
-
-//DataGhost
-
-sf::Packet& operator>>(sf::Packet& packet, QAngle& angle)
-{
-    return packet >> angle.x >> angle.y >> angle.z;
-}
-
+#include <TGUI/TGUI.hpp>
 
 #include <iostream>
 
 int main()
 {
+    sf::RenderWindow window{
+        { 800, 600 }, "Ghost Server"
+    };
+    tgui::Gui gui{ window };
+    gui.loadWidgetsFromFile("Server.txt");
 
     NetworkManager network(53000);
     if (!network.IsConnected()) {
@@ -48,11 +18,26 @@ int main()
         return 0;
     }
 
+    //std::cout << "Server started on <" << network.GetPublicIP() << "> (Local : " << network.GetLocalIP() << ") ; Port: " << network.GetPort() << ">" << std::endl;
 
+	tgui::TextBox::Ptr log = gui.get<tgui::TextBox>("log");
+    log->addText("Server started on <" + network.GetPublicIP().toString() + "> (Local : " + network.GetLocalIP().toString() + ") ; Port: " + std::to_string(network.GetPort()) + ">\n");
+	
+	tgui::EditBox::Ptr commandEdit = gui.get<tgui::EditBox>("commandEdit");
+    commandEdit->connect("ReturnKeyPressed", [&]() { log->addText(commandEdit->getText() + "\n"); commandEdit->setText(""); });
 
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
             }
+            gui.handleEvent(event);
         }
 
+        window.clear();
+        gui.draw();
+        window.display();
     }
 
 
