@@ -37,7 +37,6 @@ void Portal2::LoadOffsets()
     StringToButtonCode = 31; // CInputSystem
     SleepUntilInput = 33; // CInputSystem
     GetRecordingTick = 1; // CDemoRecorder
-    net_time = 28; // CDemoRecorder::GetRecordingTick
     SetSignonState = 3; // CDemoRecorder
     StopRecording = 7; // CDemoRecorder
     GetPlaybackTick = 4; // CDemoPlayer
@@ -116,12 +115,6 @@ void Portal2::LoadOffsets()
     NUM_ENT_ENTRIES = 8192; // CBaseEntityList::CBaseEntityList
     GetIServerEntity = 2; // CServerTools
     m_EntPtrArray = 48; // CServerTools::GetIServerEntity
-    SetKeyValueChar = 12; // CServerTools::SetKeyValue (const char *szValue)
-    SetKeyValueFloat = 13; // CServerTools::SetKeyValue (float flValue )
-    SetKeyValueVector = 14; // CServerTools::SetKeyValue (const Vector &vecValue )
-    CreateEntityByName = 15; // CServerTools::CreateEntityByName
-    DispatchSpawn = 16; //CServerTool::DispatchSpawn
-    RemoveEntity = 22; //CServerTool::RemoveEntity
     ClientCommand = 39; // CVEngineServer
     IsPlayer = 86; // CBasePlayer
     m_pSurfaceData = 4116; // CGameMovement::CheckJumpButton

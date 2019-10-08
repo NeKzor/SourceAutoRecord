@@ -18,7 +18,6 @@
 #include "Variable.hpp"
 
 Variable host_framerate;
-Variable net_showmsg;
 
 REDECL(Engine::Disconnect);
 REDECL(Engine::Disconnect2);
@@ -47,9 +46,10 @@ void Engine::ExecuteCommand(const char* cmd)
 {
     this->ClientCmd(this->engineClient->ThisPtr(), cmd);
 }
-int Engine::GetTick()
+int Engine::GetSessionTick()
 {
-    return (this->GetMaxClients() < 2) ? *this->tickcount : TIME_TO_TICKS(*this->net_time);
+    auto result = *this->tickcount - session->baseTick;
+    return (result >= 0) ? result : 0;
 }
 float Engine::ToTime(int tick)
 {
@@ -168,7 +168,7 @@ DETOUR(Engine::SetSignonState2, int state, int count)
 // CEngine::Frame
 DETOUR(Engine::Frame)
 {
-    speedrun->PreUpdate(engine->GetTick(), engine->m_szLevelName);
+    speedrun->PreUpdate(engine->tickcount, engine->m_szLevelName);
 
     if (engine->hoststate->m_currentState != session->prevState) {
         session->Changed();
@@ -176,7 +176,7 @@ DETOUR(Engine::Frame)
     session->prevState = engine->hoststate->m_currentState;
 
     if (engine->hoststate->m_activeGame || std::strlen(engine->m_szLevelName) == 0) {
-        speedrun->PostUpdate(engine->GetTick(), engine->m_szLevelName);
+        speedrun->PostUpdate(engine->tickcount, engine->m_szLevelName);
     }
 
     return Engine::Frame(thisptr);
@@ -360,9 +360,6 @@ bool Engine::Init()
         auto GetCurrentMap = tool->Original(Offsets::GetCurrentMap);
         this->m_szLevelName = Memory::Deref<char*>(GetCurrentMap + Offsets::m_szLevelName);
         this->m_bLoadgame = reinterpret_cast<bool*>((uintptr_t)this->m_szLevelName + Offsets::m_bLoadGame);
-
-        this->PrecacheModel = tool->Original<_PrecacheModel>(Offsets::PrecacheModel);
-
         Interface::Delete(tool);
     }
 
@@ -428,7 +425,6 @@ bool Engine::Init()
     }
 
     host_framerate = Variable("host_framerate");
-    net_showmsg = Variable("net_showmsg");
 
     return this->hasLoaded = this->engineClient && this->s_ServerPlugin && this->demoplayer && this->demorecorder;
 }

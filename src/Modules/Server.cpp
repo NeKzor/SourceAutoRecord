@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstring>
 
-#include "Features/Demo/GhostPlayer.hpp"
 #include "Features/OffsetFinder.hpp"
 #include "Features/Routing/EntityInspector.hpp"
 #include "Features/Session.hpp"
@@ -34,10 +33,6 @@ Variable sv_maxspeed;
 Variable sv_stopspeed;
 Variable sv_maxvelocity;
 Variable sv_gravity;
-
-Variable sar_record_at("sar_record_at", "0", 0, "Start recording a demo at the tick specified. Will use sar_record_at_demo_name.\n");
-Variable sar_record_at_demo_name("sar_record_at_demo_name", "chamber", "Name of the demo automatically recorded.\n", 0);
-Variable sar_record_at_increment("sar_record_at_increment", "0", "Increment automatically the demo name.\n");
 
 REDECL(Server::CheckJumpButton);
 REDECL(Server::CheckJumpButtonBase);
@@ -88,11 +83,6 @@ int Server::GetSplitScreenPlayerSlot(void* entity)
     }
 
     return 0;
-}
-
-void Server::SetParent(void* entity, void* pNewParent, int iAttachement)
-{
-    Memory::VMT<void(__func*)(void*, void*, int)>(entity, Offsets::SetParent)(entity, pNewParent, iAttachement);
 }
 
 // CGameMovement::CheckJumpButton
@@ -279,15 +269,6 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
-    if (simulating && ghostPlayer->IsReady()) {
-        ghostPlayer->Run();
-    }
-
-    if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
-        std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();
-        engine->ExecuteCommand(cmd.c_str());
-    }
-
     if (!server->IsRestoring()) {
         if (!simulating && !pauseTimer->IsActive()) {
             pauseTimer->Start();
@@ -316,7 +297,7 @@ DETOUR(Server::GameFrame, bool simulating)
     }
 
     if (session->isRunning && sar_speedrun_standard.GetBool()) {
-        speedrun->CheckRules(engine->GetTick());
+        speedrun->CheckRules(engine->tickcount);
     }
 
 #ifndef _WIN32
@@ -342,7 +323,7 @@ bool Server::Init()
             auto baseCtor = Memory::Read(ctor + Offsets::AirMove_Offset1);
             auto baseOffset = Memory::Deref<uintptr_t>(baseCtor + Offsets::AirMove_Offset2);
             Memory::Deref<_AirMove>(baseOffset + Offsets::AirMove * sizeof(uintptr_t*), &Server::AirMoveBase);
-
+            
             Memory::Deref<_CheckJumpButton>(baseOffset + Offsets::CheckJumpButton * sizeof(uintptr_t*), &Server::CheckJumpButtonBase);
 
 #ifdef _WIN32
@@ -364,14 +345,6 @@ bool Server::Init()
     if (auto g_ServerTools = Interface::Create(this->Name(), "VSERVERTOOLS0")) {
         auto GetIServerEntity = g_ServerTools->Original(Offsets::GetIServerEntity);
         Memory::Deref(GetIServerEntity + Offsets::m_EntPtrArray, &this->m_EntPtrArray);
-
-        this->CreateEntityByName = g_ServerTools->Original<_CreateEntityByName>(Offsets::CreateEntityByName);
-        this->DispatchSpawn = g_ServerTools->Original<_DispatchSpawn>(Offsets::DispatchSpawn);
-        this->SetKeyValueChar = g_ServerTools->Original<_SetKeyValueChar>(Offsets::SetKeyValueChar);
-        this->SetKeyValueFloat = g_ServerTools->Original<_SetKeyValueFloat>(Offsets::SetKeyValueFloat);
-        this->SetKeyValueVector = g_ServerTools->Original<_SetKeyValueVector>(Offsets::SetKeyValueVector);
-        this->RemoveEntity = g_ServerTools->Original<_RemoveEntity>(Offsets::RemoveEntity);
-
         Interface::Delete(g_ServerTools);
     }
 

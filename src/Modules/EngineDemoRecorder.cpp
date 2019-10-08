@@ -6,7 +6,6 @@
 
 #include "Console.hpp"
 #include "Engine.hpp"
-#include "Server.hpp"
 
 #include "Command.hpp"
 #include "Offsets.hpp"
@@ -26,7 +25,7 @@ DETOUR(EngineDemoRecorder::SetSignonState, int state)
 {
     //SIGNONSTATE_FULL is set twice during first CM load. Using SINGONSTATE_SPAWN for demo number increase instead
     if (state == SIGNONSTATE_SPAWN) {
-        if (engine->demorecorder->isRecordingDemo || *engine->demorecorder->m_bRecording || sar_record_at_increment.GetBool()) {
+        if (engine->demorecorder->isRecordingDemo || *engine->demorecorder->m_bRecording) {
             engine->demorecorder->lastDemoNumber++;
         }
     }
@@ -61,9 +60,6 @@ DETOUR(EngineDemoRecorder::StopRecording)
     if (engine->demorecorder->isRecordingDemo && sar_autorecord.GetBool() && !engine->demorecorder->requestedStop) {
         *engine->demorecorder->m_nDemoNumber = engine->demorecorder->lastDemoNumber;
         *engine->demorecorder->m_bRecording = true;
-    } else if (sar_record_at_increment.GetBool()) {
-        *engine->demorecorder->m_nDemoNumber = engine->demorecorder->lastDemoNumber;
-        engine->demorecorder->isRecordingDemo = false;
     } else {
         engine->demorecorder->isRecordingDemo = false;
         engine->demorecorder->lastDemoNumber = 1;
@@ -91,8 +87,6 @@ bool EngineDemoRecorder::Init()
         this->m_szDemoBaseName = reinterpret_cast<char*>((uintptr_t)demorecorder + Offsets::m_szDemoBaseName);
         this->m_nDemoNumber = reinterpret_cast<int*>((uintptr_t)demorecorder + Offsets::m_nDemoNumber);
         this->m_bRecording = reinterpret_cast<bool*>((uintptr_t)demorecorder + Offsets::m_bRecording);
-
-        engine->net_time = Memory::Deref<double*>((uintptr_t)this->GetRecordingTick + Offsets::net_time);
     }
 
     Command::Hook("stop", EngineDemoRecorder::stop_callback_hook, EngineDemoRecorder::stop_callback);

@@ -11,7 +11,6 @@
 #include "Features/Summary.hpp"
 #include "Features/Tas/CommandQueuer.hpp"
 #include "Features/Timer/Timer.hpp"
-#include "Features/Demo/GhostPlayer.hpp"
 
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
@@ -30,11 +29,6 @@ Session::Session()
 {
     this->hasLoaded = true;
 }
-int Session::GetTick()
-{
-    auto result = engine->GetTick() - this->baseTick;
-    return (result >= 0) ? result : 0;
-}
 void Session::Rebase(const int from)
 {
     this->baseTick = from;
@@ -47,12 +41,12 @@ void Session::Started(bool menu)
 
     if (menu) {
         console->Print("Session started! (menu)\n");
-        this->Rebase(engine->GetTick());
+        this->Rebase(*engine->tickcount);
 
         if (sar_speedrun_autostop.isRegistered && sar_speedrun_autostop.GetBool()) {
             speedrun->Stop(false);
         } else {
-            speedrun->Resume(engine->GetTick());
+            speedrun->Resume(engine->tickcount);
         }
 
         this->isRunning = true;
@@ -66,14 +60,10 @@ void Session::Start()
     if (this->isRunning) {
         return;
     }
-	
-    engine->PrecacheModel(ghostPlayer->GetGhost()->modelName, true);
-    ghostPlayer->GetGhost()->hasFinished = false;
-    auto tick = engine->GetTick();
 
-    this->Rebase(tick);
-    timer->Rebase(tick);
-    speedrun->Resume(tick);
+    this->Rebase(*engine->tickcount);
+    timer->Rebase(*engine->tickcount);
+    speedrun->Resume(engine->tickcount);
 
     if (rebinder->isSaveBinding || rebinder->isReloadBinding) {
         if (engine->demorecorder->isRecordingDemo) {
@@ -120,7 +110,7 @@ void Session::Start()
     }
 
     if (sar_speedrun_autostart.isRegistered && sar_speedrun_autostart.GetBool() && !speedrun->IsActive()) {
-        speedrun->Start(engine->GetTick());
+        speedrun->Start(engine->tickcount);
     }
 
     stepCounter->ResetTimer();
@@ -135,10 +125,7 @@ void Session::Ended()
         return;
     }
 
-	//Ghost
-    ghostPlayer->ResetGhost();
-
-    auto tick = this->GetTick();
+    auto tick = engine->GetSessionTick();
 
     if (tick != 0) {
         console->Print("Session: %i (%.3f)\n", tick, engine->ToTime(tick));
@@ -152,10 +139,10 @@ void Session::Ended()
 
     if (timer->isRunning) {
         if (sar_timer_always_running.GetBool()) {
-            timer->Save(engine->GetTick());
+            timer->Save(*engine->tickcount);
             console->Print("Timer paused: %i (%.3f)!\n", timer->totalTicks, engine->ToTime(timer->totalTicks));
         } else {
-            timer->Stop(engine->GetTick());
+            timer->Stop(*engine->tickcount);
             console->Print("Timer stopped!\n");
         }
     }

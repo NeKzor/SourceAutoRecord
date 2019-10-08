@@ -5,7 +5,6 @@
 #include <random>
 
 #include "Features/OffsetFinder.hpp"
-#include "Features/Session.hpp"
 
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
@@ -96,7 +95,7 @@ Vector TasTools::GetAcceleration(void* player)
     auto slot = server->GetSplitScreenPlayerSlot(player);
     auto slotData = this->data[slot];
 
-    auto curTick = session->GetTick();
+    auto curTick = engine->GetSessionTick();
     if (slotData->prevTick != curTick) {
         auto curVelocity = server->GetLocalVelocity(player);
 

@@ -46,12 +46,22 @@ int WorkshopList::Update()
 
 // Completion Function
 
-DECL_COMMAND_COMPLETION(sar_workshop)
+int sar_workshop_CompletionFunc(const char* partial,
+    char commands[COMMAND_COMPLETION_MAXITEMS][COMMAND_COMPLETION_ITEM_LENGTH])
 {
+    const char* cmd = "sar_workshop ";
+    char* match = (char*)partial;
+    if (std::strstr(partial, cmd) == partial) {
+        match = match + std::strlen(cmd);
+    }
+
     if (workshop->maps.empty()) {
         workshop->Update();
     }
 
+    // Filter items
+    static auto items = std::vector<std::string>();
+    items.clear();
     for (auto& map : workshop->maps) {
         if (items.size() == COMMAND_COMPLETION_MAXITEMS) {
             break;
@@ -66,31 +76,25 @@ DECL_COMMAND_COMPLETION(sar_workshop)
         }
     }
 
-    FINISH_COMMAND_COMPLETION();
+    // Copy items into list buffer
+    auto count = 0;
+    for (auto& item : items) {
+        std::strcpy(commands[count++], (std::string(cmd) + item).c_str());
+    }
+
+    return count;
 }
 
 // Commands
 
-CON_COMMAND_F_COMPLETION(sar_workshop, "Same as \"map\" command but lists workshop maps.\n"
-                                       "Usage: sar_workshop <file> [ss/changelevel]\n",
-    0,
+CON_COMMAND_F_COMPLETION(sar_workshop, "Same as \"map\" command but lists workshop maps.\nUsage: sar_workshop <file>\n", 0,
     sar_workshop_CompletionFunc)
 {
     if (args.ArgC() < 2) {
         return console->Print(sar_workshop.ThisPtr()->m_pszHelpString);
     }
 
-    auto command = std::string("map");
-
-    if (args.ArgC() > 2) {
-        if (!std::strcmp(args[2], "ss")) {
-            command = std::string("ss_map");
-        } else if (!std::strcmp(args[2], "changelevel")) {
-            command = std::string("changelevel");
-        }
-    }
-
-    engine->ExecuteCommand((command + std::string(" workshop/") + std::string(args[1])).c_str());
+    engine->ExecuteCommand((std::string("map workshop/") + std::string(args[1])).c_str());
 }
 CON_COMMAND(sar_workshop_update, "Updates the workshop map list.\n")
 {

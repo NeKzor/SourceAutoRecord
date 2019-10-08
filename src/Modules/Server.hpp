@@ -21,22 +21,10 @@ public:
     using _UTIL_PlayerByIndex = void*(__cdecl*)(int index);
     using _GetAllServerClasses = ServerClass* (*)();
     using _IsRestoring = bool(*)();
-    using _CreateEntityByName = void*(__stdcall*)(const char *);
-    using _DispatchSpawn = void(__stdcall*)(void*);
-    using _SetKeyValueChar = bool(__stdcall*)(void*, const char*, const char*);
-    using _SetKeyValueFloat = bool(__stdcall*)(void*, const char*, float);
-    using _SetKeyValueVector = bool(__stdcall*)(void*, const char*, const Vector&);
-    using _RemoveEntity = void(__thiscall*)(void*);
 
     _UTIL_PlayerByIndex UTIL_PlayerByIndex = nullptr;
     _GetAllServerClasses GetAllServerClasses = nullptr;
     _IsRestoring IsRestoring = nullptr;
-    _CreateEntityByName CreateEntityByName = nullptr;
-    _DispatchSpawn DispatchSpawn = nullptr;
-    _SetKeyValueChar SetKeyValueChar = nullptr;
-    _SetKeyValueFloat SetKeyValueFloat = nullptr;
-    _SetKeyValueVector SetKeyValueVector = nullptr;
-    _RemoveEntity RemoveEntity = nullptr;
 
     CGlobalVars* gpGlobals = nullptr;
     CEntInfo* m_EntPtrArray = nullptr;
@@ -63,7 +51,6 @@ public:
     bool IsPlayer(void* entity);
     bool AllowsMovementChanges();
     int GetSplitScreenPlayerSlot(void* entity);
-    void SetParent(void* entity, void* pNewParent, int iAttachment = -1);
 
 public:
     // CGameMovement::ProcessMovement
@@ -115,7 +102,3 @@ extern Variable sv_maxspeed;
 extern Variable sv_stopspeed;
 extern Variable sv_maxvelocity;
 extern Variable sv_gravity;
-
-extern Variable sar_record_at;
-extern Variable sar_record_at_demo_name;
-extern Variable sar_record_at_increment;

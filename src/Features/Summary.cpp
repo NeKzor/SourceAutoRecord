@@ -1,10 +1,7 @@
 #include "Summary.hpp"
 
-#include "Features/Session.hpp"
-
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
-
 
 #include "Command.hpp"
 #include "Variable.hpp"
@@ -50,7 +47,7 @@ CON_COMMAND(sar_sum_stop, "Stops summary counter.\n")
     }
 
     if (sar_sum_during_session.GetBool()) {
-        auto tick = session->GetTick();
+        auto tick = engine->GetSessionTick();
         summary->Add(tick, engine->ToTime(tick), engine->m_szLevelName);
     }
 
@@ -77,7 +74,7 @@ CON_COMMAND(sar_sum_result, "Prints result of summary.\n")
 
     auto totalTime = engine->ToTime(summary->totalTicks);
     if (summary->isRunning) {
-        auto tick = session->GetTick();
+        auto tick = engine->GetSessionTick();
         auto time = engine->ToTime(tick);
         console->PrintActive("%s -> ", *engine->m_szLevelName);
         console->PrintActive("%i ticks ", tick);

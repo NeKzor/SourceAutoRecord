@@ -37,7 +37,6 @@ void Portal2::LoadOffsets()
     StringToButtonCode = 31; // CInputSystem
     SleepUntilInput = 33; // CInputSystem
     GetRecordingTick = 1; // CDemoRecorder
-    net_time = 19; // CDemoRecorder::GetRecordingTick
     SetSignonState = 3; // CDemoRecorder
     StopRecording = 7; // CDemoRecorder
     GetPlaybackTick = 3; // CDemoPlayer
@@ -58,7 +57,6 @@ void Portal2::LoadOffsets()
     demorecorder = 87; // CClientState::Disconnect
     GetCurrentMap = 25; // CEngineTool
     m_szLevelName = 36; // CEngineTool::GetCurrentMap
-    PrecacheModel = 61; // CEngineTool::PrecacheModel
     AddListener = 3; // CGameEventManager
     RemoveListener = 5; // CGameEventManager
     FireEventClientSide = 8; // CGameEventManager
@@ -116,15 +114,8 @@ void Portal2::LoadOffsets()
     NUM_ENT_ENTRIES = 8192; // CBaseEntityList::CBaseEntityList
     GetIServerEntity = 1; // CServerTools
     m_EntPtrArray = 61; // CServerTools::GetIServerEntity
-    SetKeyValueChar = 13; // CServerTools::SetKeyValue (const char *szValue)
-    SetKeyValueFloat = 12; // CServerTools::SetKeyValue (float flValue )
-    SetKeyValueVector = 11; // CServerTools::SetKeyValue (const Vector &vecValue )
-    CreateEntityByName = 14; //CServerTool::CreateEntityByName
-    DispatchSpawn = 15; //CServerTool::DispatchSpawn
-    RemoveEntity = 21; //CServerTool::RemoveEntity
     ClientCommand = 39; // CVEngineServer
     IsPlayer = 85; // CBasePlayer
-    SetParent = 38; //CBaseEntity::SetParent
     m_pSurfaceData = 3868; // CGameMovement::CheckJumpButton
     jumpFactor = 68; // CGameMovement::CheckJumpButton
 

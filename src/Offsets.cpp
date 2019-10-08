@@ -106,7 +106,6 @@ int m_flMaxspeed;
 int m_flGravity;
 int S_m_vecViewOffset;
 int IsPlayer;
-int SetParent;
 
 // CBasePlayer
 int m_fFlags;
@@ -124,7 +123,6 @@ int Paint;
 
 // CEngineTool
 int GetCurrentMap;
-int PrecacheModel;
 
 // CSchemeManager
 int GetIScheme;
@@ -165,12 +163,6 @@ int m_bWaitEnabled;
 
 // CServerTools
 int GetIServerEntity;
-int CreateEntityByName;
-int DispatchSpawn;
-int SetKeyValueChar;
-int SetKeyValueFloat;
-int SetKeyValueVector;
-int RemoveEntity;
 
 // CVEngineServer
 int ClientCommand;
@@ -224,5 +216,4 @@ int MULTIPLAYER_BACKUP;
 int PerUserInput_tSize;
 int GetLocalClient;
 int MAX_SPLITSCREEN_PLAYERS;
-int net_time;
 }

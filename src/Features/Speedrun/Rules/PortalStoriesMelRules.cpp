@@ -2,9 +2,10 @@
 
 #include <cstdint>
 
-#include "Features/Session.hpp"
 #include "Features/Speedrun/TimerCategory.hpp"
 #include "Features/Speedrun/TimerRule.hpp"
+
+#include "Modules/Engine.hpp"
 
 #include "Utils/SDK.hpp"
 
@@ -21,7 +22,7 @@ SAR_RULE3(tram_teleport, "sp_a1_tramride", "Intro_Viewcontroller", SearchMode::N
     // CTriggerCamera aka point_viewcontrol
     auto m_state = reinterpret_cast<int*>((uintptr_t)entity + Offset_m_state);
 
-    if (session->GetTick() > 60 && *m_state == USE_OFF) {
+    if (engine->GetSessionTick() > 60 && *m_state == USE_OFF) {
         return TimerAction::Start;
     }
 
@@ -32,7 +33,7 @@ SAR_RULE3(tram_teleport2, "st_a1_tramride", "Intro_Viewcontroller", SearchMode::
     // CTriggerCamera aka point_viewcontrol
     auto m_state = reinterpret_cast<int*>((uintptr_t)entity + Offset_m_state);
 
-    if (session->GetTick() > 60 && *m_state == USE_OFF) {
+    if (engine->GetSessionTick() > 60 && *m_state == USE_OFF) {
         return TimerAction::Start;
     }
 

@@ -4,7 +4,6 @@
 
 #include "Modules/Client.hpp"
 #include "Modules/Console.hpp"
-#include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
 #include "Modules/Tier1.hpp"
 
@@ -159,7 +158,6 @@ void Cvars::Lock()
         sv_stopspeed.Lock();
         sv_maxvelocity.Lock();
         sv_footsteps.Lock();
-        net_showmsg.Lock();
 
         if (sar.game->Is(SourceGame_Portal2Game)) {
             sv_bonus_challenge.Lock();
@@ -181,7 +179,6 @@ void Cvars::Unlock()
         sv_stopspeed.Unlock();
         sv_maxvelocity.Unlock();
         sv_footsteps.Unlock();
-        net_showmsg.Unlock();
 
         if (sar.game->Is(SourceGame_Portal2Game)) {
             // Don't find a way to abuse this, ok?

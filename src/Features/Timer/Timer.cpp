@@ -3,7 +3,6 @@
 #include "TimerAverage.hpp"
 #include "TimerCheckPoints.hpp"
 
-#include "Features/Session.hpp"
 #include "Features/Stats/Stats.hpp"
 
 #include "Modules/Console.hpp"
@@ -77,7 +76,7 @@ CON_COMMAND(sar_timer_start, "Starts timer.\n")
         console->DevMsg("Starting timer!\n");
     }
 
-    timer->Start(engine->GetTick());
+    timer->Start(*engine->tickcount);
 
     if (sar_stats_auto_reset.GetInt() >= 2) {
         stats->ResetAll();
@@ -89,16 +88,16 @@ CON_COMMAND(sar_timer_stop, "Stops timer.\n")
         return console->DevMsg("Timer isn't running!\n");
     }
 
-    timer->Stop(engine->GetTick());
+    timer->Stop(*engine->tickcount);
 
     if (timer->avg->isEnabled) {
-        auto tick = timer->GetTick(engine->GetTick());
+        auto tick = timer->GetTick(*engine->tickcount);
         timer->avg->Add(tick, engine->ToTime(tick), engine->m_szLevelName);
     }
 }
 CON_COMMAND(sar_timer_result, "Prints result of timer.\n")
 {
-    auto tick = timer->GetTick(engine->GetTick());
+    auto tick = timer->GetTick(*engine->tickcount);
     auto time = engine->ToTime(tick);
 
     if (timer->isRunning) {
@@ -141,7 +140,7 @@ CON_COMMAND(sar_cps_add, "Saves current time of timer.\n")
         return console->DevMsg("Timer isn't running!\n");
     }
 
-    auto tick = timer->GetTick(session->GetTick());
+    auto tick = timer->GetTick(engine->GetSessionTick());
     timer->cps->Add(tick, engine->ToTime(tick), engine->m_szLevelName);
 }
 CON_COMMAND(sar_cps_clear, "Resets saved times of timer.\n")
@@ -170,7 +169,7 @@ CON_COMMAND(sar_cps_result, "Prints result of timer checkpoints.\n")
     }
 
     if (!timer->isRunning) {
-        auto tick = timer->GetTick(engine->GetTick());
+        auto tick = timer->GetTick(*engine->tickcount);
         auto time = engine->ToTime(tick);
         console->Print("Result: %i (%.3f)\n", tick, time);
     }

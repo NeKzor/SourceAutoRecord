@@ -77,7 +77,6 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
                 this->cheats->Init();
 
                 this->features->AddFeature<TasTools>(&tasTools);
-                this->features->AddFeature<GhostPlayer>(&ghostPlayer);
 
                 if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
                     this->features->AddFeature<Listener>(&listener);
@@ -150,7 +149,7 @@ void SAR::SearchPlugin()
 
 CON_COMMAND(sar_session, "Prints the current tick of the server since it has loaded.\n")
 {
-    auto tick = session->GetTick();
+    auto tick = engine->GetSessionTick();
     console->Print("Session Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
     if (*engine->demorecorder->m_bRecording) {
         tick = engine->demorecorder->GetTick();

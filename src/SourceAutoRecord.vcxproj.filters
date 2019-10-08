@@ -295,12 +295,6 @@
     <ClCompile Include="Games\Windows\PortalUnpack.cpp">
       <Filter>SourceAutoRecord\Games\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="Features\Demo\GhostEntity.cpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
-    </ClCompile>
-    <ClCompile Include="Features\Demo\GhostPlayer.cpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\lib\minhook\buffer.h">
@@ -623,12 +617,6 @@
     </ClInclude>
     <ClInclude Include="Games\Windows\PortalUnpack.hpp">
       <Filter>SourceAutoRecord\Games\Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="Features\Demo\GhostEntity.hpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
-    </ClInclude>
-    <ClInclude Include="Features\Demo\GhostPlayer.hpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
