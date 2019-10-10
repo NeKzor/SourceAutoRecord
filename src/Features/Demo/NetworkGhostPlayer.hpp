@@ -13,7 +13,7 @@
 #include <thread>
 #include <vector>
 
-enum HEADER {
+enum class HEADER {
     NONE,
     PING,
     CONNECT,

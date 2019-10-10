@@ -1,6 +1,5 @@
 #include "NetworkManager.h"
 
-
 //DataGhost
 sf::Packet& operator>>(sf::Packet& packet, QAngle& angle)
 {
@@ -35,7 +34,6 @@ sf::Packet& operator<<(sf::Packet& packet, const HEADER& header)
 {
     return packet << static_cast<sf::Uint8>(header);
 }
-
 
 /*
 Manage multiple Portal 2 clients
@@ -88,41 +86,45 @@ Packets contains :
 		Server send : UDPpacket << HEADER << sf::Uint32 ID << DataGhost
 */
 
-
 std::mutex mutex;
 std::mutex mutex2;
 std::mutex mutex3;
+std::mutex mutex4;
 std::condition_variable TCPfinishedCondVar;
 std::condition_variable UDPfinishedCondVar;
 std::atomic<bool> UDPfinished = true;
 std::atomic<bool> TCPfinished = false;
 
 NetworkManager::NetworkManager(unsigned short int port)
-    : isConnected(false)
 {
-	//UDP
+    this->isConnected = false;
+    //UDP
     this->port = port;
     if (this->UDPSocket.bind(port) != sf::Socket::Done) {
         //error
-        std::cout << "Cant bind socket to port " << port << std::endl;
-        std::getchar();
-		//TODO : Handle errors
+        return;
     }
 
     this->runServer = true;
     UDPthread = std::thread(&NetworkManager::UDPListening, this);
     UDPthread.detach();
 
-	//TCP
+    //TCP
     TCPthread = std::thread(&NetworkManager::TCPListening, this);
     TCPthread.detach();
 
+    this->stopped = false;
     this->isConnected = true;
 }
 
 bool NetworkManager::IsConnected()
 {
     return this->isConnected;
+}
+
+bool NetworkManager::IsStopped()
+{
+    return this->stopped;
 }
 
 sf::IpAddress NetworkManager::GetLocalIP()
@@ -135,12 +137,10 @@ sf::IpAddress NetworkManager::GetPublicIP()
     return sf::IpAddress::getPublicAddress();
 }
 
-
 unsigned short int NetworkManager::GetPort()
 {
     return this->port;
 }
-
 
 /*
 Wait until the socket receive an update of a client
@@ -150,22 +150,12 @@ bool NetworkManager::ReceivePacket(sf::Packet& packet, sf::UdpSocket& socket, sf
 {
     if (selector.wait(sf::seconds(1))) {
         if (socket.receive(packet, ip_sender, port_sender) != sf::Socket::Done) {
-            //error
-            std::cout << "Error : Can't receive packet" << std::endl;
             return false;
         }
     } else {
         return false;
     }
     return true;
-}
-
-//Send the packet specified to the client
-void NetworkManager::SendPacket(sf::UdpSocket& socket, sf::Packet& packet, const sf::IpAddress& ip_client, const unsigned short& port)
-{
-    if (socket.send(packet, ip_client, port) != sf::Socket::Done) {
-        std::cout << "Error : Can't send packet" << std::endl;
-    }
 }
 
 void NetworkManager::UDPListening()
@@ -201,7 +191,7 @@ void NetworkManager::UDPListening()
                     update_packet << header << ip_sender.toInteger() << data;
                     for (auto& player_it : this->player_pool) {
                         if (player_it.first != ip_sender) {
-                            SendPacket(this->UDPSocket, update_packet, player_it.first, player_it.second.port); //Send update to other clients
+                            this->UDPSocket.send(update_packet, player_it.first, player_it.second.port); //Send update to other clients
                         }
                     }
                 }
@@ -220,34 +210,32 @@ void NetworkManager::UDPListening()
 void NetworkManager::TCPListening()
 {
     //TCP
-    sf::SocketSelector selector;
-    sf::TcpListener listener;
-    listener.setBlocking(true);
 
-    if (listener.listen(this->port) != sf::Socket::Done) {
+    this->listener.setBlocking(true);
+
+    if (this->listener.listen(this->port) != sf::Socket::Done) {
         //Error
         this->runServer = false;
     }
 
     while (this->runServer) {
 
-        CheckNewConnection(listener, selector); //Check if someone wants to connect
+        CheckNewConnection(); //Check if someone wants to connect
 
         unsigned int crashed = -1;
-        if (selector.wait(sf::seconds(5))) {
+        if (this->TCPselector.wait(sf::seconds(5))) {
             for (size_t id = 0; id < this->socket_pool.size(); ++id) {
                 if (this->socket_pool[id]->getRemoteAddress() != sf::IpAddress::None) {
-                    if (selector.isReady(*this->socket_pool[id])) {
+                    if (this->TCPselector.isReady(*this->socket_pool[id])) {
                         sf::Packet packet;
                         this->socket_pool[id]->receive(packet);
                         HEADER header;
                         packet >> header;
                         if (header == HEADER::DISCONNECT) {
                             sf::Uint32 ID = this->socket_pool[id]->getRemoteAddress().toInteger();
-                            Disconnect(ID, selector);
+                            Disconnect(ID);
                         } else if (header == HEADER::STOP_SERVER) {
-                            std::cout << "STOP_SERVER received. Server will stop ! Press Enter to quit ..." << std::endl;
-                            StopServer(this->runServer);
+                            StopServer();
                         } else if (header == HEADER::MAP_CHANGE) {
                             std::string newMap;
                             packet >> newMap;
@@ -255,7 +243,6 @@ void NetworkManager::TCPListening()
                         } else if (header == HEADER::MESSAGE) {
                             std::string message;
                             packet >> message;
-                            std::cout << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name << " : " << message << std::endl;
 
                             sf::Uint32 ID = this->socket_pool[id]->getRemoteAddress().toInteger();
                             SendMessage(ID, message);
@@ -263,47 +250,47 @@ void NetworkManager::TCPListening()
                             sf::Packet packet_ping;
                             packet_ping << HEADER::PING;
                             this->socket_pool[id]->send(packet_ping);
-                            std::cout << "Ping from " + this->player_pool[this->socket_pool[id]->getRemoteAddress()].name + " !" << std::endl;
                         } else if (header == HEADER::COUNTDOWN) {
-                            sf::Packet countdown_packet;
-                            countdown_packet << HEADER::COUNTDOWN;
-                            for (auto& socket : this->socket_pool) {
-                                socket->send(packet);
-                            }
+                            sf::Packet e;
+                            e << HEADER::COUNTDOWN << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
+                            this->eventList.push_back(e);
+                            this->StartCountdown();
                         }
                     }
                 } else {
                     crashed = id;
                 }
             }
-        } else if(this->socket_pool.size() == 0) {
-            listener.setBlocking(true);
-		}
+        } else if (this->socket_pool.size() == 0) {
+            this->listener.setBlocking(true);
+        }
 
         if (crashed != -1) {
-            Disconnect(crashed, selector, true);
+            Disconnect(crashed, true);
         }
     }
+
+    stopped = true;
 }
 
 //Listen for a client to connect and add the player to the player pool
-void NetworkManager::CheckNewConnection(sf::TcpListener& listener, sf::SocketSelector& selector)
+void NetworkManager::CheckNewConnection()
 {
     std::shared_ptr<sf::TcpSocket> client(new sf::TcpSocket);
 
-    if (listener.accept(*client) != sf::Socket::Done) {
+    if (this->listener.accept(*client) != sf::Socket::Done) {
         return;
     }
     if (this->socket_pool.size() == 0) {
-        listener.setBlocking(false);
-	}
+        this->listener.setBlocking(false);
+    }
 
     sf::IpAddress ip_sender = client->getRemoteAddress();
     if (this->player_pool.find(ip_sender) != this->player_pool.end()) { //Check if player is already connected
         return;
     }
 
-    selector.add(*client);
+    this->TCPselector.add(*client);
     sf::Packet connection_packet;
     client->receive(connection_packet);
 
@@ -325,9 +312,9 @@ void NetworkManager::CheckNewConnection(sf::TcpListener& listener, sf::SocketSel
     TCPfinished = true;
     TCPfinishedCondVar.notify_one();
 
-    std::cout << "New player connected: Hello <" << ip_sender << "; "
-              << port_sender << "; "
-              << name << "> !" << std::endl;
+    sf::Packet e;
+    e << HEADER::CONNECT << this->player_pool[ip_sender].name;
+    this->eventList.push_back(e);
 
     for (auto& socket : this->socket_pool) {
         if (socket->getRemoteAddress() == ip_sender) { //Send confirmation
@@ -349,15 +336,12 @@ void NetworkManager::CheckNewConnection(sf::TcpListener& listener, sf::SocketSel
 }
 
 //Disconnect a player
-void NetworkManager::Disconnect(const sf::Uint32& ID, sf::SocketSelector& selector, bool hasCrashed)
+std::string NetworkManager::Disconnect(const sf::Uint32& ID, bool hasCrashed)
 {
     sf::IpAddress ip_sender = sf::IpAddress(ID);
+    std::string disconnectedName;
     if (!hasCrashed) {
-        {
-            std::unique_lock<std::mutex> lck(mutex2);
-            std::cout << "Player " << this->player_pool[ip_sender].name << " has disconnected !" << std::endl;
-        }
-        int id = 0;
+        int id = -1;
         for (int i = 0; i < this->socket_pool.size(); ++i) {
             //Update other players
             sf::Packet confirm_packet;
@@ -365,7 +349,11 @@ void NetworkManager::Disconnect(const sf::Uint32& ID, sf::SocketSelector& select
             this->socket_pool[i]->send(confirm_packet); //Send disconnection to other clients
             if (this->socket_pool[i]->getRemoteAddress() == ip_sender) {
                 id = i;
+                disconnectedName = this->player_pool[sf::IpAddress(ID)].name;
             }
+        }
+        if (id == -1) {
+            return "";
         }
 
         std::unique_lock<std::mutex> lck(mutex2);
@@ -373,24 +361,30 @@ void NetworkManager::Disconnect(const sf::Uint32& ID, sf::SocketSelector& select
         TCPfinished = false;
 
         this->player_pool.erase(ip_sender);
-        selector.remove(*this->socket_pool[id]);
+        this->TCPselector.remove(*this->socket_pool[id]);
         this->socket_pool[id]->disconnect();
         this->socket_pool.erase(this->socket_pool.begin() + id);
 
         TCPfinished = true;
         TCPfinishedCondVar.notify_one();
     } else {
+        int id = -1;
+        for (int i = 0; i < this->socket_pool.size(); ++i) {
+            if (this->socket_pool[i]->getRemoteAddress() == ip_sender) {
+                id = i;
+                disconnectedName = this->player_pool[sf::IpAddress(ID)].name;
+            }
+        }
+
+        if (id == -1) {
+            return "";
+        }
+
         std::unique_lock<std::mutex> lck(mutex2);
         UDPfinishedCondVar.wait(lck, [] { return UDPfinished.load(); }); //Wait for the main function to finish updating ghosts
         TCPfinished = false;
 
-        int id = 0;
-        for (int i = 0; i < this->socket_pool.size(); ++i) {
-            if (this->socket_pool[i]->getRemoteAddress() == ip_sender) {
-                id = i;
-            }
-        }
-        selector.remove(*this->socket_pool[id]);
+        this->TCPselector.remove(*this->socket_pool[id]);
         this->socket_pool.erase(this->socket_pool.begin() + ID);
         auto playerID = this->player_pool.begin();
         for (auto player = this->player_pool.begin(); player != this->player_pool.end(); ++player) {
@@ -399,7 +393,6 @@ void NetworkManager::Disconnect(const sf::Uint32& ID, sf::SocketSelector& select
                 player = this->player_pool.end();
             }
         }
-        std::cout << "Player " << playerID->second.name << " has disconnected !" << std::endl;
         sf::Packet confirm_packet;
         confirm_packet << HEADER::DISCONNECT << playerID->first.toInteger();
         for (auto& socket : this->socket_pool) {
@@ -412,17 +405,29 @@ void NetworkManager::Disconnect(const sf::Uint32& ID, sf::SocketSelector& select
         TCPfinished = true;
         TCPfinishedCondVar.notify_one();
     }
+
+    sf::Packet e;
+    e << HEADER::DISCONNECT << disconnectedName;
+    this->eventList.push_back(e);
+
+    return disconnectedName;
 }
 
 //Stop the server
-void NetworkManager::StopServer(bool& stopServer)
+void NetworkManager::StopServer()
 {
     sf::Packet packet;
     packet << HEADER::STOP_SERVER;
     for (auto& it : this->socket_pool) {
         it->send(packet); //Send disconnection to other clients
     }
-    stopServer = false;
+    TCPfinished = true;
+    TCPfinishedCondVar.notify_one();
+    UDPfinished = true;
+    UDPfinishedCondVar.notify_one();
+    this->listener.close();
+    this->isConnected = false;
+    this->runServer = false;
 }
 
 //Signal map change
@@ -443,6 +448,24 @@ void NetworkManager::SendMessage(const sf::Uint32& ID, const std::string& messag
     sf::Packet packet;
     packet << HEADER::MESSAGE << ID << message;
     for (auto& it : this->socket_pool) {
-        it->send(packet); //Send disconnection to other clients
+        it->send(packet);
     }
+    sf::Packet e;
+    e << HEADER::MESSAGE << this->player_pool[sf::IpAddress(ID)].name << message;
+    this->eventList.push_back(e);
+}
+
+void NetworkManager::StartCountdown()
+{
+    sf::Packet countdown_packet;
+    countdown_packet << HEADER::COUNTDOWN;
+    for (auto& socket : this->socket_pool) {
+        socket->send(countdown_packet);
+    }
+}
+
+void NetworkManager::GetEvent(std::vector<sf::Packet>& e)
+{
+    e = this->eventList;
+    this->eventList.clear();
 }

@@ -8,43 +8,41 @@ TextBox.log {
     TextSize = 13;
 
     Renderer {
-        backgroundcolor = white;
-        bordercolor = black;
-        borders = (1, 1, 1, 1);
-        caretcolor = black;
-        caretwidth = 1;
-        padding = (0, 0, 0, 0);
-        selectedtextbackgroundcolor = #006EFF;
-        selectedtextcolor = white;
-        textcolor = #3C3C3C;
-        texturebackground = None;
+        caretcolor = rgb(110, 110, 255);
+        padding = (3, 3, 3, 3);
+        selectedtextbackgroundcolor = rgb( 10, 110, 255);
+        selectedtextcolor = White;
+        textcolor = rgb(190, 190, 190);
+        texturebackground = "themes/Black.png" Part(0, 154, 48, 48) Middle(16, 16, 16, 16);
+
+        scrollbar {
+            texturearrowdown = "themes/Black.png" Part(163, 174, 20, 20) Middle(0, 1, 20, 19);
+            texturearrowdownhover = "themes/Black.png" Part(183, 174, 20, 20) Middle(0, 1, 20, 19);
+            texturearrowup = "themes/Black.png" Part(163, 154, 20, 20) Middle(0, 0, 20, 19);
+            texturearrowuphover = "themes/Black.png" Part(183, 154, 20, 20) Middle(0, 0, 20, 19);
+            texturethumb = "themes/Black.png" Part(143, 154, 20, 20);
+            texturethumbhover = "themes/Black.png" Part(143, 174, 20, 20);
+            texturetrack = "themes/Black.png" Part(123, 154, 20, 20);
+            texturetrackhover = "themes/Black.png" Part(123, 174, 20, 20);
+        }
     }
 }
 
 EditBox.commandEdit {
-    Position = (10, 560);
-    Size = (780, 32);
+    Position = (10, 558.625);
+    Size = (780, 33.375);
     TextSize = 13;
 
     Renderer {
-        backgroundcolor = #F5F5F5;
-        backgroundcolordisabled = #E6E6E6;
-        backgroundcolorhover = white;
-        bordercolor = #3C3C3C;
-        bordercolordisabled = #7D7D7D;
-        bordercolorhover = black;
-        borders = (1, 1, 1, 1);
-        caretcolor = black;
-        caretwidth = 1;
-        defaulttextcolor = #A0A0A0;
-        padding = (0, 0, 0, 0);
-        selectedtextbackgroundcolor = #006EFF;
-        selectedtextcolor = white;
-        textcolor = #3C3C3C;
-        textcolordisabled = #7D7D7D;
-        texture = None;
+        caretcolor = rgb(110, 110, 255);
+        defaulttextcolor = rgb(120, 120, 120);
+        padding = (6, 4, 6, 4);
+        selectedtextbackgroundcolor = rgb( 10, 110, 255);
+        selectedtextcolor = White;
+        textcolor = rgb(190, 190, 190);
+        texture = "themes/Black.png" Part(0, 114, 60, 40) Middle(15, 0, 30, 40);
         texturedisabled = None;
-        texturefocused = None;
-        texturehover = None;
+        texturefocused = "themes/Black.png" Part(120, 114, 60, 40) Middle(15, 0, 30, 40);
+        texturehover = "themes/Black.png" Part(60, 114, 60, 40) Middle(15, 0, 30, 40);
     }
 }

@@ -14,7 +14,7 @@ struct QAngle {
     float z;
 };
 
-enum HEADER {
+enum class HEADER {
     NONE,
     PING,
     CONNECT,
@@ -31,6 +31,11 @@ struct DataGhost {
     QAngle view_angle;
 };
 
+struct EventInfo {
+    HEADER header;
+    std::string name;
+};
+
 //PlayerInfo
 struct PlayerInfo {
     sf::IpAddress ip;
@@ -41,6 +46,11 @@ struct PlayerInfo {
     unsigned int socketID; //To handle crash
     std::string modelName;
 };
+
+//HEADER
+sf::Packet& operator>>(sf::Packet& packet, HEADER& header);
+
+sf::Packet& operator<<(sf::Packet& packet, const HEADER& header);
 
 class NetworkManager {
 
@@ -53,29 +63,32 @@ private:
     sf::UdpSocket UDPSocket;
     bool isConnected;
     bool runServer;
+    bool stopped;
+    sf::SocketSelector TCPselector;
+    sf::TcpListener listener;
+    std::vector<sf::Packet> eventList;
 
 public:
-
 public:
     NetworkManager(unsigned short int port = 53000);
 
-	bool IsConnected();
+    bool IsConnected();
+    bool IsStopped();
     sf::IpAddress GetLocalIP();
     sf::IpAddress GetPublicIP();
     unsigned short int GetPort();
 
-
     bool ReceivePacket(sf::Packet& packet, sf::UdpSocket& socket, sf::IpAddress& ip_sender, unsigned short& port_sender, sf::SocketSelector& selector);
-    void SendPacket(sf::UdpSocket& socket, sf::Packet& packet, const sf::IpAddress& ip_client, const unsigned short& port);
 
-    //void SendPacket(const sf::TcpSocket& socket, const sf::Packet& packet);
     void TCPListening();
     void UDPListening();
-    
-	void CheckNewConnection(sf::TcpListener& listener, sf::SocketSelector& selector);
-    void Disconnect(const sf::Uint32& ID, sf::SocketSelector& selector, bool hasCrashed = false);
-    void StopServer(bool& stopServer);
+
+    void CheckNewConnection();
+    std::string Disconnect(const sf::Uint32& ID, bool hasCrashed = false);
+    void StopServer();
     void ChangeMap(const sf::Uint32& ID, const std::string& map);
     void SendMessage(const sf::Uint32& ID, const std::string& message);
-	
+    void StartCountdown();
+
+    void GetEvent(std::vector<sf::Packet>& e);
 };
