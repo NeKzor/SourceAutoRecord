@@ -251,10 +251,14 @@ void NetworkManager::TCPListening()
                             packet_ping << HEADER::PING;
                             this->socket_pool[id]->send(packet_ping);
                         } else if (header == HEADER::COUNTDOWN) {
+
+                            sf::Uint32 time;
+                            packet >> time;
+                            this->StartCountdown(time);
+
                             sf::Packet e;
                             e << HEADER::COUNTDOWN << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
                             this->eventList.push_back(e);
-                            this->StartCountdown();
                         }
                     }
                 } else {
@@ -455,10 +459,12 @@ void NetworkManager::SendMessage(const sf::Uint32& ID, const std::string& messag
     this->eventList.push_back(e);
 }
 
-void NetworkManager::StartCountdown()
+void NetworkManager::StartCountdown(sf::Uint32 time)
 {
+	sf::Uint64 epoch = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+
     sf::Packet countdown_packet;
-    countdown_packet << HEADER::COUNTDOWN;
+    countdown_packet << HEADER::COUNTDOWN << epoch << time;
     for (auto& socket : this->socket_pool) {
         socket->send(countdown_packet);
     }

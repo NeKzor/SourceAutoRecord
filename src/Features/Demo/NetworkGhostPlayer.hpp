@@ -51,7 +51,7 @@ public:
     bool isInLevel;
     bool pausedByServer;
     int countdown;
-    std::chrono::time_point<std::chrono::steady_clock> startCountDown;
+    std::chrono::time_point<std::chrono::system_clock> startCountDown;
 
 private:
     void NetworkThink();
@@ -65,6 +65,7 @@ public:
     void ConnectToServer(std::string, unsigned short port);
     void Disconnect();
     void StopServer();
+    void Countdown(sf::Uint64 epoch, sf::Uint32 time);
     bool IsConnected();
 
     int ReceivePacket(sf::Packet& packet, sf::IpAddress&, int timeout);

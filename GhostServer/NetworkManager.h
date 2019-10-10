@@ -88,7 +88,7 @@ public:
     void StopServer();
     void ChangeMap(const sf::Uint32& ID, const std::string& map);
     void SendMessage(const sf::Uint32& ID, const std::string& message);
-    void StartCountdown();
+    void StartCountdown(sf::Uint32 time);
 
     void GetEvent(std::vector<sf::Packet>& e);
 };

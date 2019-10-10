@@ -41,8 +41,6 @@ public:
     CGlobalVars* gpGlobals = nullptr;
     CEntInfo* m_EntPtrArray = nullptr;
 
-    std::chrono::steady_clock clock;
-
 private:
     bool jumpedLastTime = false;
     float savedVerticalVelocity = 0.0f;

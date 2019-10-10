@@ -290,14 +290,24 @@ DETOUR(Server::GameFrame, bool simulating)
     if (!networkGhostPlayer->pausedByServer) {
         for (auto& ghost : networkGhostPlayer->ghostPool) {
             if (ghost->ghost_entity != nullptr) {
-                auto time = std::chrono::duration_cast<std::chrono::milliseconds>(server->clock.now() - ghost->lastUpdate).count();
+                auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - ghost->lastUpdate).count();
                 ghost->Lerp(ghost->oldPos, ghost->newPos, ((float)time / (ghost->loopTime)));
             }
         }
     }
 
     if (networkGhostPlayer->countdown >= 0) {
-        if (std::chrono::duration_cast<std::chrono::seconds>(server->clock.now() - networkGhostPlayer->startCountDown).count() >= 1) {
+        auto now = std::chrono::system_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - networkGhostPlayer->startCountDown).count() >= 1) {
+            std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + "...";
+            engine->ExecuteCommand(command.c_str());
+            networkGhostPlayer->countdown--;
+            networkGhostPlayer->startCountDown = now;
+        }
+    }
+
+    /*if (networkGhostPlayer->countdown >= 0) {
+        if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - networkGhostPlayer->startCountDown).count() >= 1) {
             if (networkGhostPlayer->countdown == 3) {
                 engine->ExecuteCommand("say Countdown started ! : 3 ...");
             } else if (networkGhostPlayer->countdown == 2) {
@@ -307,10 +317,10 @@ DETOUR(Server::GameFrame, bool simulating)
             } else if (networkGhostPlayer->countdown == 0) {
                 engine->ExecuteCommand("say GO !!");
             }
-            networkGhostPlayer->startCountDown = server->clock.now();
+            networkGhostPlayer->startCountDown = std::chrono::steady_clock::now();
             networkGhostPlayer->countdown--;
         }
-    }
+    }*/
 
     if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
         std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();

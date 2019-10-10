@@ -68,7 +68,10 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
             return "No player corresponding to the ip !";
         }
     } else if (command->second.commandType == COMMANDTYPE::COUNTDOWN) {
-        network.StartCountdown();
+        if (args.size() != 2) {
+            return "Not enough argument -> " + command->second.helpString;
+		}
+        network.StartCountdown(std::atoi(args[1].c_str()));
         return "Countdown started !";
     } else if (command->second.commandType == COMMANDTYPE::FONTSIZE) {
         if (args.size() < 2) {
@@ -92,7 +95,7 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
     }
 }
 
-void HandleEvent(tgui::TextBox::Ptr& log, std::vector<sf::Packet>& e)
+void HandleEvent(tgui::TextBox::Ptr& log, std::vector<sf::Packet>& e, NetworkManager& network)
 {
     for (auto& it : e) {
         HEADER header;
@@ -165,7 +168,7 @@ int main()
         }
         network.GetEvent(e);
         if (e.size() > 0) {
-            HandleEvent(log, e);
+            HandleEvent(log, e, network);
         }
 
         window.clear();

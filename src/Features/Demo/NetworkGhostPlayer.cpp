@@ -172,6 +172,17 @@ void NetworkGhostPlayer::StopServer()
     this->isInLevel = false;
 }
 
+void NetworkGhostPlayer::Countdown(sf::Uint64 epoch, sf::Uint32 time)
+{
+    auto oldEpoch = std::chrono::milliseconds(epoch);
+    auto t = std::chrono::seconds(time);
+    auto now = std::chrono::system_clock::now();
+    auto finalTime = (now - (now.time_since_epoch() - oldEpoch) + t);
+    auto startTime = finalTime + std::chrono::seconds(3);
+    this->countdown = time;
+    this->startCountDown = startTime;
+}
+
 bool NetworkGhostPlayer::IsConnected()
 {
     return this->isConnected;
@@ -321,8 +332,8 @@ void NetworkGhostPlayer::NetworkThink()
                         //this->SetPosAng(ID, QAngleToVector({ data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }), QAngleToVector(data.view_angle));
                         ghost->oldPos = ghost->newPos;
                         ghost->newPos = { { data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }, { data.view_angle.x, data.view_angle.y, data.view_angle.z } };
-                        ghost->loopTime = std::chrono::duration_cast<std::chrono::milliseconds>(server->clock.now() - ghost->lastUpdate).count();
-                        ghost->lastUpdate = server->clock.now();
+                        ghost->loopTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - ghost->lastUpdate).count();
+                        ghost->lastUpdate = std::chrono::steady_clock::now();
                     }
                 }
             }
@@ -392,11 +403,24 @@ void NetworkGhostPlayer::CheckConnection()
                     std::string cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
                     engine->ExecuteCommand(cmd.c_str());
                 } else if (header == HEADER::PING) {
-                    auto stop = server->clock.now();
+                    auto stop = std::chrono::steady_clock::now();
                     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
                     console->Print("Ping returned in %lld ms\n", elapsed.count());
                 } else if (header == HEADER::COUNTDOWN) {
-                    this->countdown = 3;
+                    sf::Uint64 epoch;
+                    sf::Uint32 time;
+
+                    packet >> epoch >> time;
+
+					auto oldEpoch = std::chrono::milliseconds(epoch);
+                    auto t = std::chrono::seconds(time);
+                    auto now = std::chrono::system_clock::now();
+                    auto finalTime = (now - (now.time_since_epoch() - oldEpoch) + t);
+                    auto startTime = finalTime + std::chrono::seconds(3);
+                    this->countdown = time;
+                    this->startCountDown = startTime;
+
+                    //this->Countdown(epoch, time);
                 }
             } else if (status == sf::Socket::Disconnected) {
                 console->Warning("Connexion has been interrupted ! You have been disconnected !\n");
@@ -473,7 +497,7 @@ CON_COMMAND(sar_ghost_ping, "Send ping\n")
     sf::Packet packet;
     packet << HEADER::PING;
 
-    networkGhostPlayer->start = server->clock.now();
+    networkGhostPlayer->start = std::chrono::steady_clock::now();
     networkGhostPlayer->tcpSocket.send(packet);
 }
 
@@ -519,8 +543,13 @@ CON_COMMAND(sar_ghost_tickrate, "Adjust the tickrate\n")
 
 CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
 {
+    if (args.ArgC() != 2) {
+        console->Print(sar_ghost_tickrate.ThisPtr()->m_pszHelpString);
+        return;
+	}
+
     sf::Packet packet;
-    packet << HEADER::COUNTDOWN;
+    packet << HEADER::COUNTDOWN << sf::Uint32(std::atoi(args[1]));
     networkGhostPlayer->tcpSocket.send(packet);
 }
 
