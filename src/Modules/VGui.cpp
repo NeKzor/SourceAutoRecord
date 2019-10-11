@@ -96,7 +96,7 @@ DETOUR(VGui::Paint, int mode)
 
         surface->DrawTxt(font,
             xPos - sizeof(fmt) * fontSize,
-            yPos - sar_ghost_height.GetInt() - sar_ghost_name_offset.GetInt(),
+            yPos - sar_ghost_height.GetInt() - sar_ghost_name_offset.GetInt() + elements * (fontSize + spacing),
             textColor,
             data);
 

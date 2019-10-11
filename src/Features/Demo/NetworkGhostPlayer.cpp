@@ -199,20 +199,6 @@ int NetworkGhostPlayer::ReceivePacket(sf::Packet& packet, sf::IpAddress& ip, int
 {
     unsigned short port;
 
-    /*if (selector.wait(sf::milliseconds(timeout))) {
-        this->socket.receive(packet, ip, port);
-    } else {
-        packet << HEADER::NONE;
-        if (!this->IsConnected()) {
-            packet << "Error: Timeout reached ! You are now disconnected !\n";
-            return -1; //Not connected anymore
-        }
-
-        return 0; //Connected but don't receive packets (ex: 1 player online)
-    }
-
-    return 1; //Received packet*/
-
     if (this->socket.receive(packet, ip, port) == sf::Socket::Done) {
         return 1;
     } else {

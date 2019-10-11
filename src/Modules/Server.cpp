@@ -298,14 +298,6 @@ DETOUR(Server::GameFrame, bool simulating)
 
     if (networkGhostPlayer->countdown >= 0) {
         auto now = std::chrono::system_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - networkGhostPlayer->startCountDown).count() >= 1) {
-            std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + "...";
-            engine->ExecuteCommand(command.c_str());
-            networkGhostPlayer->countdown--;
-            networkGhostPlayer->startCountDown = now;
-        }
-    }
-
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - networkGhostPlayer->startCountdown).count() >= 1000) {
             if (networkGhostPlayer->countdown == 0) {
                 std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + " ! GO !";
