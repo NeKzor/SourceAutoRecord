@@ -477,7 +477,7 @@ void NetworkManager::StartCountdown(sf::Uint32 time)
     sf::Uint64 epoch = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 
     sf::Packet countdown_packet;
-    countdown_packet << HEADER::COUNTDOWN_AND_TELEPORT << epoch << time << position.x << position.y << position.z;
+    countdown_packet << HEADER::COUNTDOWN_AND_TELEPORT << time;
     for (auto& socket : this->socket_pool) {
         socket->send(countdown_packet);
     }
