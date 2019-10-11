@@ -267,12 +267,12 @@ void NetworkManager::TCPListening()
                             sf::Uint32 time;
                             float x, y, z;
                             packet >> time >> x >> y >> z;
-                            this->StartCountdown(time, {x, y, z});
+                            this->StartCountdown(time, { x, y, z });
 
                             sf::Packet e;
                             e << HEADER::COUNTDOWN_AND_TELEPORT << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
                             this->eventList.push_back(e);
-						}
+                        }
                     }
                 } else {
                     crashed = id;
@@ -474,10 +474,10 @@ void NetworkManager::SendMessage(const sf::Uint32& ID, const std::string& messag
 
 void NetworkManager::StartCountdown(sf::Uint32 time)
 {
-	sf::Uint64 epoch = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+    sf::Uint64 epoch = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 
     sf::Packet countdown_packet;
-    countdown_packet << HEADER::COUNTDOWN << epoch << time;
+    countdown_packet << HEADER::COUNTDOWN_AND_TELEPORT << epoch << time << position.x << position.y << position.z;
     for (auto& socket : this->socket_pool) {
         socket->send(countdown_packet);
     }

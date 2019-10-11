@@ -174,10 +174,9 @@ void NetworkGhostPlayer::StopServer()
 
 void NetworkGhostPlayer::Countdown(sf::Uint64 epoch, sf::Uint32 time)
 {
-    auto oldEpoch = std::chrono::milliseconds(epoch);
     auto t = std::chrono::seconds(time);
     auto now = std::chrono::system_clock::now();
-    auto finalTime = (now + t); // Synch the clocks on the final time (works)
+    auto finalTime = (now + t); // Synch the clocks on the final time (works but can't calculate ping, so precision is ping dependant)
     //auto finalTime = (now + (now.time_since_epoch() - oldEpoch) + t); // Synch the clocks on the final time + network delay (actually add delay, I don't know why)
     auto startTime = finalTime - t + std::chrono::seconds(3); // Start the coutdown 3s after the command
     this->countdown = time;
