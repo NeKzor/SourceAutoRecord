@@ -23,6 +23,7 @@ enum class HEADER {
     MAP_CHANGE,
     MESSAGE,
     COUNTDOWN,
+    COUNTDOWN_AND_TELEPORT,
     UPDATE,
 };
 
@@ -89,6 +90,7 @@ public:
     void ChangeMap(const sf::Uint32& ID, const std::string& map);
     void SendMessage(const sf::Uint32& ID, const std::string& message);
     void StartCountdown(sf::Uint32 time);
+    void StartCountdown(sf::Uint32 time, QAngle position);
 
     void GetEvent(std::vector<sf::Packet>& e);
 };

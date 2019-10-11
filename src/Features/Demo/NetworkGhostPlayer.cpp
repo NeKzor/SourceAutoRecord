@@ -177,10 +177,17 @@ void NetworkGhostPlayer::Countdown(sf::Uint64 epoch, sf::Uint32 time)
     auto oldEpoch = std::chrono::milliseconds(epoch);
     auto t = std::chrono::seconds(time);
     auto now = std::chrono::system_clock::now();
-    auto finalTime = (now - (now.time_since_epoch() - oldEpoch) + t);
-    auto startTime = finalTime + std::chrono::seconds(3);
+    auto finalTime = (now + t); // Synch the clocks on the final time (works)
+    //auto finalTime = (now + (now.time_since_epoch() - oldEpoch) + t); // Synch the clocks on the final time + network delay (actually add delay, I don't know why)
+    auto startTime = finalTime - t + std::chrono::seconds(3); // Start the coutdown 3s after the command
     this->countdown = time;
-    this->startCountDown = startTime;
+    this->startCountdown = startTime;
+}
+
+void NetworkGhostPlayer::Countdown(sf::Uint64 epoch, sf::Uint32 time, QAngle position)
+{
+    this->teleportCountdown = position;
+    this->Countdown(epoch, time);
 }
 
 bool NetworkGhostPlayer::IsConnected()
@@ -411,16 +418,16 @@ void NetworkGhostPlayer::CheckConnection()
                     sf::Uint32 time;
 
                     packet >> epoch >> time;
+                    this->Countdown(epoch, time);
+                    this->shouldTeleportCountdown = false;
+                } else if (header == HEADER::COUNTDOWN_AND_TELEPORT) {
+                    sf::Uint64 epoch;
+                    sf::Uint32 time;
+                    float x, y, z;
 
-					auto oldEpoch = std::chrono::milliseconds(epoch);
-                    auto t = std::chrono::seconds(time);
-                    auto now = std::chrono::system_clock::now();
-                    auto finalTime = (now - (now.time_since_epoch() - oldEpoch) + t);
-                    auto startTime = finalTime + std::chrono::seconds(3);
-                    this->countdown = time;
-                    this->startCountDown = startTime;
-
-                    //this->Countdown(epoch, time);
+                    packet >> epoch >> time >> x >> y >> z;
+                    this->Countdown(epoch, time, { x, y, z });
+                    this->shouldTeleportCountdown = true;
                 }
             } else if (status == sf::Socket::Disconnected) {
                 console->Warning("Connexion has been interrupted ! You have been disconnected !\n");
@@ -543,14 +550,18 @@ CON_COMMAND(sar_ghost_tickrate, "Adjust the tickrate\n")
 
 CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
 {
-    if (args.ArgC() != 2) {
+    if (args.ArgC() < 2) {
         console->Print(sar_ghost_tickrate.ThisPtr()->m_pszHelpString);
         return;
-	}
-
-    sf::Packet packet;
-    packet << HEADER::COUNTDOWN << sf::Uint32(std::atoi(args[1]));
-    networkGhostPlayer->tcpSocket.send(packet);
+    } else if (args.ArgC() >= 5) {
+        sf::Packet packet;
+        packet << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint32(std::atoi(args[1])) << std::stof(args[2]) << std::stof(args[3]) << std::stof(args[4]);
+        networkGhostPlayer->tcpSocket.send(packet);
+    } else if (args.ArgC() < 5) {
+        sf::Packet packet;
+        packet << HEADER::COUNTDOWN << sf::Uint32(std::atoi(args[1]));
+        networkGhostPlayer->tcpSocket.send(packet);
+    }
 }
 
 //Cause crash at sar_exit

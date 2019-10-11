@@ -22,6 +22,7 @@ enum class HEADER {
     MAP_CHANGE,
     MESSAGE,
     COUNTDOWN,
+    COUNTDOWN_AND_TELEPORT,
     UPDATE,
 };
 
@@ -31,7 +32,6 @@ private:
     bool isConnected;
     sf::SocketSelector selector;
     std::condition_variable waitForPaused;
-
 
 public:
     sf::IpAddress ip_client;
@@ -51,7 +51,9 @@ public:
     bool isInLevel;
     bool pausedByServer;
     int countdown;
-    std::chrono::time_point<std::chrono::system_clock> startCountDown;
+    std::chrono::time_point<std::chrono::system_clock> startCountdown;
+    QAngle teleportCountdown;
+    bool shouldTeleportCountdown;
 
 private:
     void NetworkThink();
@@ -66,6 +68,7 @@ public:
     void Disconnect();
     void StopServer();
     void Countdown(sf::Uint64 epoch, sf::Uint32 time);
+    void Countdown(sf::Uint64 epoch, sf::Uint32 time, QAngle position);
     bool IsConnected();
 
     int ReceivePacket(sf::Packet& packet, sf::IpAddress&, int timeout);
@@ -85,7 +88,6 @@ extern NetworkGhostPlayer* networkGhostPlayer;
 
 extern Command sar_ghost_connect_to_server;
 extern Command sar_ghost_disconnect;
-//extern Command sar_ghost_stop_server;
 extern Command sar_ghost_name;
 extern Command sar_ghost_tickrate;
 extern Command sar_ghost_countdown;

@@ -306,21 +306,24 @@ DETOUR(Server::GameFrame, bool simulating)
         }
     }
 
-    /*if (networkGhostPlayer->countdown >= 0) {
-        if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - networkGhostPlayer->startCountDown).count() >= 1) {
-            if (networkGhostPlayer->countdown == 3) {
-                engine->ExecuteCommand("say Countdown started ! : 3 ...");
-            } else if (networkGhostPlayer->countdown == 2) {
-                engine->ExecuteCommand("say 2 ...");
-            } else if (networkGhostPlayer->countdown == 1) {
-                engine->ExecuteCommand("say 1 ...");
-            } else if (networkGhostPlayer->countdown == 0) {
-                engine->ExecuteCommand("say GO !!");
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - networkGhostPlayer->startCountdown).count() >= 1000) {
+            if (networkGhostPlayer->countdown == 0) {
+                std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + " ! GO !";
+                engine->ExecuteCommand(command.c_str());
+                if (networkGhostPlayer->shouldTeleportCountdown) {
+                    command = "setpos " + std::to_string(networkGhostPlayer->teleportCountdown.x) + " " + std::to_string(networkGhostPlayer->teleportCountdown.y) + " " + std::to_string(networkGhostPlayer->teleportCountdown.z);
+                    sv_cheats.ThisPtr()->m_nValue = 1;
+                    engine->ExecuteCommand(command.c_str());
+                    engine->SendToCommandBuffer("sv_cheats 0", 1);
+                }
+            } else {
+                std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + "...";
+                engine->ExecuteCommand(command.c_str());
             }
-            networkGhostPlayer->startCountDown = std::chrono::steady_clock::now();
             networkGhostPlayer->countdown--;
+            networkGhostPlayer->startCountdown = now;
         }
-    }*/
+    }
 
     if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
         std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();

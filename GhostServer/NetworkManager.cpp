@@ -79,7 +79,12 @@ Packets contains :
 		Server receive and send : TCPpacket << HEADER
 
 	 if HEADER == COUNTDOWN :
-		Server receive and send : TCPpacket << HEADER
+		Server receive : TCPpacket << HEADER << sf::Uint32 time
+		Server send : TCPpacket << HEADER << sf::Uint32 finalTime << sf::Uint32 time
+
+     if HEADER == COUNTDOWN_AND_TELEPORT :
+	    Server receive : TCPpacket << HEADER << sf::Uint32 time << float x << float y << float z
+		Server send : TCPpacket << HEADER << sf::Uint32 finalTime << sf::Uint32 time << QAngle pos
 
 	 if HEADER == UPDATE :
 		Server receive : UDPpacket << HEADER << DataGhost
@@ -251,7 +256,6 @@ void NetworkManager::TCPListening()
                             packet_ping << HEADER::PING;
                             this->socket_pool[id]->send(packet_ping);
                         } else if (header == HEADER::COUNTDOWN) {
-
                             sf::Uint32 time;
                             packet >> time;
                             this->StartCountdown(time);
@@ -259,7 +263,16 @@ void NetworkManager::TCPListening()
                             sf::Packet e;
                             e << HEADER::COUNTDOWN << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
                             this->eventList.push_back(e);
-                        }
+                        } else if (header == HEADER::COUNTDOWN_AND_TELEPORT) {
+                            sf::Uint32 time;
+                            float x, y, z;
+                            packet >> time >> x >> y >> z;
+                            this->StartCountdown(time, {x, y, z});
+
+                            sf::Packet e;
+                            e << HEADER::COUNTDOWN_AND_TELEPORT << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
+                            this->eventList.push_back(e);
+						}
                     }
                 } else {
                     crashed = id;
@@ -465,6 +478,17 @@ void NetworkManager::StartCountdown(sf::Uint32 time)
 
     sf::Packet countdown_packet;
     countdown_packet << HEADER::COUNTDOWN << epoch << time;
+    for (auto& socket : this->socket_pool) {
+        socket->send(countdown_packet);
+    }
+}
+
+void NetworkManager::StartCountdown(sf::Uint32 time, QAngle position)
+{
+    sf::Uint64 epoch = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+
+    sf::Packet countdown_packet;
+    countdown_packet << HEADER::COUNTDOWN_AND_TELEPORT << epoch << time << position.x << position.y << position.z;
     for (auto& socket : this->socket_pool) {
         socket->send(countdown_packet);
     }

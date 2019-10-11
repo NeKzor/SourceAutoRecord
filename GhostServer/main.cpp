@@ -70,15 +70,18 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
     } else if (command->second.commandType == COMMANDTYPE::COUNTDOWN) {
         if (args.size() != 2) {
             return "Not enough argument -> " + command->second.helpString;
-		}
-        network.StartCountdown(std::atoi(args[1].c_str()));
-        return "Countdown started !";
+        } else if (args.size() == 5) {
+            network.StartCountdown(std::atoi(args[1].c_str()), { std::stof(args[2]), std::stof(args[4]), std::stof(args[4]) });
+        } else {
+            network.StartCountdown(std::stoi(args[1]));
+            return "Countdown started !";
+        }
     } else if (command->second.commandType == COMMANDTYPE::FONTSIZE) {
         if (args.size() < 2) {
             return "Not enough argument -> " + command->second.helpString;
         }
-        log->setTextSize(std::atoi(args[1].c_str()));
-        edit->setTextSize(std::atoi(args[1].c_str()));
+        log->setTextSize(std::stoi(args[1]));
+        edit->setTextSize(std::stoi(args[1]));
         return "";
     } else if (command->second.commandType == COMMANDTYPE::HELP) {
         if (args.size() == 1) { //Print every help strings
@@ -109,7 +112,7 @@ void HandleEvent(tgui::TextBox::Ptr& log, std::vector<sf::Packet>& e, NetworkMan
             std::string message;
             it >> message;
             log->addText(name + " : \"" + message + "\"");
-        } else if (header == HEADER::COUNTDOWN) {
+        } else if (header == HEADER::COUNTDOWN || header == HEADER::COUNTDOWN_AND_TELEPORT) {
             log->addText("Player " + name + " has started a countdown !\n");
         }
     }
@@ -134,6 +137,7 @@ int main()
     sf::RenderWindow window{
         { 800, 600 }, "Ghost Server"
     };
+    window.setFramerateLimit(60);
     tgui::Gui gui{ window };
     gui.loadWidgetsFromFile("Server.txt");
     gui.setFont("Consolas.ttf");
