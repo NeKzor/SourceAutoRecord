@@ -51,15 +51,18 @@ public:
     bool isInLevel;
     bool pausedByServer;
     int countdown;
-    std::chrono::time_point<std::chrono::system_clock> startCountdown;
+    std::chrono::time_point<std::chrono::steady_clock> startCountdown;
     QAngle teleportCountdown;
     bool shouldTeleportCountdown;
+    bool isCountdownReady;
 
 private:
     void NetworkThink();
     void CheckConnection();
     GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&, std::string&, std::string& modelName);
     void UpdatePlayer();
+    void SetupCountdown(sf::Uint32 time);
+    void SetupCountdown(sf::Uint32 time, QAngle teleport);
 
 public:
     NetworkGhostPlayer();
@@ -67,8 +70,7 @@ public:
     void ConnectToServer(std::string, unsigned short port);
     void Disconnect();
     void StopServer();
-    void Countdown(sf::Uint64 epoch, sf::Uint32 time);
-    void Countdown(sf::Uint64 epoch, sf::Uint32 time, QAngle position);
+    void Countdown();
     bool IsConnected();
 
     int ReceivePacket(sf::Packet& packet, sf::IpAddress&, int timeout);

@@ -66,6 +66,7 @@ NetworkGhostPlayer::NetworkGhostPlayer()
     , pausedByServer(false)
     , countdown(-1)
     , modelName("models/props/food_can/food_can_open.mdl")
+    , isCountdownReady(false)
 {
     this->hasLoaded = true;
     this->socket.setBlocking(false);
@@ -170,23 +171,6 @@ void NetworkGhostPlayer::StopServer()
     this->socket.unbind();
     this->tcpSocket.disconnect();
     this->isInLevel = false;
-}
-
-void NetworkGhostPlayer::Countdown(sf::Uint64 epoch, sf::Uint32 time)
-{
-    auto t = std::chrono::seconds(time);
-    auto now = std::chrono::system_clock::now();
-    auto finalTime = (now + t); // Synch the clocks on the final time (works but can't calculate ping, so precision is ping dependant)
-    //auto finalTime = (now + (now.time_since_epoch() - oldEpoch) + t); // Synch the clocks on the final time + network delay (actually add delay, I don't know why)
-    auto startTime = finalTime - t + std::chrono::seconds(3); // Start the coutdown 3s after the command
-    this->countdown = time;
-    this->startCountdown = startTime;
-}
-
-void NetworkGhostPlayer::Countdown(sf::Uint64 epoch, sf::Uint32 time, QAngle position)
-{
-    this->teleportCountdown = position;
-    this->Countdown(epoch, time);
 }
 
 bool NetworkGhostPlayer::IsConnected()
@@ -399,20 +383,32 @@ void NetworkGhostPlayer::CheckConnection()
                     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
                     console->Print("Ping returned in %lld ms\n", elapsed.count());
                 } else if (header == HEADER::COUNTDOWN) {
-                    sf::Uint64 epoch;
-                    sf::Uint32 time;
-
-                    packet >> epoch >> time;
-                    this->Countdown(epoch, time);
-                    this->shouldTeleportCountdown = false;
+                    sf::Uint8 step;
+                    packet >> step;
+                    if (step == 0) {
+                        sf::Uint32 time;
+                        packet >> time;
+                        sf::Packet packet_confirm;
+                        packet_confirm << HEADER::COUNTDOWN << sf::Uint8(1);
+                        tcpSocket.send(packet_confirm);
+                        this->SetupCountdown(time);
+                    } else if (step == 1) {
+                        this->Countdown();
+                    }
                 } else if (header == HEADER::COUNTDOWN_AND_TELEPORT) {
-                    sf::Uint64 epoch;
-                    sf::Uint32 time;
-                    float x, y, z;
-
-                    packet >> epoch >> time >> x >> y >> z;
-                    this->Countdown(epoch, time, { x, y, z });
-                    this->shouldTeleportCountdown = true;
+                    sf::Uint8 step;
+                    packet >> step;
+                    if (step == 0) {
+                        sf::Uint32 time;
+                        float x, y, z;
+                        packet >> time >> x >> y >> z;
+                        sf::Packet packet_confirm;
+                        packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(1);
+                        tcpSocket.send(packet_confirm);
+                        this->SetupCountdown(time, { x, y, z });
+                    } else if (step == 1) {
+                        this->Countdown();
+                    }
                 }
             } else if (status == sf::Socket::Disconnected) {
                 console->Warning("Connexion has been interrupted ! You have been disconnected !\n");
@@ -447,6 +443,28 @@ void NetworkGhostPlayer::ClearGhosts()
     for (auto& ghost : this->ghostPool) {
         ghost->Stop();
     }
+}
+
+void NetworkGhostPlayer::SetupCountdown(sf::Uint32 time)
+{
+    this->shouldTeleportCountdown = false;
+    this->countdown = time;
+    this->start = std::chrono::steady_clock::now();
+}
+
+void NetworkGhostPlayer::SetupCountdown(sf::Uint32 time, QAngle teleport)
+{
+    this->shouldTeleportCountdown = true;
+    this->teleportCountdown = teleport;
+    this->countdown = time;
+    this->start = std::chrono::steady_clock::now();
+}
+
+void NetworkGhostPlayer::Countdown()
+{
+    auto ping = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - this->start);
+    this->startCountdown = std::chrono::steady_clock::now() + std::chrono::seconds(3) - ping; // Start the coutdown 3s after the command
+    this->isCountdownReady = true;
 }
 
 //Commands
@@ -540,7 +558,7 @@ CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
         return;
     } else if (args.ArgC() >= 5) {
         sf::Packet packet;
-        packet << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint32(std::atoi(args[1])) << std::stof(args[2]) << std::stof(args[3]) << std::stof(args[4]);
+        packet << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(0) << sf::Uint32(std::atoi(args[1])) << std::stof(args[2]) << std::stof(args[3]) << std::stof(args[4]);
         networkGhostPlayer->tcpSocket.send(packet);
     } else if (args.ArgC() < 5) {
         sf::Packet packet;

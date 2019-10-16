@@ -71,7 +71,7 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
         if (args.size() != 2) {
             return "Not enough argument -> " + command->second.helpString;
         } else if (args.size() == 5) {
-            network.StartCountdown(std::atoi(args[1].c_str()), { std::stof(args[2]), std::stof(args[4]), std::stof(args[4]) });
+            network.StartCountdown(std::atoi(args[1].c_str()), { std::stof(args[2]), std::stof(args[3]), std::stof(args[4]) });
         } else {
             network.StartCountdown(std::stoi(args[1]));
             return "Countdown started !";

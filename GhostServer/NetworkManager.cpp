@@ -256,22 +256,38 @@ void NetworkManager::TCPListening()
                             packet_ping << HEADER::PING;
                             this->socket_pool[id]->send(packet_ping);
                         } else if (header == HEADER::COUNTDOWN) {
-                            sf::Uint32 time;
-                            packet >> time;
-                            this->StartCountdown(time);
+                            sf::Uint8 step;
+                            packet >> step;
+                            if (step == 0) {
+                                sf::Uint32 time;
+                                packet >> time;
+                                this->StartCountdown(time);
 
-                            sf::Packet e;
-                            e << HEADER::COUNTDOWN << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
-                            this->eventList.push_back(e);
+                                sf::Packet e;
+                                e << HEADER::COUNTDOWN << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
+                                this->eventList.push_back(e);
+                            } else if (step == 1) {
+                                sf::Packet packet_confirm;
+                                packet_confirm << HEADER::COUNTDOWN << sf::Uint8(1);
+                                this->socket_pool[id]->send(packet_confirm);
+                            }
                         } else if (header == HEADER::COUNTDOWN_AND_TELEPORT) {
-                            sf::Uint32 time;
-                            float x, y, z;
-                            packet >> time >> x >> y >> z;
-                            this->StartCountdown(time, { x, y, z });
+                            sf::Uint8 step;
+                            packet >> step;
+                            if (step == 0) {
+                                sf::Uint32 time;
+                                float x, y, z;
+                                packet >> time >> x >> y >> z;
+                                this->StartCountdown(time, { x, y, z });
 
-                            sf::Packet e;
-                            e << HEADER::COUNTDOWN_AND_TELEPORT << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
-                            this->eventList.push_back(e);
+                                sf::Packet e;
+                                e << HEADER::COUNTDOWN_AND_TELEPORT << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
+                                this->eventList.push_back(e);
+                            } else if (step == 1) {
+                                sf::Packet packet_confirm;
+                                packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(1);
+                                this->socket_pool[id]->send(packet_confirm);
+                            }
                         }
                     }
                 } else {
@@ -474,23 +490,19 @@ void NetworkManager::SendMessage(const sf::Uint32& ID, const std::string& messag
 
 void NetworkManager::StartCountdown(sf::Uint32 time)
 {
-    sf::Uint64 epoch = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-
-    sf::Packet countdown_packet;
-    countdown_packet << HEADER::COUNTDOWN_AND_TELEPORT << time;
-    for (auto& socket : this->socket_pool) {
-        socket->send(countdown_packet);
+    sf::Packet packet_confirm;
+    packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(0) << time;
+    for (auto& it : this->socket_pool) {
+        it->send(packet_confirm);
     }
 }
 
 void NetworkManager::StartCountdown(sf::Uint32 time, QAngle position)
 {
-    sf::Uint64 epoch = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-
-    sf::Packet countdown_packet;
-    countdown_packet << HEADER::COUNTDOWN_AND_TELEPORT << epoch << time << position.x << position.y << position.z;
-    for (auto& socket : this->socket_pool) {
-        socket->send(countdown_packet);
+    sf::Packet packet_confirm;
+    packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(0) << time << position.x << position.y << position.z;
+    for (auto& it : this->socket_pool) {
+        it->send(packet_confirm);
     }
 }
 
