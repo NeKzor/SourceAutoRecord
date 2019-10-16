@@ -93,4 +93,4 @@ extern Command sar_ghost_disconnect;
 extern Command sar_ghost_name;
 extern Command sar_ghost_tickrate;
 extern Command sar_ghost_countdown;
-//extern Command sar_ghost_message;
+extern Command sar_ghost_message;

@@ -376,7 +376,12 @@ void NetworkGhostPlayer::CheckConnection()
                     sf::Uint32 ID;
                     std::string message;
                     packet >> ID >> message;
-                    std::string cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
+                    std::string cmd;
+                    if (ID == this->ip_client.toInteger()) {
+                        cmd = "say " + this->name + ": " + message;
+                    } else {
+                        std::string cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
+                    }
                     engine->ExecuteCommand(cmd.c_str());
                 } else if (header == HEADER::PING) {
                     auto stop = std::chrono::steady_clock::now();
@@ -523,16 +528,6 @@ CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
     console->Print("You have successfully been disconnected !\n");
 }
 
-/*CON_COMMAND(sar_ghost_stop_server, "Stop the server\n")
-{
-    if (!networkGhostPlayer->IsConnected()) {
-        console->Warning("You are not connected to a server !\n");
-        return;
-    }
-
-    networkGhostPlayer->StopServer();
-}*/
-
 CON_COMMAND(sar_ghost_name, "Name that will be displayed\n")
 {
     if (args.ArgC() <= 1) {
@@ -567,8 +562,7 @@ CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
     }
 }
 
-//Cause crash at sar_exit
-/*CON_COMMAND(sar_ghost_message, "Send a message toother players\n")
+CON_COMMAND(sar_ghost_message, "Send a message toother players\n")
 {
     if (args.ArgC() <= 1) {
         console->Print(sar_ghost_message.ThisPtr()->m_pszHelpString);
@@ -582,4 +576,4 @@ CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
     }
     packet << message;
     networkGhostPlayer->tcpSocket.send(packet);
-}*/
+}

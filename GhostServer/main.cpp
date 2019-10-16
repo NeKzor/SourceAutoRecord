@@ -111,7 +111,7 @@ void HandleEvent(tgui::TextBox::Ptr& log, std::vector<sf::Packet>& e, NetworkMan
         } else if (header == HEADER::MESSAGE) {
             std::string message;
             it >> message;
-            log->addText(name + " : \"" + message + "\"");
+            log->addText(name + " : \"" + message + "\"\n");
         } else if (header == HEADER::COUNTDOWN || header == HEADER::COUNTDOWN_AND_TELEPORT) {
             log->addText("Player " + name + " has started a countdown !\n");
         }
