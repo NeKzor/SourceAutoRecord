@@ -93,9 +93,9 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
         } else {
             return commandList.find(args[1])->second.helpString;
         }
-    } else {
-        return "\"" + args[0] + "\" is not an existing command. Type \"help\" to see all the available commands";
     }
+    
+	return "\"" + args[0] + "\" is not an existing command. Type \"help\" to see all the available commands";
 }
 
 void HandleEvent(tgui::TextBox::Ptr& log, std::vector<sf::Packet>& e, NetworkManager& network)
