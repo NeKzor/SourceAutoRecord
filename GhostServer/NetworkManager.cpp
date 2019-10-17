@@ -231,64 +231,70 @@ void NetworkManager::TCPListening()
         if (this->TCPselector.wait(sf::seconds(5))) {
             for (size_t id = 0; id < this->socket_pool.size(); ++id) {
                 if (this->socket_pool[id]->getRemoteAddress() != sf::IpAddress::None) {
-                    if (this->TCPselector.isReady(*this->socket_pool[id])) {
-                        sf::Packet packet;
-                        this->socket_pool[id]->receive(packet);
-                        HEADER header;
-                        packet >> header;
-                        if (header == HEADER::DISCONNECT) {
-                            sf::Uint32 ID = this->socket_pool[id]->getRemoteAddress().toInteger();
-                            Disconnect(ID);
-                        } else if (header == HEADER::STOP_SERVER) {
-                            StopServer();
-                        } else if (header == HEADER::MAP_CHANGE) {
-                            std::string newMap;
-                            packet >> newMap;
-                            ChangeMap(this->socket_pool[id]->getRemoteAddress().toInteger(), newMap);
-                        } else if (header == HEADER::MESSAGE) {
-                            std::string message;
-                            packet >> message;
+                    try {
+                        if (this->TCPselector.isReady(*this->socket_pool[id])) {
+                            sf::Packet packet;
+                            this->socket_pool[id]->receive(packet);
+                            HEADER header;
+                            packet >> header;
+                            if (header == HEADER::DISCONNECT) {
+                                sf::Uint32 ID = this->socket_pool[id]->getRemoteAddress().toInteger();
+                                Disconnect(ID);
+                            } else if (header == HEADER::STOP_SERVER) {
+                                StopServer();
+                            } else if (header == HEADER::MAP_CHANGE) {
+                                std::string newMap;
+                                packet >> newMap;
+                                ChangeMap(this->socket_pool[id]->getRemoteAddress().toInteger(), newMap);
+                            } else if (header == HEADER::MESSAGE) {
+                                std::string message;
+                                packet >> message;
 
-                            sf::Uint32 ID = this->socket_pool[id]->getRemoteAddress().toInteger();
-                            SendMessage(ID, message);
-                        } else if (header == HEADER::PING) {
-                            sf::Packet packet_ping;
-                            packet_ping << HEADER::PING;
-                            this->socket_pool[id]->send(packet_ping);
-                        } else if (header == HEADER::COUNTDOWN) {
-                            sf::Uint8 step;
-                            packet >> step;
-                            if (step == 0) {
-                                sf::Uint32 time;
-                                packet >> time;
-                                this->StartCountdown(time);
+                                sf::Uint32 ID = this->socket_pool[id]->getRemoteAddress().toInteger();
+                                SendMessage(ID, message);
+                            } else if (header == HEADER::PING) {
+                                sf::Packet packet_ping;
+                                packet_ping << HEADER::PING;
+                                this->socket_pool[id]->send(packet_ping);
+                            } else if (header == HEADER::COUNTDOWN) {
+                                sf::Uint8 step;
+                                packet >> step;
+                                if (step == 0) {
+                                    sf::Uint32 time;
+                                    packet >> time;
+                                    this->StartCountdown(time);
 
-                                sf::Packet e;
-                                e << HEADER::COUNTDOWN << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
-                                this->eventList.push_back(e);
-                            } else if (step == 1) {
-                                sf::Packet packet_confirm;
-                                packet_confirm << HEADER::COUNTDOWN << sf::Uint8(1);
-                                this->socket_pool[id]->send(packet_confirm);
-                            }
-                        } else if (header == HEADER::COUNTDOWN_AND_TELEPORT) {
-                            sf::Uint8 step;
-                            packet >> step;
-                            if (step == 0) {
-                                sf::Uint32 time;
-                                float x, y, z;
-                                packet >> time >> x >> y >> z;
-                                this->StartCountdown(time, { x, y, z });
+                                    sf::Packet e;
+                                    e << HEADER::COUNTDOWN << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
+                                    this->eventList.push_back(e);
+                                } else if (step == 1) {
+                                    sf::Packet packet_confirm;
+                                    packet_confirm << HEADER::COUNTDOWN << sf::Uint8(1);
+                                    this->socket_pool[id]->send(packet_confirm);
+                                }
+                            } else if (header == HEADER::COUNTDOWN_AND_TELEPORT) {
+                                sf::Uint8 step;
+                                packet >> step;
+                                if (step == 0) {
+                                    sf::Uint32 time;
+                                    float x, y, z;
+                                    packet >> time >> x >> y >> z;
+                                    this->StartCountdown(time, { x, y, z });
 
-                                sf::Packet e;
-                                e << HEADER::COUNTDOWN_AND_TELEPORT << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
-                                this->eventList.push_back(e);
-                            } else if (step == 1) {
-                                sf::Packet packet_confirm;
-                                packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(1);
-                                this->socket_pool[id]->send(packet_confirm);
+                                    sf::Packet e;
+                                    e << HEADER::COUNTDOWN_AND_TELEPORT << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
+                                    this->eventList.push_back(e);
+                                } else if (step == 1) {
+                                    sf::Packet packet_confirm;
+                                    packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(1);
+                                    this->socket_pool[id]->send(packet_confirm);
+                                }
                             }
                         }
+                    } catch (const std::exception& exept) {
+                        sf::Packet e;
+                        e << HEADER::MESSAGE << "Warning" << "Player \"" + this->player_pool[this->socket_pool[id]->getRemoteAddress()].name + "\" has crashed or has been disconnected forcefully";
+                        this->eventList.push_back(e);
                     }
                 } else {
                     crashed = id;
@@ -491,7 +497,7 @@ void NetworkManager::SendMessage(const sf::Uint32& ID, const std::string& messag
 void NetworkManager::StartCountdown(sf::Uint32 time)
 {
     sf::Packet packet_confirm;
-    packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(0) << time;
+    packet_confirm << HEADER::COUNTDOWN << sf::Uint8(0) << time;
     for (auto& it : this->socket_pool) {
         it->send(packet_confirm);
     }

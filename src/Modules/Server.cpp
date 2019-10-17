@@ -307,8 +307,8 @@ DETOUR(Server::GameFrame, bool simulating)
                     sv_cheats.ThisPtr()->m_nValue = 1;
                     engine->ExecuteCommand(command.c_str());
                     engine->SendToCommandBuffer("sv_cheats 0", 1); //Need cheats to teleport players (Might change this later)
-                    networkGhostPlayer->isCountdownReady = false;
                 }
+                networkGhostPlayer->isCountdownReady = false;
             } else {
                 std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + "...";
                 engine->ExecuteCommand(command.c_str());

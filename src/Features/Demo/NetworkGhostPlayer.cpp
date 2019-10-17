@@ -274,14 +274,12 @@ void NetworkGhostPlayer::NetworkThink()
 
         //Update other players
         int success = 1;
-        if (this->selector.wait()) {
-            while (success != 0) {
-                sf::Packet packet;
-                sf::IpAddress ip;
-                success = this->ReceivePacket(packet, ip, 50);
-                if (success == 1) {
-                    packet_queue.insert({ ip.toInteger(), packet });
-                }
+        while (success != 0) {
+            sf::Packet packet;
+            sf::IpAddress ip;
+            success = this->ReceivePacket(packet, ip, 50);
+            if (success == 1) {
+                packet_queue.insert({ ip.toInteger(), packet });
             }
         }
 
@@ -380,7 +378,7 @@ void NetworkGhostPlayer::CheckConnection()
                     if (ID == this->ip_client.toInteger()) {
                         cmd = "say " + this->name + ": " + message;
                     } else {
-                        std::string cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
+                        cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
                     }
                     engine->ExecuteCommand(cmd.c_str());
                 } else if (header == HEADER::PING) {
@@ -557,7 +555,7 @@ CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
         networkGhostPlayer->tcpSocket.send(packet);
     } else if (args.ArgC() < 5) {
         sf::Packet packet;
-        packet << HEADER::COUNTDOWN << sf::Uint32(std::atoi(args[1]));
+        packet << HEADER::COUNTDOWN << sf::Uint8(0) << sf::Uint32(std::atoi(args[1]));
         networkGhostPlayer->tcpSocket.send(packet);
     }
 }
