@@ -132,7 +132,7 @@ void GhostEntity::SetStartDelay(int delay)
 void GhostEntity::ChangeModel(std::string modelName)
 {
     std::copy(modelName.begin(), modelName.end(), this->modelName);
-    this->modelName[sizeof(this->modelName)] = '\0';
+    this->modelName[sizeof(this->modelName)-1] = '\0';
 }
 
 void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)

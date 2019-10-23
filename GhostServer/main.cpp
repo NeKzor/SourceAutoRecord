@@ -44,14 +44,15 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
         return "";
     }
 
+    //Getting the args
     std::vector<std::string> args;
     std::stringstream check(input);
     std::string tmp;
     while (std::getline(check, tmp, ' ')) {
         args.push_back(LowerString(tmp));
     }
-
     auto command = commandList.find(args[0]);
+
     if (command->second.commandType == COMMANDTYPE::STOP_SERVER) {
         network.StopServer();
         return "Server wil stop !";
@@ -68,7 +69,7 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
             return "No player corresponding to the ip !";
         }
     } else if (command->second.commandType == COMMANDTYPE::COUNTDOWN) {
-        if (args.size() != 2) {
+        if (args.size() < 2) {
             return "Not enough argument -> " + command->second.helpString;
         } else if (args.size() == 5) {
             network.StartCountdown(std::atoi(args[1].c_str()), { std::stof(args[2]), std::stof(args[3]), std::stof(args[4]) });
@@ -94,8 +95,8 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
             return commandList.find(args[1])->second.helpString;
         }
     }
-    
-	return "\"" + args[0] + "\" is not an existing command. Type \"help\" to see all the available commands";
+
+    return "\"" + args[0] + "\" is not an existing command. Type \"help\" to see all the available commands";
 }
 
 void HandleEvent(tgui::TextBox::Ptr& log, std::vector<sf::Packet>& e, NetworkManager& network)

@@ -283,13 +283,6 @@ void NetworkGhostPlayer::NetworkThink()
             }
         }
 
-        /*if (success == -1) {
-            std::string message;
-            data_packet >> message;
-            console->Warning(message.c_str());
-            this->Disconnect(true);
-            return;
-        } else {*/
         for (auto& data_packet : packet_queue) {
             HEADER header;
             data_packet.second >> header;
@@ -303,7 +296,6 @@ void NetworkGhostPlayer::NetworkThink()
                         if (ghost->ghost_entity == nullptr) {
                             ghost->Spawn(true, false, QAngleToVector(data.position));
                         }
-                        //this->SetPosAng(ID, QAngleToVector({ data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }), QAngleToVector(data.view_angle));
                         ghost->oldPos = ghost->newPos;
                         ghost->newPos = { { data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }, { data.view_angle.x, data.view_angle.y, data.view_angle.z } };
                         ghost->loopTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - ghost->lastUpdate).count();

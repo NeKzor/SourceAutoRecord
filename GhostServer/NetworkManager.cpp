@@ -459,6 +459,7 @@ void NetworkManager::StopServer()
     packet << HEADER::STOP_SERVER;
     for (auto& it : this->socket_pool) {
         it->send(packet); //Send disconnection to other clients
+        it->disconnect();
     }
     TCPfinished = true;
     TCPfinishedCondVar.notify_one();
@@ -467,6 +468,8 @@ void NetworkManager::StopServer()
     this->listener.close();
     this->isConnected = false;
     this->runServer = false;
+    while (TCPthread.joinable() && UDPthread.joinable()) {
+    }
 }
 
 //Signal map change
