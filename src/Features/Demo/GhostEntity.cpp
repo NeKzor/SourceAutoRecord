@@ -144,6 +144,10 @@ void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)
 
 void GhostEntity::Lerp(DataGhost& oldPosition, DataGhost& targetPosition, float time)
 {
+    if (time > 1) {
+        return;
+	}
+
     Vector newPos;
     newPos.x = (1 - time) * oldPosition.position.x + time * targetPosition.position.x;
     newPos.y = (1 - time) * oldPosition.position.y + time * targetPosition.position.y;
