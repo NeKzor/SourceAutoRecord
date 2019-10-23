@@ -21,6 +21,7 @@ enum class COMMANDTYPE {
     STOP_SERVER,
     MESSAGE,
     COUNTDOWN,
+    COUNTDOWN_AND_TELEPORT,
     FONTSIZE,
     HELP
 };
@@ -71,12 +72,31 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
     } else if (command->second.commandType == COMMANDTYPE::COUNTDOWN) {
         if (args.size() < 2) {
             return "Not enough argument -> " + command->second.helpString;
-        } else if (args.size() == 5) {
-            network.StartCountdown(std::atoi(args[1].c_str()), { std::stof(args[2]), std::stof(args[3]), std::stof(args[4]) });
-        } else {
-            network.StartCountdown(std::stoi(args[1]));
-            return "Countdown started !";
         }
+        std::string commands = ""; //If there's some commands
+        for (int i = 2; i < args.size(); ++i) {
+            commands += args[i] + " ";
+        }
+        network.StartCountdown(std::stoi(args[1]), commands);
+        std::string s = "Countdown of " + args[1] + "started !";
+        if (!commands.empty()) {
+            s += "\n Commands \"" + commands + "\"";
+        }
+        return s;
+    } else if (command->second.commandType == COMMANDTYPE::COUNTDOWN_AND_TELEPORT) {
+        if (args.size() < 5) {
+            return "Not enough argument -> " + command->second.helpString;
+        }
+        std::string commands = ""; //If there's some commands
+        for (int i = 5; i < args.size(); ++i) {
+            commands += args[i] + " ";
+        }
+        network.StartCountdown(std::stoi(args[1]), { std::stof(args[2]), std::stof(args[3]), std::stof(args[4]) }, commands);
+        std::string s = "Countdown of " + args[1] + "started !";
+        if (!commands.empty()) {
+            s += "\n Commands \"" + commands + "\"";
+        }
+        return s;
     } else if (command->second.commandType == COMMANDTYPE::FONTSIZE) {
         if (args.size() < 2) {
             return "Not enough argument -> " + command->second.helpString;
@@ -131,7 +151,8 @@ int main()
 {
     commandList.insert({ "stopserver", { COMMANDTYPE::STOP_SERVER, "stopserver : Disconnects all the players and stops the server" } });
     commandList.insert({ "disconnect", { COMMANDTYPE::DISCONNECT, "disconnect <ip> : Disconnects the player specified" } });
-    commandList.insert({ "countdown", { COMMANDTYPE::COUNTDOWN, "countdown : Starts a countdown for all the players" } });
+    commandList.insert({ "countdown", { COMMANDTYPE::COUNTDOWN, "countdown <time> [commands] : Starts a countdown for all the players. Can play a command at the beggining of the countdown" } });
+    commandList.insert({ "countdown_teleport", { COMMANDTYPE::COUNTDOWN_AND_TELEPORT, "countdown_teleport <time> <x y z> [commands] : Starts a countdown for all the players. Can teleport the players to the position specified. Can play a command at the beggining of the countdown" } });
     commandList.insert({ "fontsize", { COMMANDTYPE::FONTSIZE, "fontsize <size> : Change the size of the font in the console" } });
     commandList.insert({ "help", { COMMANDTYPE::HELP, "help [command] : Prints help string either of the specifed command or all the commands" } });
 

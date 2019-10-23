@@ -302,7 +302,7 @@ DETOUR(Server::GameFrame, bool simulating)
             if (networkGhostPlayer->countdown == 0) {
                 std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + " ! GO !";
                 engine->ExecuteCommand(command.c_str());
-                if (networkGhostPlayer->shouldTeleportCountdown) {
+                if (networkGhostPlayer->countdownType == COUNTDOWNTYPE::TELEPORT) {
                     command = "setpos " + std::to_string(networkGhostPlayer->teleportCountdown.x) + " " + std::to_string(networkGhostPlayer->teleportCountdown.y) + " " + std::to_string(networkGhostPlayer->teleportCountdown.z);
                     sv_cheats.ThisPtr()->m_nValue = 1;
                     engine->ExecuteCommand(command.c_str());

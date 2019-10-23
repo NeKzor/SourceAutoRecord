@@ -13,6 +13,12 @@
 #include <thread>
 #include <vector>
 
+enum class COUNTDOWNTYPE {
+	NONE,
+	TELEPORT,
+	PAUSE
+};
+
 enum class HEADER {
     NONE,
     PING,
@@ -53,7 +59,7 @@ public:
     int countdown;
     std::chrono::time_point<std::chrono::steady_clock> startCountdown;
     QAngle teleportCountdown;
-    bool shouldTeleportCountdown;
+    COUNTDOWNTYPE countdownType;
     bool isCountdownReady;
 
 private:

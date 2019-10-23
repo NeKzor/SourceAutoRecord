@@ -381,8 +381,12 @@ void NetworkGhostPlayer::CheckConnection()
                     sf::Uint8 step;
                     packet >> step;
                     if (step == 0) {
+						std::string commands;
                         sf::Uint32 time;
-                        packet >> time;
+                        packet >> time >> commands;
+                        if (!commands.empty()) {
+                            engine->ExecuteCommand(commands.c_str());
+                        }
                         sf::Packet packet_confirm;
                         packet_confirm << HEADER::COUNTDOWN << sf::Uint8(1);
                         tcpSocket.send(packet_confirm);
@@ -396,7 +400,11 @@ void NetworkGhostPlayer::CheckConnection()
                     if (step == 0) {
                         sf::Uint32 time;
                         float x, y, z;
-                        packet >> time >> x >> y >> z;
+                        std::string commands;
+                        packet >> time >> x >> y >> z >> commands;
+                        if (!commands.empty()) {
+                            engine->ExecuteCommand(commands.c_str());
+                        }
                         sf::Packet packet_confirm;
                         packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(1);
                         tcpSocket.send(packet_confirm);
@@ -442,14 +450,14 @@ void NetworkGhostPlayer::ClearGhosts()
 
 void NetworkGhostPlayer::SetupCountdown(sf::Uint32 time)
 {
-    this->shouldTeleportCountdown = false;
+    this->countdownType = COUNTDOWNTYPE::NONE;
     this->countdown = time;
     this->start = std::chrono::steady_clock::now();
 }
 
 void NetworkGhostPlayer::SetupCountdown(sf::Uint32 time, QAngle teleport)
 {
-    this->shouldTeleportCountdown = true;
+    this->countdownType = COUNTDOWNTYPE::TELEPORT;
     this->teleportCountdown = teleport;
     this->countdown = time;
     this->start = std::chrono::steady_clock::now();
