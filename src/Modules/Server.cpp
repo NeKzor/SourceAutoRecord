@@ -16,8 +16,8 @@
 #include "Features/Timer/PauseTimer.hpp"
 #include "Features/Timer/Timer.hpp"
 
-#include "Engine.hpp"
 #include "Client.hpp"
+#include "Engine.hpp"
 
 #include "Game.hpp"
 #include "Interface.hpp"
@@ -302,11 +302,10 @@ DETOUR(Server::GameFrame, bool simulating)
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - networkGhostPlayer->startCountdown).count() >= 1000) { //Every seconds
             if (networkGhostPlayer->countdown == 0) {
                 client->Chat(TextColor::GREEN, "0 ! GO !");
-                if (networkGhostPlayer->countdownType == COUNTDOWNTYPE::TELEPORT) {
-                    std::string command = "setpos " + std::to_string(networkGhostPlayer->teleportCountdown.x) + " " + std::to_string(networkGhostPlayer->teleportCountdown.y) + " " + std::to_string(networkGhostPlayer->teleportCountdown.z);
-                    sv_cheats.ThisPtr()->m_nValue = 1;
-                    engine->ExecuteCommand(command.c_str());
-                    engine->SendToCommandBuffer("sv_cheats 0", 1); //Need cheats to teleport players (Might change this later)
+                std::string commands;
+                if (!networkGhostPlayer->commandPostCountdown.empty()) {
+                    commands += ";" + networkGhostPlayer->commandPostCountdown;
+                    engine->ExecuteCommand(commands.c_str());
                 }
                 networkGhostPlayer->isCountdownReady = false;
             } else {

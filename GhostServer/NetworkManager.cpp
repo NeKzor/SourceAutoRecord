@@ -261,9 +261,11 @@ void NetworkManager::TCPListening()
                                 packet >> step;
                                 if (step == 0) {
                                     sf::Uint32 time;
-                                    std::string commands;
-                                    packet >> time >> commands;
-                                    this->StartCountdown(time, commands);
+                                    std::string precommands, postcommands;
+                                    packet >> time >> precommands >> postcommands;
+                                    this->SetCommandPreCoutdown(precommands);
+                                    this->SetCommandPostCoutdown(postcommands);
+                                    this->StartCountdown(time);
 
                                     sf::Packet e;
                                     e << HEADER::COUNTDOWN << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
@@ -271,24 +273,6 @@ void NetworkManager::TCPListening()
                                 } else if (step == 1) {
                                     sf::Packet packet_confirm;
                                     packet_confirm << HEADER::COUNTDOWN << sf::Uint8(1);
-                                    this->socket_pool[id]->send(packet_confirm);
-                                }
-                            } else if (header == HEADER::COUNTDOWN_AND_TELEPORT) {
-                                sf::Uint8 step;
-                                packet >> step;
-                                if (step == 0) {
-                                    sf::Uint32 time;
-                                    float x, y, z;
-                                    std::string commands;
-                                    packet >> time >> x >> y >> z >> commands;
-                                    this->StartCountdown(time, { x, y, z }, commands);
-
-                                    sf::Packet e;
-                                    e << HEADER::COUNTDOWN_AND_TELEPORT << this->player_pool[this->socket_pool[id]->getRemoteAddress()].name;
-                                    this->eventList.push_back(e);
-                                } else if (step == 1) {
-                                    sf::Packet packet_confirm;
-                                    packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(1);
                                     this->socket_pool[id]->send(packet_confirm);
                                 }
                             }
@@ -499,22 +483,23 @@ void NetworkManager::SendMessage(const sf::Uint32& ID, const std::string& messag
     this->eventList.push_back(e);
 }
 
-void NetworkManager::StartCountdown(sf::Uint32 time, std::string& commands)
+void NetworkManager::StartCountdown(sf::Uint32 time)
 {
     sf::Packet packet_confirm;
-    packet_confirm << HEADER::COUNTDOWN << sf::Uint8(0) << time << commands;
+    packet_confirm << HEADER::COUNTDOWN << sf::Uint8(0) << time << this->commandPreCountdown << this->commandPostCountdown;
     for (auto& it : this->socket_pool) {
         it->send(packet_confirm);
     }
 }
 
-void NetworkManager::StartCountdown(sf::Uint32 time, QAngle position, std::string& commands)
+void NetworkManager::SetCommandPreCoutdown(std::string& commands)
 {
-    sf::Packet packet_confirm;
-    packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(0) << time << position.x << position.y << position.z << commands;
-    for (auto& it : this->socket_pool) {
-        it->send(packet_confirm);
-    }
+    this->commandPreCountdown = commands;
+}
+
+void NetworkManager::SetCommandPostCoutdown(std::string& commands)
+{
+    this->commandPostCountdown = commands;
 }
 
 void NetworkManager::GetEvent(std::vector<sf::Packet>& e)

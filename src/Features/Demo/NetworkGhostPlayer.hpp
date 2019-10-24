@@ -13,12 +13,6 @@
 #include <thread>
 #include <vector>
 
-enum class COUNTDOWNTYPE {
-	NONE,
-	TELEPORT,
-	PAUSE
-};
-
 enum class HEADER {
     NONE,
     PING,
@@ -28,7 +22,6 @@ enum class HEADER {
     MAP_CHANGE,
     MESSAGE,
     COUNTDOWN,
-    COUNTDOWN_AND_TELEPORT,
     UPDATE,
 };
 
@@ -58,9 +51,9 @@ public:
     bool pausedByServer;
     int countdown;
     std::chrono::time_point<std::chrono::steady_clock> startCountdown;
-    QAngle teleportCountdown;
-    COUNTDOWNTYPE countdownType;
     bool isCountdownReady;
+    std::string commandPreCountdown;
+    std::string commandPostCountdown;
 
 private:
     void NetworkThink();
@@ -68,7 +61,6 @@ private:
     GhostEntity* SetupGhost(sf::Uint32& ID, std::string name, DataGhost&, std::string&, std::string& modelName);
     void UpdatePlayer();
     void SetupCountdown(sf::Uint32 time);
-    void SetupCountdown(sf::Uint32 time, QAngle teleport);
 
 public:
     NetworkGhostPlayer();

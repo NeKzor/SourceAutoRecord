@@ -389,34 +389,21 @@ void NetworkGhostPlayer::CheckConnection()
                     sf::Uint8 step;
                     packet >> step;
                     if (step == 0) {
-                        std::string commands;
+                        std::string preCommand;
+                        std::string postCommand;
                         sf::Uint32 time;
-                        packet >> time >> commands;
-                        if (!commands.empty()) {
-                            engine->ExecuteCommand(commands.c_str());
+                        packet >> time >> preCommand >> postCommand;
+                        if (!preCommand.empty()) {
+                            sv_cheats.ThisPtr()->m_nValue = 1;
+                            engine->SendToCommandBuffer("sv_cheats 0", 1); //Need cheats to teleport players (Might change this later)
+                            engine->ExecuteCommand(preCommand.c_str());
                         }
+                        this->commandPostCountdown = postCommand;
+
                         sf::Packet packet_confirm;
                         packet_confirm << HEADER::COUNTDOWN << sf::Uint8(1);
                         tcpSocket.send(packet_confirm);
                         this->SetupCountdown(time);
-                    } else if (step == 1) {
-                        this->Countdown();
-                    }
-                } else if (header == HEADER::COUNTDOWN_AND_TELEPORT) {
-                    sf::Uint8 step;
-                    packet >> step;
-                    if (step == 0) {
-                        sf::Uint32 time;
-                        float x, y, z;
-                        std::string commands;
-                        packet >> time >> x >> y >> z >> commands;
-                        if (!commands.empty()) {
-                            engine->ExecuteCommand(commands.c_str());
-                        }
-                        sf::Packet packet_confirm;
-                        packet_confirm << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(1);
-                        tcpSocket.send(packet_confirm);
-                        this->SetupCountdown(time, { x, y, z });
                     } else if (step == 1) {
                         this->Countdown();
                     }
@@ -458,15 +445,6 @@ void NetworkGhostPlayer::ClearGhosts()
 
 void NetworkGhostPlayer::SetupCountdown(sf::Uint32 time)
 {
-    this->countdownType = COUNTDOWNTYPE::NONE;
-    this->countdown = time;
-    this->start = std::chrono::steady_clock::now();
-}
-
-void NetworkGhostPlayer::SetupCountdown(sf::Uint32 time, QAngle teleport)
-{
-    this->countdownType = COUNTDOWNTYPE::TELEPORT;
-    this->teleportCountdown = teleport;
     this->countdown = time;
     this->start = std::chrono::steady_clock::now();
 }
@@ -557,13 +535,9 @@ CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
     if (args.ArgC() < 2) {
         console->Print(sar_ghost_tickrate.ThisPtr()->m_pszHelpString);
         return;
-    } else if (args.ArgC() >= 5) {
+    } else if (args.ArgC() >= 2) {
         sf::Packet packet;
-        packet << HEADER::COUNTDOWN_AND_TELEPORT << sf::Uint8(0) << sf::Uint32(std::atoi(args[1])) << std::stof(args[2]) << std::stof(args[3]) << std::stof(args[4]);
-        networkGhostPlayer->tcpSocket.send(packet);
-    } else if (args.ArgC() < 5) {
-        sf::Packet packet;
-        packet << HEADER::COUNTDOWN << sf::Uint8(0) << sf::Uint32(std::atoi(args[1]));
+        packet << HEADER::COUNTDOWN << sf::Uint8(0) << sf::Uint32(std::atoi(args[1])) << std::string("") << std::string(""); //Players can't use pre/post commands
         networkGhostPlayer->tcpSocket.send(packet);
     }
 }

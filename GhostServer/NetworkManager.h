@@ -23,7 +23,6 @@ enum class HEADER {
     MAP_CHANGE,
     MESSAGE,
     COUNTDOWN,
-    COUNTDOWN_AND_TELEPORT,
     UPDATE,
 };
 
@@ -68,6 +67,8 @@ private:
     sf::SocketSelector TCPselector;
     sf::TcpListener listener;
     std::vector<sf::Packet> eventList;
+    std::string commandPreCountdown;
+    std::string commandPostCountdown;
 
 public:
 public:
@@ -89,8 +90,9 @@ public:
     void StopServer();
     void ChangeMap(const sf::Uint32& ID, const std::string& map);
     void SendMessage(const sf::Uint32& ID, const std::string& message);
-    void StartCountdown(sf::Uint32 time, std::string& commands);
-    void StartCountdown(sf::Uint32 time, QAngle position, std::string& commands);
+    void StartCountdown(sf::Uint32 time);
+    void SetCommandPreCoutdown(std::string& commands);
+    void SetCommandPostCoutdown(std::string& commands);
 
     void GetEvent(std::vector<sf::Packet>& e);
 };
