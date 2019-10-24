@@ -45,6 +45,8 @@ private:
     bool jumpedLastTime = false;
     float savedVerticalVelocity = 0.0f;
     bool callFromCheckJumpButton = false;
+    bool paused = false;
+    int pauseTick;
 
 public:
     DECL_M(GetPortals, int);
@@ -118,3 +120,6 @@ extern Variable sv_gravity;
 extern Variable sar_record_at;
 extern Variable sar_record_at_demo_name;
 extern Variable sar_record_at_increment;
+extern Variable sar_pause;
+extern Variable sar_pause_at;
+extern Variable sar_pause_for;
