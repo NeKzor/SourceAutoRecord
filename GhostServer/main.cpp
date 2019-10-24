@@ -2,18 +2,6 @@
 #include <SFML/Network.hpp>
 #include <TGUI/TGUI.hpp>
 
-/*enum HEADER {
-    NONE,
-    PING,
-    CONNECT,
-    DISCONNECT,
-    STOP_SERVER,
-    MAP_CHANGE,
-    MESSAGE,
-    COUNTDOWN,
-    UPDATE,
-};*/
-
 enum class COMMANDTYPE {
     PING,
     CONNECT,
@@ -64,9 +52,7 @@ std::string HandleCommand(std::string input, NetworkManager& network, tgui::Edit
 
         sf::IpAddress ip = args[1];
         std::string name = network.Disconnect(ip.toInteger());
-        if (!name.empty()) {
-            return "Player " + name + " has disconnected !";
-        } else {
+        if (name.empty()) {
             return "No player corresponding to the ip !";
         }
     } else if (command->second.commandType == COMMANDTYPE::COUNTDOWN) {

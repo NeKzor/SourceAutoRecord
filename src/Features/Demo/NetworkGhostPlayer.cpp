@@ -1,9 +1,9 @@
 #include "NetworkGhostPlayer.hpp"
 
+#include "Modules/Client.hpp"
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
-#include "Modules/Client.hpp"
 #include "Utils/SDK.hpp"
 
 #include "GhostPlayer.hpp"
@@ -87,7 +87,14 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     this->port_server = port;
 
     sf::Packet connection_packet;
-    connection_packet << HEADER::CONNECT << this->socket.getLocalPort() << this->name << this->GetPlayerData() << std::string(engine->m_szLevelName) << this->modelName;
+    connection_packet << HEADER::CONNECT << this->socket.getLocalPort() << this->name;
+    if (!*engine->m_szLevelName) { //If not in a level
+        connection_packet << DataGhost{ { 0, 0, 0 }, { 0, 0, 0 } };
+    } else {
+        connection_packet << this->GetPlayerData();
+    }
+
+    connection_packet << std::string(engine->m_szLevelName) << this->modelName;
     tcpSocket.send(connection_packet);
 
     sf::SocketSelector tcpSelector;
@@ -119,7 +126,8 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     client->Chat(TextColor::GREEN, "Successfully connected to the server !\n%d player connected\n", nbPlayer);
 
     this->isConnected = true;
-    this->isInLevel = true;
+    this->isInLevel = *engine->m_szLevelName;
+    this->pauseThread = !this->isInLevel;
     this->StartThinking();
 }
 
@@ -381,7 +389,7 @@ void NetworkGhostPlayer::CheckConnection()
                     sf::Uint8 step;
                     packet >> step;
                     if (step == 0) {
-						std::string commands;
+                        std::string commands;
                         sf::Uint32 time;
                         packet >> time >> commands;
                         if (!commands.empty()) {
