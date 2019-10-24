@@ -17,6 +17,7 @@
 #include "Features/Timer/Timer.hpp"
 
 #include "Engine.hpp"
+#include "Client.hpp"
 
 #include "Game.hpp"
 #include "Interface.hpp"
@@ -300,18 +301,16 @@ DETOUR(Server::GameFrame, bool simulating)
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - networkGhostPlayer->startCountdown).count() >= 1000) { //Every seconds
             if (networkGhostPlayer->countdown == 0) {
-                std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + " ! GO !";
-                engine->ExecuteCommand(command.c_str());
+                client->Chat(TextColor::GREEN, "0 ! GO !");
                 if (networkGhostPlayer->countdownType == COUNTDOWNTYPE::TELEPORT) {
-                    command = "setpos " + std::to_string(networkGhostPlayer->teleportCountdown.x) + " " + std::to_string(networkGhostPlayer->teleportCountdown.y) + " " + std::to_string(networkGhostPlayer->teleportCountdown.z);
+                    std::string command = "setpos " + std::to_string(networkGhostPlayer->teleportCountdown.x) + " " + std::to_string(networkGhostPlayer->teleportCountdown.y) + " " + std::to_string(networkGhostPlayer->teleportCountdown.z);
                     sv_cheats.ThisPtr()->m_nValue = 1;
                     engine->ExecuteCommand(command.c_str());
                     engine->SendToCommandBuffer("sv_cheats 0", 1); //Need cheats to teleport players (Might change this later)
                 }
                 networkGhostPlayer->isCountdownReady = false;
             } else {
-                std::string command = "say " + std::to_string(networkGhostPlayer->countdown) + "...";
-                engine->ExecuteCommand(command.c_str());
+                client->Chat(TextColor::LIGHT_GREEN, "%d...", networkGhostPlayer->countdown);
             }
             networkGhostPlayer->countdown--;
             networkGhostPlayer->startCountdown = now;

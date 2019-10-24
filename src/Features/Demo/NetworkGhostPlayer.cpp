@@ -3,6 +3,7 @@
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
+#include "Modules/Client.hpp"
 #include "Utils/SDK.hpp"
 
 #include "GhostPlayer.hpp"
@@ -75,7 +76,7 @@ NetworkGhostPlayer::NetworkGhostPlayer()
 void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
 {
     if (tcpSocket.connect(ip, port, sf::seconds(5)) != sf::Socket::Done) {
-        console->Warning("Timeout reached ! Can't connect to the server %s:%d !\n", ip.c_str(), port);
+        client->Chat(TextColor::ORANGE, "0 ! GO !", "Timeout reached ! Can't connect to the server %s:%d !\n", ip.c_str(), port);
         return;
     }
 
@@ -95,11 +96,11 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
     sf::Packet confirmation_packet;
     if (tcpSelector.wait(sf::seconds(30))) {
         if (tcpSocket.receive(confirmation_packet) != sf::Socket::Done) {
-            console->Warning("Error\n");
+            client->Chat(TextColor::ORANGE, "Error\n");
             return;
         }
     } else {
-        console->Warning("Timeout reached ! Can't connect to the server %s:%d !\n", ip.c_str(), port);
+        client->Chat(TextColor::ORANGE, "Timeout reached ! Can't connect to the server %s:%d !\n", ip.c_str(), port);
         return;
     }
 
@@ -115,7 +116,7 @@ void NetworkGhostPlayer::ConnectToServer(std::string ip, unsigned short port)
         confirmation_packet >> ID >> name >> data >> currentMap >> ghostModelName;
         this->ghostPool.push_back(this->SetupGhost(ID, name, data, currentMap, ghostModelName));
     }
-    console->Print("Successfully connected to the server !\n%d player connected\n", nbPlayer);
+    client->Chat(TextColor::GREEN, "Successfully connected to the server !\n%d player connected\n", nbPlayer);
 
     this->isConnected = true;
     this->isInLevel = true;
@@ -160,7 +161,7 @@ void NetworkGhostPlayer::StopServer()
         confirmation_packet >> header;
     }
 
-    console->Print("Server will stop !\n");
+    client->Chat(TextColor::LIGHT_GREEN, "Server will stop !\n");
 
     for (auto& it : this->ghostPool) {
         it->Stop();
@@ -336,7 +337,7 @@ void NetworkGhostPlayer::CheckConnection()
                             ghost->Spawn(true, false, { 1, 1, 1 });
                         }
                     }
-                    console->Print("Player %s has connected !\n", name.c_str());
+                    client->Chat(TextColor::LIGHT_GREEN, "Player %s has connected !\n", name.c_str());
                 } else if (header == HEADER::DISCONNECT) {
                     sf::Uint32 ID;
                     packet >> ID;
@@ -355,7 +356,7 @@ void NetworkGhostPlayer::CheckConnection()
                     std::string newMap;
                     packet >> ID >> newMap;
                     auto ghost = this->GetGhostByID(ID);
-                    console->Print("Player %s is now on %s\n", ghost->name.c_str(), newMap.c_str());
+                    client->Chat(TextColor::LIGHT_GREEN, "Player %s is now on %s\n", ghost->name.c_str(), newMap.c_str());
                     if (newMap == engine->m_szLevelName) {
                         ghost->sameMap = true;
                     } else {
@@ -368,11 +369,10 @@ void NetworkGhostPlayer::CheckConnection()
                     packet >> ID >> message;
                     std::string cmd;
                     if (ID == this->ip_client.toInteger()) {
-                        cmd = "say " + this->name + ": " + message;
+                        client->Chat(TextColor::ORANGE, "%s : %s", this->name, message);
                     } else {
-                        cmd = "say " + this->GetGhostByID(ID)->name + ": " + message;
+                        client->Chat(TextColor::ORANGE, "%s : %s", this->GetGhostByID(ID)->name, message);
                     }
-                    engine->ExecuteCommand(cmd.c_str());
                 } else if (header == HEADER::PING) {
                     auto stop = std::chrono::steady_clock::now();
                     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - this->start);
@@ -414,7 +414,7 @@ void NetworkGhostPlayer::CheckConnection()
                     }
                 }
             } else if (status == sf::Socket::Disconnected) {
-                console->Warning("Connexion has been interrupted ! You have been disconnected !\n");
+                client->Chat(TextColor::ORANGE, "Connexion has been interrupted ! You have been disconnected !\n");
                 this->Disconnect();
             }
         }
@@ -523,7 +523,7 @@ CON_COMMAND(sar_ghost_disconnect, "Disconnect the player from the server\n")
     }
 
     networkGhostPlayer->Disconnect();
-    console->Print("You have successfully been disconnected !\n");
+    client->Chat(TextColor::ORANGE, "You have successfully been disconnected !\n");
 }
 
 CON_COMMAND(sar_ghost_name, "Name that will be displayed\n")
@@ -560,7 +560,7 @@ CON_COMMAND(sar_ghost_countdown, "Start a countdown\n")
     }
 }
 
-CON_COMMAND(sar_ghost_message, "Send a message toother players\n")
+CON_COMMAND(sar_ghost_message, "Send a message to other players\n")
 {
     if (args.ArgC() <= 1) {
         console->Print(sar_ghost_message.ThisPtr()->m_pszHelpString);

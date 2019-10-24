@@ -174,6 +174,9 @@ extern int SetKeyValueVector;
 // CVEngineServer
 extern int ClientCommand;
 
+//CBaseHudChat
+extern int ChatPrintf;
+
 // CSteam3Client
 extern int OnGameOverlayActivated;
 

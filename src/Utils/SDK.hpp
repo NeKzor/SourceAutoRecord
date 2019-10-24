@@ -94,6 +94,12 @@ struct Color {
     unsigned char _color[4] = { 0, 0, 0, 0 };
 };
 
+enum class TextColor {
+    GREEN = 4,
+    LIGHT_GREEN,
+	ORANGE
+};
+
 #define FCVAR_DEVELOPMENTONLY (1 << 1)
 #define FCVAR_HIDDEN (1 << 4)
 #define FCVAR_NEVER_AS_STRING (1 << 12)

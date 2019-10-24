@@ -141,6 +141,7 @@ void Portal2::LoadOffsets()
     GetName = 10; // CHud
     GetHud = 125; // cc_leaderboard_enable
     FindElement = 135; // cc_leaderboard_enable
+    ChatPrintf = 22; // CBaseHudChat
     DecodeUserCmdFromBuffer = 7; // CInput
     PerUserInput_tSize = 368; // CInput::DecodeUserCmdFromBuffer
     m_pCommands = 228; // CInput::DecodeUserCmdFromBuffer
