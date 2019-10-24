@@ -157,18 +157,6 @@ void NetworkGhostPlayer::StopServer()
     this->runThread = false;
     this->waitForPaused.notify_one(); //runThread being false will make the thread stopping no matter if pauseThread is true or false
 
-    sf::Packet packet;
-    packet << HEADER::STOP_SERVER;
-    this->tcpSocket.send(packet);
-
-    HEADER header = HEADER::NONE;
-    this->tcpSocket.setBlocking(true);
-    while (header != HEADER::STOP_SERVER) {
-        sf::Packet confirmation_packet;
-        this->tcpSocket.receive(confirmation_packet);
-        confirmation_packet >> header;
-    }
-
     client->Chat(TextColor::LIGHT_GREEN, "Server will stop !\n");
 
     for (auto& it : this->ghostPool) {
@@ -250,7 +238,6 @@ void NetworkGhostPlayer::StartThinking()
         this->waitForPaused.notify_one();
     } else { //First time we connect
         this->runThread = true;
-        this->pauseThread = false;
         this->waitForPaused.notify_one();
         this->networkThread = std::thread(&NetworkGhostPlayer::NetworkThink, this);
         this->networkThread.detach();

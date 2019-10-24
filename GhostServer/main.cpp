@@ -165,7 +165,6 @@ int main()
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 network.StopServer();
-                window.close();
             }
             gui.handleEvent(event);
         }
