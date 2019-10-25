@@ -1,6 +1,7 @@
 #include "Features/Demo/GhostPlayer.hpp"
 #include "Features/Demo/DemoParser.hpp"
 #include "Features/Demo/NetworkGhostPlayer.hpp"
+#include "Modules/Server.hpp"
 
 GhostPlayer* ghostPlayer;
 
@@ -166,7 +167,9 @@ CON_COMMAND(sar_ghost_set_prop_model, "Set the prop model. Example : models/prop
 
     ghostPlayer->GetFirstGhost()->ChangeModel(args[1]);
     ghostPlayer->ResetGhost();
-    ghostPlayer->GetFirstGhost()->Spawn(false, true);
+    auto pos = server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1));
+    pos.z += sar_ghost_height.GetFloat();
+    ghostPlayer->GetFirstGhost()->Spawn(false, pos);
 }
 
 CON_COMMAND(sar_ghost_time_offset, "In seconds. Start the ghost with a delay. Can be negative of positive.\n")
@@ -205,10 +208,13 @@ CON_COMMAND(sar_ghost_enable, "Start automatically the ghost playback when loadi
     if (args.ArgC() <= 1) {
         return console->Print(sar_ghost_time_offset.ThisPtr()->m_pszHelpString);
     }
+    if (networkGhostPlayer->IsConnected()) {
+        return console->Warning("Can't play ghost with demos when connected to a server !\n");
+	}
     bool enable = static_cast<bool>(std::atoi(args[1]));
     if (enable) {
         ghostPlayer->enabled = true;
-        //ghostPlayer->AddGhost(new GhostEntity);
+        ghostPlayer->AddGhost(new GhostEntity);
     } else {
         ghostPlayer->enabled = false;
         ghostPlayer->StopAll();

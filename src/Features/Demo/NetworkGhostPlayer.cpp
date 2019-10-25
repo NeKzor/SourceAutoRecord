@@ -290,7 +290,7 @@ void NetworkGhostPlayer::NetworkThink()
                 if (ghost != nullptr) {
                     if (ghost->sameMap && !pauseThread) { //" && !pauseThread" to verify the map is still loaded
                         if (ghost->ghost_entity == nullptr) {
-                            ghost->Spawn(true, false, QAngleToVector(data.position));
+                            ghost->Spawn(true, QAngleToVector(data.position));
                         }
                         ghost->oldPos = ghost->newPos;
                         ghost->newPos = { { data.position.x, data.position.y, data.position.z + sar_ghost_height.GetFloat() }, { data.view_angle.x, data.view_angle.y, data.view_angle.z } };
@@ -329,7 +329,7 @@ void NetworkGhostPlayer::CheckConnection()
                     if (this->runThread) {
                         auto ghost = this->GetGhostByID(ID);
                         if (ghost->sameMap) {
-                            ghost->Spawn(true, false, { 1, 1, 1 });
+                            ghost->Spawn(true, { 1, 1, 1 });
                         }
                     }
                     client->Chat(TextColor::LIGHT_GREEN, "Player %s has connected !\n", name.c_str());

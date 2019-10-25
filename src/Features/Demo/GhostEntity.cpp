@@ -11,7 +11,7 @@ GhostEntity::GhostEntity()
     : positionList()
     , angleList()
     , ID()
-    , name()
+    , name("demo")
     , currentMap()
     , sameMap(false)
     , ghost_entity(nullptr)
@@ -41,23 +41,14 @@ void GhostEntity::Stop()
     delete this->ghost_entity;
 }
 
-GhostEntity* GhostEntity::Spawn(bool instantPlay, bool playerPos, Vector position)
+GhostEntity* GhostEntity::Spawn(bool instantPlay, Vector position)
 {
     this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
     server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
-    server->SetKeyValueChar(this->ghost_entity, "targetname", "ghost");
+    std::string ghostName = "ghost_" + this->name;
+    server->SetKeyValueChar(this->ghost_entity, "targetname", ghostName.c_str());
 
-    Vector pos;
-    if (!playerPos && (position.x == 0 || position.y == 0 || position.z == 0)) {
-        pos = this->positionList[(this->tickCount)];
-    } else if (!playerPos && (position.x != 0 || position.y != 0 || position.z != 0)) {
-        pos = position;
-    } else if (playerPos) {
-        pos = server->GetAbsOrigin(server->GetPlayer(GET_SLOT() + 1));
-        pos.z += sar_ghost_height.GetFloat();
-    }
-
-    this->SetPosAng(pos, Vector{ 0, 0, 0 });
+    this->SetPosAng(position, Vector{ 0, 0, 0 });
 
     if (sar_ghost_transparency.GetFloat() <= 254) {
         server->SetKeyValueChar(this->ghost_entity, "rendermode", "1");
@@ -96,7 +87,8 @@ void GhostEntity::Think()
 {
     auto tick = session->GetTick();
     if (this->ghost_entity == nullptr && !this->hasFinished && ((engine->GetMaxClients() == 1 && tick >= (this->startTick + (this->CMTime - this->demo.playbackTicks))) || (engine->GetMaxClients() > 1 && tick >= this->startTick))) {
-        this->Spawn();
+        auto pos = this->positionList[(this->tickCount)];
+		this->Spawn(true, pos);
     }
 
     if (this->isPlaying) {

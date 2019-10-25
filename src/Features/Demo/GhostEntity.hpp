@@ -51,7 +51,7 @@ public:
     GhostEntity();
     void Reset();
     void Stop();
-    GhostEntity* Spawn(bool instantPlay = true, bool playerPos = false, Vector position = { 0, 0, 0 });
+    GhostEntity* Spawn(bool instantPlay, Vector position);
     bool IsReady();
     void SetCMTime(float);
     void Think();
