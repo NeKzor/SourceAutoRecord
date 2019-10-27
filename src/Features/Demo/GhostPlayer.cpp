@@ -46,6 +46,7 @@ void GhostPlayer::StopAll()
     for (auto it : this->ghost) {
         it->Stop();
     }
+    this->ghost.clear();
 }
 
 void GhostPlayer::StopByID(unsigned int& ID)
