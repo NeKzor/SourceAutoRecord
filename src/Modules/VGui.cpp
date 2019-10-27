@@ -1,5 +1,8 @@
 #include "VGui.hpp"
 
+#include "Features/Demo/GhostEntity.hpp"
+#include "Features/Demo/GhostPlayer.hpp"
+#include "Features/Demo/NetworkGhostPlayer.hpp"
 #include "Features/EntityList.hpp"
 #include "Features/Hud/InputHud.hpp"
 #include "Features/Hud/InspectionHud.hpp"
@@ -15,9 +18,6 @@
 #include "Features/Timer/Timer.hpp"
 #include "Features/Timer/TimerAverage.hpp"
 #include "Features/Timer/TimerCheckPoints.hpp"
-#include "Features/Demo/GhostEntity.hpp"
-#include "Features/Demo/NetworkGhostPlayer.hpp"
-#include "Features/Demo/GhostPlayer.hpp"
 
 #include "Client.hpp"
 #include "Console.hpp"
@@ -50,8 +50,8 @@ DETOUR(VGui::Paint, int mode)
     if (sar_ghost_show_name.GetBool()) {
         for (auto const& hud : vgui->ghostHuds) {
             hud->Draw();
-		}
-	}
+        }
+    }
 
     surface->StartDrawing(surface->matsurface->ThisPtr());
 
@@ -104,13 +104,47 @@ DETOUR(VGui::Paint, int mode)
     };
 
     //Ghosts
-    if (sar_ghost_show_name.GetBool()) {
-        auto player = client->GetPlayer(slot + 1);
-        if (player) {
-            auto pos = client->GetAbsOrigin(player);
-            for (auto& ghost : networkGhostPlayer->ghostPool) {
+    if (!networkGhostPlayer->ghostPool.empty()) { //Netork ghosts
+        if (sar_ghost_show_name.GetBool()) {
+            auto player = client->GetPlayer(slot + 1);
+            if (player) {
+                auto pos = client->GetAbsOrigin(player);
+                for (auto& ghost : networkGhostPlayer->ghostPool) {
+                    Vector screenPos;
+                    engine->PointToScreen(ghost->currentPos, screenPos);
+                    DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
+                    if (sar_ghost_show_distance.GetBool()) {
+                        DrawGhostNames(screenPos.x, screenPos.y, "Dist: %.3f", Math::Distance(pos, ghost->currentPos));
+                    }
+                }
+            }
+        }
+    } else if (!ghostPlayer->ghost.empty() && ghostPlayer->GetFirstGhost()->isPlaying) { //Demo ghost
+        if (sar_ghost_show_name.GetBool()) {
+            auto player = client->GetPlayer(slot + 1);
+            if (player) {
+                auto pos = client->GetAbsOrigin(player);
+                auto ghost = ghostPlayer->GetFirstGhost();
                 Vector screenPos;
                 engine->PointToScreen(ghost->currentPos, screenPos);
+                DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
+                if (sar_ghost_show_distance.GetBool()) {
+                    DrawGhostNames(screenPos.x, screenPos.y, "Dist: %.3f", Math::Distance(pos, ghost->currentPos));
+                }
+            }
+        }
+    } else if (engine->demoplayer->IsPlaying() && !ghostPlayer->ghost.empty()) { //Playing demo with ghost
+        if (sar_ghost_show_name.GetBool()) {
+            auto player = client->GetPlayer(slot + 1);
+            if (player) {
+                auto pos = client->GetAbsOrigin(player);
+                auto ghost = ghostPlayer->GetFirstGhost();
+                Vector screenPos;
+                int tick = session->GetTick() / 2 + ghost->GetStartDelay();
+                if (tick < 0) {
+                    tick = 0;
+                }
+                engine->PointToScreen(ghost->positionList[tick], screenPos);
                 DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
                 if (sar_ghost_show_distance.GetBool()) {
                     DrawGhostNames(screenPos.x, screenPos.y, "Dist: %.3f", Math::Distance(pos, ghost->currentPos));
@@ -360,7 +394,7 @@ void VGui::Shutdown()
     }
     for (auto const& hud : this->ghostHuds) {
         delete hud;
-	}
+    }
     this->huds.clear();
     this->huds2.clear();
     this->ghostHuds.clear();

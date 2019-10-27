@@ -148,6 +148,7 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_ghost_set_demo, "Set the demo in order to build
         parser.Adjust(&demo);
         ghostPlayer->GetFirstGhost()->SetCMTime(demo.playbackTime);
         ghostPlayer->GetFirstGhost()->demo = demo;
+        ghostPlayer->GetFirstGhost()->name = demo.clientName;
         console->Print("Ghost sucessfully created ! Final time of the ghost : %f\n", demo.playbackTime);
     } else {
         console->Print("Could not parse \"%s\"!\n", name.c_str());
