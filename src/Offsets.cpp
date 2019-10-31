@@ -158,7 +158,12 @@ int IsRunningSimulation;
 
 // CIVDebugOverlay
 int ScreenPosition;
+int AddBoxOverlay;
+int AddSphereOverlay;
+int AddTriangleOverlay;
+int AddLineOverlay;
 int AddScreenTextOverlay;
+int ClearAllOverlays;
 
 // CCommandBuffer
 int m_bWaitEnabled;

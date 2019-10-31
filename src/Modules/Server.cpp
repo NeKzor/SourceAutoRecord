@@ -279,10 +279,6 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
-    if (ghostPlayer->IsReady() && !ghostPlayer->IsNetworking() && simulating) {
-        ghostPlayer->Run();
-    }
-
     if (simulating && networkGhostPlayer->pausedByServer && networkGhostPlayer->isInLevel && networkGhostPlayer->runThread) {
         networkGhostPlayer->StartThinking();
         networkGhostPlayer->pausedByServer = false;
