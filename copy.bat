@@ -1,11 +1,11 @@
-ECHO !!! YOU FORGOT TO EDIT copy.bat !!!
+REM ECHO !!! YOU FORGOT TO EDIT copy.bat !!!
 
 SET "binary=sar.dll"
 SET "src=..\bin\%binary%"
-SET "dest=C:\Program Files (x86)\Steam\SteamApps\common"
-SET "unpack=F:\SOURCE_UNPACK"
+SET "dest=D:\Gry\Steem\steamapps\common"
+REM SET "unpack=F:\SOURCE_UNPACK"
 
-REM copy /Y "%src%" "%dest%\Portal 2\%binary%"
+copy /Y "%src%" "%dest%\Portal 2\%binary%"
 REM copy /Y "%src%" "%dest%\Aperture Tag\%binary%"
 REM copy /Y "%src%" "%dest%\Portal Stories Mel\%binary%"
 REM copy /Y "%src%" "%dest%\Portal\%binary%"
