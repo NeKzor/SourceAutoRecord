@@ -913,3 +913,57 @@ struct cmdalias_t {
 struct GameOverlayActivated_t {
     uint8_t m_bActive;
 };
+
+
+
+struct csurface_t {
+    const char* name;
+    short surfaceProps;
+    unsigned short flags;
+};
+
+struct cplane_t {
+    Vector normal;
+    float dist;
+    unsigned char type;
+    unsigned char signbits;
+    unsigned char pad[2];
+};
+
+struct CBaseTrace {
+    Vector startpos;
+    Vector endpos;
+    cplane_t plane;
+    float fraction;
+    int contents;
+    unsigned short dispFlags;
+    bool allsolid;
+    bool startsolid;
+};
+
+struct CGameTrace : public CBaseTrace {
+    float fractionleftsolid;
+    csurface_t surface;
+    int hitgroup;
+    short physicsbone;
+    unsigned short worldSurfaceIndex;
+    int hitbox;
+};
+
+struct VectorAligned : public Vector {
+    float w;
+};
+
+struct matrix3x4_t {
+    float m_flMatVal[3][4];
+};
+
+struct Ray_t {
+    VectorAligned m_Start;
+    VectorAligned m_Delta;
+    VectorAligned m_StartOffset;
+    VectorAligned m_Extents;
+    const matrix3x4_t* m_pWorldAxisTransform;
+    bool m_IsRay;
+    bool m_IsSwept;
+};

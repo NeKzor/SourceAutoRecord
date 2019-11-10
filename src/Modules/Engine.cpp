@@ -27,6 +27,7 @@ REDECL(Engine::SetSignonState2);
 REDECL(Engine::Frame);
 REDECL(Engine::OnGameOverlayActivated);
 REDECL(Engine::OnGameOverlayActivatedBase);
+REDECL(Engine::TraceRay);
 REDECL(Engine::plugin_load_callback);
 REDECL(Engine::plugin_unload_callback);
 REDECL(Engine::exit_callback);
@@ -270,10 +271,24 @@ DETOUR_COMMAND(Engine::gameui_activate)
     Engine::gameui_activate_callback(args);
 }
 
+DETOUR(Engine::TraceRay, const Ray_t& ray, unsigned int fMask, void* pTraceFilter, CGameTrace* pTrace) {
+    auto result = Engine::TraceRay(thisptr, ray, fMask, pTraceFilter, pTrace);
+
+    if (!sv_bonus_challenge.GetBool() || sv_cheats.GetBool()) {
+        if (sar_portalable_nodraw.GetBool() && strcmp(pTrace->surface.name, "TOOLS/TOOLSNODRAW") == 0) {
+            //removing SURF_NOPORTAL (0x20) flag from surface flags.
+            pTrace->surface.flags = pTrace->surface.flags & ~0x20;
+        }
+    }
+
+    return result;
+}
+
 bool Engine::Init()
 {
     this->engineClient = Interface::Create(this->Name(), "VEngineClient0", false);
     this->s_ServerPlugin = Interface::Create(this->Name(), "ISERVERPLUGINHELPERS0", false);
+    this->engineTrace = Interface::Create(this->Name(), "EngineTraceServer004");
 
     if (this->engineClient) {
         this->GetScreenSize = this->engineClient->Original<_GetScreenSize>(Offsets::GetScreenSize);
@@ -306,6 +321,10 @@ bool Engine::Init()
             if (auto g_VEngineServer = Interface::Create(this->Name(), "VEngineServer0", false)) {
                 this->ClientCommand = g_VEngineServer->Original<_ClientCommand>(Offsets::ClientCommand);
                 Interface::Delete(g_VEngineServer);
+            }
+
+            if (this->engineTrace) {
+                this->engineTrace->Hook(Engine::TraceRay_Hook, Engine::TraceRay, Offsets::TraceRay);
             }
         }
 
@@ -442,6 +461,7 @@ void Engine::Shutdown()
     Interface::Delete(this->cl);
     Interface::Delete(this->eng);
     Interface::Delete(this->s_GameEventManager);
+    Interface::Delete(this->engineTrace);
 
 #ifdef _WIN32
     Command::Unhook("connect", Engine::connect_callback);
