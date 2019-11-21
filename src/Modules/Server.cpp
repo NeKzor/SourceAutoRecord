@@ -361,7 +361,7 @@ bool Server::Init()
         }
     }
 
-    offsetFinder->ServerSide("CBasePlayer", "m_nWaterLevel", &Offsets::m_nWaterLevel);
+    /* offsetFinder->ServerSide("CBasePlayer", "m_nWaterLevel", &Offsets::m_nWaterLevel);
     offsetFinder->ServerSide("CBasePlayer", "m_iName", &Offsets::m_iName);
     offsetFinder->ServerSide("CBasePlayer", "m_vecVelocity[0]", &Offsets::S_m_vecVelocity);
     offsetFinder->ServerSide("CBasePlayer", "m_fFlags", &Offsets::m_fFlags);
@@ -375,7 +375,7 @@ bool Server::Init()
 
     if (sar.game->Is(SourceGame_Portal2Game)) {
         offsetFinder->ServerSide("CPortal_Player", "iNumPortalsPlaced", &Offsets::iNumPortalsPlaced);
-    }
+    }*/
 
     sv_cheats = Variable("sv_cheats");
     sv_footsteps = Variable("sv_footsteps");

@@ -32,6 +32,13 @@ public:
         this->list.push_back(*modulePtr);
     }
     template <typename T = Module>
+    bool InitModule(T** modulePtr)
+    {
+        *modulePtr = new T();
+        this->list.push_back(*modulePtr);
+        return (*modulePtr)->Init();
+    }
+    template <typename T = Module>
     void RemoveModule(T** modulePtr)
     {
         this->list.erase(*modulePtr);

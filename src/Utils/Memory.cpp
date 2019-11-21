@@ -249,14 +249,16 @@ Memory::Patch::~Patch()
         this->original = nullptr;
     }
 }
-bool Memory::Patch::Execute(uintptr_t location, unsigned char* bytes)
+bool Memory::Patch::Execute(uintptr_t location, unsigned char* bytes, size_t size)
 {
     this->location = location;
-    this->size = sizeof(bytes) / sizeof(bytes[0]) - 1;
+    this->size = size;
     this->original = new unsigned char[this->size];
 
+    auto curProc = GetCurrentProcess();
+
     for (size_t i = 0; i < this->size; ++i) {
-        if (!ReadProcessMemory(GetCurrentProcess(),
+        if (!ReadProcessMemory(curProc,
                 reinterpret_cast<LPVOID>(this->location + i),
                 &this->original[i],
                 1,
@@ -266,7 +268,7 @@ bool Memory::Patch::Execute(uintptr_t location, unsigned char* bytes)
     }
 
     for (size_t i = 0; i < this->size; ++i) {
-        if (!WriteProcessMemory(GetCurrentProcess(),
+        if (!WriteProcessMemory(curProc,
                 reinterpret_cast<LPVOID>(this->location + i),
                 &bytes[i],
                 1,
@@ -279,8 +281,10 @@ bool Memory::Patch::Execute(uintptr_t location, unsigned char* bytes)
 bool Memory::Patch::Restore()
 {
     if (this->location && this->original) {
+        auto curProc = GetCurrentProcess();
+
         for (size_t i = 0; i < this->size; ++i) {
-            if (!WriteProcessMemory(GetCurrentProcess(),
+            if (!WriteProcessMemory(curProc,
                     reinterpret_cast<LPVOID>(this->location + i),
                     &this->original[i],
                     1,

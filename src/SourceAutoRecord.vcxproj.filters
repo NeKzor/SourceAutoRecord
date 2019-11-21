@@ -295,6 +295,9 @@
     <ClCompile Include="Games\Windows\PortalUnpack.cpp">
       <Filter>SourceAutoRecord\Games\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="Games\Windows\BlackMesa.cpp">
+      <Filter>SourceAutoRecord\Games\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\lib\minhook\buffer.h">
@@ -616,6 +619,9 @@
       <Filter>SourceAutoRecord\Games\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Games\Windows\PortalUnpack.hpp">
+      <Filter>SourceAutoRecord\Games\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Games\Windows\BlackMesa.hpp">
       <Filter>SourceAutoRecord\Games\Windows</Filter>
     </ClInclude>
   </ItemGroup>

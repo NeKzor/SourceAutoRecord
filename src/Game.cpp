@@ -17,6 +17,7 @@
 #include GAME(INFRA)
 #include GAME(HalfLife2Unpack)
 #include GAME(PortalUnpack)
+#include GAME(BlackMesa)
 #endif
 
 #define HAS_GAME_FLAG(flag, name)        \
@@ -90,6 +91,9 @@ Game* Game::CreateNew()
     if (Utils::ICompare(modDir, INFRA::ModDir())) {
         return new INFRA();
     }
+    if (Utils::ICompare(modDir, BlackMesa::ModDir())) {
+        return new BlackMesa();
+    }
 #endif
 
     modDir = GetModDir(TARGET_MOD2);
@@ -115,6 +119,7 @@ std::string Game::VersionToString(int version)
         HAS_GAME_FLAG(SourceGame_ApertureTag,                      "Aperture Tag")
         HAS_GAME_FLAG(SourceGame_PortalStoriesMel,                 "Portal Stories: Mel")
         HAS_GAME_FLAG(SourceGame_INFRA,                            "INFRA")
+        HAS_GAME_FLAG(SourceGame_BlackMesa,                        "INFRA")
     }
     return games;
 }

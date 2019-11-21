@@ -39,9 +39,18 @@ bool Tier1::Init()
 #else
                 &this->ConVar_VTable;
 #endif
+            if (sar.game->Is(SourceGame_BlackMesa)) {
+                this->Dtor = Memory::VMT<_Dtor>(vtable, Offsets::Dtor);
 
-            this->Dtor = Memory::VMT<_Dtor>(vtable, Offsets::Dtor);
-            this->Create = Memory::VMT<_Create>(vtable, Offsets::Create);
+                auto setinfo = Command("setinfo");
+                if (!!setinfo) {
+                    auto ctor = Memory::Read((uintptr_t)setinfo.ThisPtr()->m_pCommandCallback + Offsets::ConVarCtor);
+                    this->Create2 = Memory::Read<_Create2>(ctor + Offsets::Create);
+                }
+            } else {
+                this->Dtor = Memory::VMT<_Dtor>(vtable, Offsets::Dtor);
+                this->Create = Memory::VMT<_Create>(vtable, Offsets::Create);
+            }
         }
 
         if (sar.game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
@@ -54,7 +63,9 @@ bool Tier1::Init()
         && this->ConCommand_VTable
         && this->ConVar_VTable
         && this->ConVar_VTable2
-        && this->AutoCompletionFunc;
+        && this->AutoCompletionFunc
+        && this->Dtor
+        && (this->Create || this->Create2);
 }
 void Tier1::Shutdown()
 {

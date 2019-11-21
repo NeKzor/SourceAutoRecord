@@ -61,16 +61,13 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
             this->features->AddFeature<PauseTimer>(&pauseTimer);
             this->features->AddFeature<DataMapDumper>(&dataMapDumper);
 
-            this->modules->AddModule<InputSystem>(&inputSystem);
-            this->modules->AddModule<Scheme>(&scheme);
-            this->modules->AddModule<Surface>(&surface);
-            this->modules->AddModule<VGui>(&vgui);
-            this->modules->AddModule<Engine>(&engine);
-            this->modules->AddModule<Client>(&client);
-            this->modules->AddModule<Server>(&server);
-            this->modules->InitAll();
-
-            if (engine && engine->hasLoaded) {
+            if (this->Load(&inputSystem)
+                && this->Load(&scheme)
+                && this->Load(&surface)
+                && this->Load(&vgui)
+                && this->Load(&engine)
+                && this->Load(&client)
+                && this->Load(&server)) {
                 engine->demoplayer->Init();
                 engine->demorecorder->Init();
 
@@ -240,7 +237,7 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
 
     if (sar.modules) {
         sar.modules->ShutdownAll();
-    }    
+    }
 
     SAFE_DELETE(sar.features)
     SAFE_DELETE(sar.cheats)
@@ -255,9 +252,6 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
 }
 
 #pragma region Unused callbacks
-void SAR::Unload()
-{
-}
 void SAR::Pause()
 {
 }

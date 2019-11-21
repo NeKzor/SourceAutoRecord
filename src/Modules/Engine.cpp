@@ -333,7 +333,7 @@ bool Engine::Init()
                 this->cl->Hook(Engine::SetSignonState_Hook, Engine::SetSignonState, Offsets::Disconnect - 1);
                 this->cl->Hook(Engine::Disconnect_Hook, Engine::Disconnect, Offsets::Disconnect);
             } else if (sar.game->Is(SourceGame_HalfLife2Engine)) {
-                this->cl->Hook(Engine::SetSignonState2_Hook, Engine::SetSignonState2, Offsets::Disconnect - 1);
+                //this->cl->Hook(Engine::SetSignonState2_Hook, Engine::SetSignonState2, Offsets::Disconnect - 1);
 #ifdef _WIN32
                 Command::Hook("connect", Engine::connect_callback_hook, Engine::connect_callback);
 #else
@@ -369,7 +369,7 @@ bool Engine::Init()
 
         if (this->eng = Interface::Create(engAddr)) {
             if (this->tickcount && this->hoststate && this->m_szLevelName) {
-                this->eng->Hook(Engine::Frame_Hook, Engine::Frame, Offsets::Frame);
+                //this->eng->Hook(Engine::Frame_Hook, Engine::Frame, Offsets::Frame);
             }
         }
         Interface::Delete(s_EngineAPI);
@@ -404,7 +404,7 @@ bool Engine::Init()
 
             this->demoSmootherPatch = new Memory::Patch();
             unsigned char nop3[] = { 0x90, 0x90, 0x90 };
-            this->demoSmootherPatch->Execute(parseSmoothingInfoAddr + 5, nop3);             // Nop rest
+            this->demoSmootherPatch->Execute(parseSmoothingInfoAddr + 5, nop3, sizeof(nop3)); // Nop rest
         }
     }
 #endif

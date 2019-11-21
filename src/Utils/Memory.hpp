@@ -40,7 +40,7 @@ private:
 
 public:
     ~Patch();
-    bool Execute(uintptr_t location, unsigned char* bytes);
+    bool Execute(uintptr_t location, unsigned char* bytes, size_t size);
     bool Restore();
 };
 #endif

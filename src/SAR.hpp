@@ -61,6 +61,17 @@ public:
 
     bool GetPlugin();
     void SearchPlugin();
+
+private:
+    template <typename T = Module>
+    bool Load(T** modulePtr)
+    {
+        auto loaded = this->modules->InitModule(modulePtr);
+        if (!loaded) {
+            console->Warning("SAR: Failed to load %s module!\n", typeid(T).name());
+        }
+        return loaded;
+    }
 };
 
 extern SAR sar;

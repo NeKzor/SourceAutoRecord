@@ -35,6 +35,7 @@ public:
 
     ConVar* ThisPtr();
     ConVar2* ThisPtr2();
+    ConVar3* ThisPtr3();
 
     bool GetBool();
     int GetInt();

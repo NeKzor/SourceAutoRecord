@@ -212,6 +212,7 @@ struct ConVar : ConCommandBase {
         , m_pParent(nullptr)
         , m_pszDefaultValue(value)
         , m_pszString(nullptr)
+        , m_StringLength(0)
         , m_fValue(0.0f)
         , m_nValue(0)
         , m_bHasMin(hasmin)
@@ -257,12 +258,57 @@ struct ConVar2 : ConCommandBase {
         , m_pParent(nullptr)
         , m_pszDefaultValue(value)
         , m_pszString(nullptr)
+        , m_StringLength(0)
         , m_fValue(0.0f)
         , m_nValue(0)
         , m_bHasMin(hasmin)
         , m_fMinVal(min)
         , m_bHasMax(hasmax)
         , m_fMaxVal(max)
+        , m_fnChangeCallback()
+    {
+    }
+};
+
+struct ConVar3 : ConCommandBase {
+    void* ConVar_VTable; // 24
+    ConVar3* m_pParent; // 28
+    const char* m_pszDefaultValue; // 32
+    char* m_pszString; // 36
+    int m_StringLength; // 40
+    float m_fValue; // 44
+    int m_nValue; // 48
+    Vector m_vecValue; // 52, 56, 60
+    bool m_bHasMin; // 64
+    float m_fMinVal; // 68
+    bool m_bHasMax; // 72
+    float m_fMaxVal; // 76
+    bool m_bHasCompMin; // 80
+    float m_fCompMinVal; // 84
+    bool m_bHasCompMax; // 88
+    float m_fCompMaxVal; // 92
+    bool m_bCompetitiveRestrictions; // 96
+    CUtlVector<FnChangeCallback_t> m_fnChangeCallback; // 100
+
+    ConVar3(const char* name, const char* value, int flags, const char* helpstr, bool hasmin, float min, bool hasmax, float max)
+        : ConCommandBase(name, flags, helpstr)
+        , ConVar_VTable(nullptr)
+        , m_pParent(nullptr)
+        , m_pszDefaultValue(value)
+        , m_pszString(nullptr)
+        , m_StringLength(0)
+        , m_fValue(0.0f)
+        , m_nValue(0)
+        , m_vecValue({0, 0, 0})
+        , m_bHasMin(hasmin)
+        , m_fMinVal(min)
+        , m_bHasMax(hasmax)
+        , m_fMaxVal(max)
+        , m_bHasCompMin(false)
+        , m_fCompMinVal(0.0f)
+        , m_bHasCompMax(false)
+        , m_fCompMaxVal(0.0f)
+        , m_bCompetitiveRestrictions(false)
         , m_fnChangeCallback()
     {
     }

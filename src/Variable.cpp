@@ -70,6 +70,18 @@ void Variable::Realloc()
             this->ptr->m_fMaxVal);
         delete this->ptr;
         this->ptr = reinterpret_cast<ConVar*>(newptr);
+    } else if(sar.game->Is(SourceGame_BlackMesa)) {
+        auto newptr = new ConVar3(
+            this->ptr->m_pszName,
+            this->ptr->m_pszDefaultValue,
+            this->ptr->m_nFlags,
+            this->ptr->m_pszHelpString,
+            this->ptr->m_bHasMin,
+            this->ptr->m_fMinVal,
+            this->ptr->m_bHasMax,
+            this->ptr->m_fMaxVal);
+        delete this->ptr;
+        this->ptr = reinterpret_cast<ConVar*>(newptr);
     }
 }
 ConVar* Variable::ThisPtr()
@@ -79,6 +91,10 @@ ConVar* Variable::ThisPtr()
 ConVar2* Variable::ThisPtr2()
 {
     return reinterpret_cast<ConVar2*>(this->ptr);
+}
+ConVar3* Variable::ThisPtr3()
+{
+    return reinterpret_cast<ConVar3*>(this->ptr);
 }
 bool Variable::GetBool()
 {
@@ -178,16 +194,34 @@ void Variable::Register()
         this->Realloc();
         this->ptr->ConCommandBase_VTable = tier1->ConVar_VTable;
         this->ptr->ConVar_VTable = tier1->ConVar_VTable2;
-        tier1->Create(this->ptr,
-            this->ptr->m_pszName,
-            this->ptr->m_pszDefaultValue,
-            this->ptr->m_nFlags,
-            this->ptr->m_pszHelpString,
-            this->ptr->m_bHasMin,
-            this->ptr->m_fMinVal,
-            this->ptr->m_bHasMax,
-            this->ptr->m_fMaxVal,
-            nullptr);
+
+        if (sar.game->Is(SourceGame_BlackMesa)) {
+            tier1->Create2(this->ptr,
+                this->ptr->m_pszName,
+                this->ptr->m_pszDefaultValue,
+                this->ptr->m_nFlags,
+                this->ptr->m_pszHelpString,
+                this->ptr->m_bHasMin,
+                this->ptr->m_fMinVal,
+                this->ptr->m_bHasMax,
+                this->ptr->m_fMaxVal,
+                nullptr,
+                0,
+                0,
+                0,
+                0);
+        } else {
+            tier1->Create(this->ptr,
+                this->ptr->m_pszName,
+                this->ptr->m_pszDefaultValue,
+                this->ptr->m_nFlags,
+                this->ptr->m_pszHelpString,
+                this->ptr->m_bHasMin,
+                this->ptr->m_fMinVal,
+                this->ptr->m_bHasMax,
+                this->ptr->m_fMaxVal,
+                nullptr);
+        }
     }
 }
 void Variable::Unregister()
