@@ -55,6 +55,7 @@ public:
     bool IsReady();
     void SetCMTime(float);
     void Think();
+    int GetTickCount();
     int GetStartDelay();
     void SetStartDelay(int);
     void ChangeModel(std::string modelName);

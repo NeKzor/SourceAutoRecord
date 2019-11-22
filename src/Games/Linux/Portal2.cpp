@@ -58,6 +58,7 @@ void Portal2::LoadOffsets()
     demorecorder = 106; // CClientState::Disconnect
     GetCurrentMap = 26; // CEngineTool
     m_szLevelName = 72; // CEngineTool::GetCurrentMap
+    PrecacheModel = 61; // CEngineTool::PrecacheModel
     AddListener = 4; // CGameEventManager
     RemoveListener = 6; // CGameEventManager
     FireEventClientSide = 9; // CGameEventManager

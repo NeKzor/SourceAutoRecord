@@ -3,9 +3,9 @@
 
 #include "Features/Demo/Demo.hpp"
 #include "Features/Demo/DemoParser.hpp"
-#include "Modules/EngineDemoPlayer.hpp"
 #include "Features/Session.hpp"
 #include "Modules/Engine.hpp"
+#include "Modules/EngineDemoPlayer.hpp"
 #include "Modules/Server.hpp"
 
 GhostEntity::GhostEntity()
@@ -24,7 +24,7 @@ GhostEntity::GhostEntity()
     , tickCount(0)
     , startDelay(0)
     , demo()
-    , newPos({{ 1, 1, 1 }, { 1, 1, 1 }})
+    , newPos({ { 1, 1, 1 }, { 1, 1, 1 } })
     , oldPos({ { 1, 1, 1 }, { 1, 1, 1 } })
 {
 }
@@ -34,6 +34,9 @@ void GhostEntity::Reset()
     this->ghost_entity = nullptr;
     this->isPlaying = false;
     this->tickCount = GetStartDelay();
+    if (sar_ghost_type.GetInt() == 1) {
+        engine->ClearAllOverlays();
+    }
 }
 
 void GhostEntity::Stop()
@@ -101,25 +104,47 @@ void GhostEntity::Think()
     auto tick = session->GetTick();
     if (this->ghost_entity == nullptr && !this->hasFinished && ((engine->GetMaxClients() == 1 && tick >= (this->startTick + (this->CMTime - this->demo.playbackTicks))) || (engine->GetMaxClients() > 1 && tick >= this->startTick))) {
         auto pos = this->positionList[(this->tickCount)];
-		this->Spawn(true, pos);
+        this->Spawn(true, pos);
     }
 
-    if (this->isPlaying || engine->demoplayer->IsPlaying()) {
+    if (this->isPlaying) {
         Vector position = this->positionList[(this->tickCount)];
         position.z += sar_ghost_height.GetFloat();
         this->SetPosAng(position, this->angleList[(this->tickCount)]);
 
-        if (engine->GetMaxClients() == 1) {
-            this->tickCount = tick / 2;
+        if (!engine->demoplayer->IsPlaying()) {
+            if (engine->GetMaxClients() == 1) {
+                if (tick % 2 == 0) {
+                    ++this->tickCount;
+                }
+            } else {
+                ++this->tickCount;
+            }
         } else {
-            this->tickCount = tick;
-		}
+            if (engine->GetMaxClients() == 1) {
+                this->tickCount = tick / 2 - (this->startTick + (this->CMTime - this->demo.playbackTicks));
+                if (this->tickCount < 0) {
+                    this->tickCount = 0;
+                }
+            } else {
+                this->tickCount = tick - (this->startTick + (this->CMTime - this->demo.playbackTicks));
+                if (this->tickCount < 0) {
+                    this->tickCount = 0;
+                }
+            }
+        }
+
+        if (this->tickCount == this->positionList.size()) {
+            console->Print("Ghost has finished.\n");
+            this->hasFinished = true;
+            this->Reset();
+        }
     }
-    if (this->tickCount == this->positionList.size()) {
-        console->Print("Ghost has finished.\n");
-        this->hasFinished = true;
-        this->Reset();
-    }
+}
+
+int GhostEntity::GetTickCount()
+{
+    return this->tickCount;
 }
 
 int GhostEntity::GetStartDelay()
@@ -135,7 +160,7 @@ void GhostEntity::SetStartDelay(int delay)
 void GhostEntity::ChangeModel(std::string modelName)
 {
     std::copy(modelName.begin(), modelName.end(), this->modelName);
-    this->modelName[sizeof(this->modelName)-1] = '\0';
+    this->modelName[sizeof(this->modelName) - 1] = '\0';
 }
 
 void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)
@@ -162,7 +187,7 @@ void GhostEntity::Lerp(DataGhost& oldPosition, DataGhost& targetPosition, float 
 {
     if (time > 1) {
         return;
-	}
+    }
 
     Vector newPos;
     newPos.x = (1 - time) * oldPosition.position.x + time * targetPosition.position.x;
@@ -174,5 +199,5 @@ void GhostEntity::Lerp(DataGhost& oldPosition, DataGhost& targetPosition, float 
     newAngle.y = (1 - time) * oldPosition.view_angle.y + time * targetPosition.view_angle.y;
     newAngle.z = 0;
 
-	this->SetPosAng(newPos, newAngle);
+    this->SetPosAng(newPos, newAngle);
 }

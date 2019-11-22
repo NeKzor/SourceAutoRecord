@@ -221,8 +221,10 @@ CON_COMMAND(sar_ghost_enable, "Start automatically the ghost playback when loadi
 	}
     bool enable = static_cast<bool>(std::atoi(args[1]));
     if (enable) {
-        ghostPlayer->enabled = true;
-        ghostPlayer->AddGhost(new GhostEntity);
+        if (!ghostPlayer->enabled) {
+            ghostPlayer->enabled = true;
+            ghostPlayer->AddGhost(new GhostEntity);
+        }
     } else {
         ghostPlayer->enabled = false;
         ghostPlayer->StopAll();
