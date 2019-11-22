@@ -144,7 +144,7 @@ void Portal2::LoadOffsets()
     FindElement = 135; // cc_leaderboard_enable
     DecodeUserCmdFromBuffer = 7; // CInput
     PerUserInput_tSize = 368; // CInput::DecodeUserCmdFromBuffer
-    m_pCommands = 228; // CInput::DecodeUserCmdFromBuffer
+    m_pCommands = 236; // CInput::DecodeUserCmdFromBuffer
     CUserCmdSize = 96; // CInput::DecodeUserCmdFromBuffer
     MULTIPLAYER_BACKUP = 150; // CInput::DecodeUserCmdFromBuffer
     IN_ActivateMouse = 15; // CHLClient
@@ -170,7 +170,7 @@ void Portal2::LoadOffsets()
 }
 const char* Portal2::Version()
 {
-    return "Portal 2 (7054)";
+    return "Portal 2 (7293)";
 }
 const float Portal2::Tickrate()
 {
