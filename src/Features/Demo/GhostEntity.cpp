@@ -5,6 +5,7 @@
 #include "Features/Demo/DemoParser.hpp"
 #include "Features/Session.hpp"
 #include "Modules/Engine.hpp"
+#include "Modules/EngineDemoPlayer.hpp"
 #include "Modules/Server.hpp"
 
 GhostEntity::GhostEntity()
@@ -23,16 +24,17 @@ GhostEntity::GhostEntity()
     , tickCount(0)
     , startDelay(0)
     , demo()
-    , newPos({{ 1, 1, 1 }, { 1, 1, 1 }})
+    , newPos({ { 1, 1, 1 }, { 1, 1, 1 } })
     , oldPos({ { 1, 1, 1 }, { 1, 1, 1 } })
-{
-}
 
 void GhostEntity::Reset()
 {
     this->ghost_entity = nullptr;
     this->isPlaying = false;
     this->tickCount = GetStartDelay();
+    if (sar_ghost_type.GetInt() == 1) {
+        engine->ClearAllOverlays();
+    }
 }
 
 void GhostEntity::Stop()
@@ -88,7 +90,7 @@ void GhostEntity::Think()
     auto tick = session->GetTick();
     if (this->ghost_entity == nullptr && !this->hasFinished && ((engine->GetMaxClients() == 1 && tick >= (this->startTick + (this->CMTime - this->demo.playbackTicks))) || (engine->GetMaxClients() > 1 && tick >= this->startTick))) {
         auto pos = this->positionList[(this->tickCount)];
-		this->Spawn(true, pos);
+        this->Spawn(true, pos);
     }
 
     if (this->isPlaying) {
@@ -111,6 +113,11 @@ void GhostEntity::Think()
     }
 }
 
+int GhostEntity::GetTickCount()
+{
+    return this->tickCount;
+}
+
 int GhostEntity::GetStartDelay()
 {
     return this->startDelay;
@@ -124,7 +131,7 @@ void GhostEntity::SetStartDelay(int delay)
 void GhostEntity::ChangeModel(std::string modelName)
 {
     std::copy(modelName.begin(), modelName.end(), this->modelName);
-    this->modelName[sizeof(this->modelName)-1] = '\0';
+    this->modelName[sizeof(this->modelName) - 1] = '\0';
 }
 
 void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)
@@ -138,7 +145,7 @@ void GhostEntity::Lerp(DataGhost& oldPosition, DataGhost& targetPosition, float 
 {
     if (time > 1) {
         return;
-	}
+    }
 
     Vector newPos;
     newPos.x = (1 - time) * oldPosition.position.x + time * targetPosition.position.x;
@@ -150,5 +157,5 @@ void GhostEntity::Lerp(DataGhost& oldPosition, DataGhost& targetPosition, float 
     newAngle.y = (1 - time) * oldPosition.view_angle.y + time * targetPosition.view_angle.y;
     newAngle.z = 0;
 
-	this->SetPosAng(newPos, newAngle);
+    this->SetPosAng(newPos, newAngle);
 }

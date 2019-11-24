@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstring>
 
+#include "Features/Demo/GhostPlayer.hpp"
+#include "Features/Demo/NetworkGhostPlayer.hpp"
 #include "Features/Hud/InputHud.hpp"
 #include "Features/Imitator.hpp"
 #include "Features/OffsetFinder.hpp"

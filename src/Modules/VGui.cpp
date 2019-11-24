@@ -139,11 +139,11 @@ DETOUR(VGui::Paint, int mode)
             if (player) {
                 auto pos = client->GetAbsOrigin(player);
                 auto ghost = ghostPlayer->GetFirstGhost();
-                Vector screenPos;
-                int tick = session->GetTick() / 2 + ghost->GetStartDelay();
+                int tick = ghost->GetTickCount();
                 if (tick < 0) {
                     tick = 0;
                 }
+                Vector screenPos;
                 engine->PointToScreen(ghost->positionList[tick], screenPos);
                 DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
                 if (sar_ghost_show_distance.GetBool()) {
