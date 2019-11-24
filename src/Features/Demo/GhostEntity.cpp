@@ -26,8 +26,6 @@ GhostEntity::GhostEntity()
     , demo()
     , newPos({ { 1, 1, 1 }, { 1, 1, 1 } })
     , oldPos({ { 1, 1, 1 }, { 1, 1, 1 } })
-{
-}
 
 void GhostEntity::Reset()
 {
