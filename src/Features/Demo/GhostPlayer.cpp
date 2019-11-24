@@ -5,9 +5,6 @@
 
 GhostPlayer* ghostPlayer;
 
-Variable sar_ghost_type("sar_ghost_type", "1", 1, "Type of the ghost :\n"
-                                                  "1 = Ghost drawn manually. Aren't recorded in demos (but still can be drawn in them with SAR)\n"
-                                                  "2 = Ghost using in-game model. WARNING : Those remain permanently in demos\n");
 Variable sar_ghost_height("sar_ghost_height", "16", -256, "Height of the ghost.\n");
 Variable sar_ghost_transparency("sar_ghost_transparency", "255", 0, 256, "Transparency of the ghost.\n");
 Variable sar_ghost_show_name("sar_ghost_text", "1", "Display the name of the ghost over it\n");
@@ -164,9 +161,6 @@ CON_COMMAND(sar_ghost_set_prop_model, "Set the prop model. Example : models/prop
     if (args.ArgC() <= 1) {
         return console->Print(sar_ghost_set_prop_model.ThisPtr()->m_pszHelpString);
     }
-    if (sar_ghost_type.GetInt() == 1) {
-        return console->Print("Can't use models when using sar_ghost_type 1.\n");
-	}
     networkGhostPlayer->modelName = args[1];
 
     if (ghostPlayer->ghost.empty()) {

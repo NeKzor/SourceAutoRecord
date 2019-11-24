@@ -3,7 +3,6 @@
 
 #include "Features/Demo/Demo.hpp"
 #include "Features/Demo/DemoParser.hpp"
-#include "Modules/EngineDemoPlayer.hpp"
 #include "Features/Session.hpp"
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
@@ -44,39 +43,27 @@ void GhostEntity::Stop()
 
 GhostEntity* GhostEntity::Spawn(bool instantPlay, Vector position)
 {
-    if (sar_ghost_type.GetInt() == 1) { //Ghost drawn with debug triangles
+    this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
+    server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
+    std::string ghostName = "ghost_" + this->name;
+    server->SetKeyValueChar(this->ghost_entity, "targetname", ghostName.c_str());
 
-        this->ghost_entity = new GhostEntity;
-        this->SetPosAng(position, Vector{ 0, 0, 0 });
-        this->isPlaying = instantPlay;
-        if (this->ghost_entity != nullptr) {
-            console->Print("Say 'Hi !' to Jonnil !\n");
-            this->lastUpdate = this->clock.now();
-            return this;
-        }
-    } else if (sar_ghost_type.GetInt() == 2) { //Ghost drawn with in-game props
-        this->ghost_entity = server->CreateEntityByName("prop_dynamic_override");
-        server->SetKeyValueChar(this->ghost_entity, "model", this->modelName);
-        std::string ghostName = "ghost_" + this->name;
-        server->SetKeyValueChar(this->ghost_entity, "targetname", ghostName.c_str());
+    this->SetPosAng(position, Vector{ 0, 0, 0 });
 
-        this->SetPosAng(position, Vector{ 0, 0, 0 });
+    if (sar_ghost_transparency.GetFloat() <= 254) {
+        server->SetKeyValueChar(this->ghost_entity, "rendermode", "1");
+        server->SetKeyValueFloat(this->ghost_entity, "renderamt", sar_ghost_transparency.GetFloat());
+    } else {
+        server->SetKeyValueChar(this->ghost_entity, "rendermode", "0");
+    }
 
-        if (sar_ghost_transparency.GetFloat() <= 254) {
-            server->SetKeyValueChar(this->ghost_entity, "rendermode", "1");
-            server->SetKeyValueFloat(this->ghost_entity, "renderamt", sar_ghost_transparency.GetFloat());
-        } else {
-            server->SetKeyValueChar(this->ghost_entity, "rendermode", "0");
-        }
+    server->DispatchSpawn(this->ghost_entity);
+    this->isPlaying = instantPlay;
 
-        server->DispatchSpawn(this->ghost_entity);
-        this->isPlaying = instantPlay;
-
-        if (this->ghost_entity != nullptr) {
-            console->Print("Say 'Hi !' to Jonnil !\n");
-            this->lastUpdate = this->clock.now();
-            return this;
-        }
+    if (this->ghost_entity != nullptr) {
+        console->Print("Say 'Hi !' to Jonnil !\n");
+        this->lastUpdate = this->clock.now();
+        return this;
     }
 
     return nullptr;
@@ -84,7 +71,7 @@ GhostEntity* GhostEntity::Spawn(bool instantPlay, Vector position)
 
 bool GhostEntity::IsReady()
 {
-    if (ghostPlayer->enabled && this->CMTime != 0) { //No need to check positionList anymore, cause CMTime is > 0 if PositionList > 0
+    if (ghostPlayer->enabled && this->CMTime > 0) { //No need to check positionList anymore, cause CMTime is > 0 if PositionList > 0
         return true;
     }
     return false;
@@ -104,16 +91,18 @@ void GhostEntity::Think()
 		this->Spawn(true, pos);
     }
 
-    if (this->isPlaying || engine->demoplayer->IsPlaying()) {
+    if (this->isPlaying) {
         Vector position = this->positionList[(this->tickCount)];
         position.z += sar_ghost_height.GetFloat();
         this->SetPosAng(position, this->angleList[(this->tickCount)]);
 
         if (engine->GetMaxClients() == 1) {
-            this->tickCount = tick / 2;
+            if (tick % 2 == 0) {
+                this->tickCount++;
+            }
         } else {
-            this->tickCount = tick;
-		}
+            this->tickCount++;
+        }
     }
     if (this->tickCount == this->positionList.size()) {
         console->Print("Ghost has finished.\n");
@@ -140,21 +129,8 @@ void GhostEntity::ChangeModel(std::string modelName)
 
 void GhostEntity::SetPosAng(const Vector& pos, const Vector& ang)
 {
-    if (sar_ghost_type.GetInt() == 1) {
-        Vector p1 = pos;
-        Vector p2 = pos;
-        p2.x += 10;
-        Vector p3 = pos;
-        p3.x += 5;
-        p3.z += 10;
-
-        engine->AddTriangleOverlay(p1, p2, p3, 254, 0, 0, sar_ghost_transparency.GetInt(), false, 0);
-        engine->AddTriangleOverlay(p3, p2, p1, 254, 0, 0, sar_ghost_transparency.GetInt(), false, 0);
-    } else if (sar_ghost_type.GetInt() == 2) {
-        server->SetKeyValueVector(this->ghost_entity, "origin", pos);
-        server->SetKeyValueVector(this->ghost_entity, "angles", ang);
-    }
-
+    server->SetKeyValueVector(this->ghost_entity, "origin", pos);
+    server->SetKeyValueVector(this->ghost_entity, "angles", ang);
     this->currentPos = pos;
 }
 

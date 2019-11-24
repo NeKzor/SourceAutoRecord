@@ -12,8 +12,6 @@
 #include "Features/Session.hpp"
 #include "Features/Tas/AutoStrafer.hpp"
 #include "Features/Tas/CommandQueuer.hpp"
-#include "Features/Demo/GhostPlayer.hpp"
-#include "Features/Demo/NetworkGhostPlayer.hpp"
 
 #include "Console.hpp"
 #include "Engine.hpp"
@@ -79,10 +77,6 @@ void Client::Chat(TextColor color, const char* fmt, ...)
 // CHLClient::HudUpdate
 DETOUR(Client::HudUpdate, unsigned int a2)
 {
-    if (ghostPlayer->IsReady() && !ghostPlayer->IsNetworking() && session->isRunning) {
-        ghostPlayer->Run();
-    }
-
     if (cmdQueuer->isRunning) {
         for (auto&& tas = cmdQueuer->frames.begin(); tas != cmdQueuer->frames.end();) {
             --tas->framesLeft;
