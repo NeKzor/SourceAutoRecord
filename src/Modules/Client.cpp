@@ -79,6 +79,10 @@ void Client::Chat(TextColor color, const char* fmt, ...)
 // CHLClient::HudUpdate
 DETOUR(Client::HudUpdate, unsigned int a2)
 {
+    if (ghostPlayer->IsReady() && !ghostPlayer->IsNetworking() && engine->demoplayer->IsPlaying()) {
+        ghostPlayer->Run();
+    }
+
     if (cmdQueuer->isRunning) {
         for (auto&& tas = cmdQueuer->frames.begin(); tas != cmdQueuer->frames.end();) {
             --tas->framesLeft;

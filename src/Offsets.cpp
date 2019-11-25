@@ -106,7 +106,6 @@ int m_flMaxspeed;
 int m_flGravity;
 int S_m_vecViewOffset;
 int IsPlayer;
-int SetParent;
 
 // CBasePlayer
 int m_fFlags;
@@ -159,7 +158,12 @@ int IsRunningSimulation;
 
 // CIVDebugOverlay
 int ScreenPosition;
+int AddBoxOverlay;
+int AddSphereOverlay;
+int AddTriangleOverlay;
+int AddLineOverlay;
 int AddScreenTextOverlay;
+int ClearAllOverlays;
 
 // CCommandBuffer
 int m_bWaitEnabled;
@@ -171,7 +175,6 @@ int DispatchSpawn;
 int SetKeyValueChar;
 int SetKeyValueFloat;
 int SetKeyValueVector;
-int RemoveEntity;
 
 // CVEngineServer
 int ClientCommand;

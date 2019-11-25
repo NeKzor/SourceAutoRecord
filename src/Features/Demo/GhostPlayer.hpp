@@ -37,6 +37,7 @@ extern Command sar_ghost_set_demo;
 extern Command sar_ghost_set_prop_model;
 extern Command sar_ghost_time_offset;
 extern Command sar_ghost_enable;
+extern Variable sar_ghost_type;
 extern Variable sar_ghost_height;
 extern Variable sar_ghost_transparency;
 extern Variable sar_ghost_show_name;

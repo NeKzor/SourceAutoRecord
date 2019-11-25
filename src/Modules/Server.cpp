@@ -95,11 +95,6 @@ int Server::GetSplitScreenPlayerSlot(void* entity)
     return 0;
 }
 
-void Server::SetParent(void* entity, void* pNewParent, int iAttachement)
-{
-    Memory::VMT<void(__func*)(void*, void*, int)>(entity, Offsets::SetParent)(entity, pNewParent, iAttachement);
-}
-
 // CGameMovement::CheckJumpButton
 DETOUR_T(bool, Server::CheckJumpButton)
 {
@@ -427,7 +422,6 @@ bool Server::Init()
         this->SetKeyValueChar = g_ServerTools->Original<_SetKeyValueChar>(Offsets::SetKeyValueChar);
         this->SetKeyValueFloat = g_ServerTools->Original<_SetKeyValueFloat>(Offsets::SetKeyValueFloat);
         this->SetKeyValueVector = g_ServerTools->Original<_SetKeyValueVector>(Offsets::SetKeyValueVector);
-        this->RemoveEntity = g_ServerTools->Original<_RemoveEntity>(Offsets::RemoveEntity);
 
         Interface::Delete(g_ServerTools);
     }
