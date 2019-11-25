@@ -15,6 +15,7 @@ public:
 
 extern InputHud* inputHud;
 extern InputHud* inputHud2;
+extern InputHud* ghostInputHud;
 
 extern Variable sar_ihud;
 extern Variable sar_ihud_x;

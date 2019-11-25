@@ -7,6 +7,7 @@
 #include "Console.hpp"
 #include "Engine.hpp"
 #include "Server.hpp"
+#include "Features/Demo/GhostEntity.hpp"
 
 #include "Command.hpp"
 #include "Offsets.hpp"

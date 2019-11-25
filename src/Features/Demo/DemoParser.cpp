@@ -55,11 +55,13 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
         file.read((char*)&demo->playbackFrames, sizeof(demo->playbackFrames));
         file.read((char*)&demo->signOnLength, sizeof(demo->signOnLength));
 
-        ghostPlayer->ResetCoord();
-        std::vector<Vector> positionList;
-        std::vector<Vector> anglesList;
-        bool waitForNext = false;
-        int lastTick = 0;
+        if (outputMode == 3) {
+            ghostPlayer->ResetCoord();
+        }
+            std::vector<Vector> positionList;
+            std::vector<Vector> anglesList;
+            bool waitForNext = false;
+            int lastTick = 0;
 
         if (!headerOnly) {
             if (demo->demoProtocol != 4) {
@@ -219,7 +221,9 @@ bool DemoParser::Parse(std::string filePath, Demo* demo)
                 }
             }
         }
-        ghostPlayer->SetCoordList(positionList, anglesList);
+        if (outputMode == 3) {
+            ghostPlayer->SetCoordList(positionList, anglesList);
+        }
         file.close();
     } catch (const std::exception& ex) {
         console->Warning("SAR: Error occurred when trying to parse the demo file.\n"

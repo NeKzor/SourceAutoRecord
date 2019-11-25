@@ -12,6 +12,7 @@
 #include "Features/Tas/CommandQueuer.hpp"
 #include "Features/Timer/Timer.hpp"
 #include "Features/Demo/GhostPlayer.hpp"
+#include "Features/Demo/NetworkGhostPlayer.hpp"
 
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
@@ -66,9 +67,19 @@ void Session::Start()
     if (this->isRunning) {
         return;
     }
-	
-    engine->PrecacheModel(ghostPlayer->GetGhost()->modelName, true);
-    ghostPlayer->GetGhost()->hasFinished = false;
+
+    if (ghostPlayer->IsReady()) {
+        engine->PrecacheModel(ghostPlayer->GetFirstGhost()->modelName, true);
+        ghostPlayer->GetFirstGhost()->hasFinished = false; //TODO : apply for all ghosts
+    } else if (networkGhostPlayer->IsConnected() && !*engine->m_szLevelName) {
+        if (networkGhostPlayer->ghostPool.size() > 0) {
+            engine->PrecacheModel(networkGhostPlayer->ghostPool[0]->modelName, true);
+        }
+        networkGhostPlayer->UpdateCurrentMap();
+        networkGhostPlayer->UpdateGhostsCurrentMap();
+        networkGhostPlayer->StartThinking();
+        networkGhostPlayer->isInLevel = true;
+	}
     auto tick = engine->GetTick();
 
     this->Rebase(tick);
@@ -136,7 +147,14 @@ void Session::Ended()
     }
 
 	//Ghost
-    ghostPlayer->ResetGhost();
+    if (ghostPlayer->IsReady()) {
+        ghostPlayer->ResetGhost();
+    }
+    if (networkGhostPlayer->IsConnected()) {
+        networkGhostPlayer->PauseThinking();
+        networkGhostPlayer->ClearGhosts();
+        networkGhostPlayer->isInLevel = false;
+    }
 
     auto tick = this->GetTick();
 

@@ -106,7 +106,6 @@ extern int m_flMaxspeed;
 extern int m_flGravity;
 extern int S_m_vecViewOffset;
 extern int IsPlayer;
-extern int SetParent;
 
 // CBasePlayer
 extern int m_fFlags;
@@ -159,6 +158,12 @@ extern int IsRunningSimulation;
 
 // CIVDebugOverlay
 extern int ScreenPosition;
+extern int AddBoxOverlay;
+extern int AddSphereOverlay;
+extern int AddTriangleOverlay;
+extern int AddLineOverlay;
+extern int AddScreenTextOverlay;
+extern int ClearAllOverlays;
 
 // CCommandBuffer
 extern int m_bWaitEnabled;
@@ -170,10 +175,12 @@ extern int DispatchSpawn;
 extern int SetKeyValueChar;
 extern int SetKeyValueFloat;
 extern int SetKeyValueVector;
-extern int RemoveEntity;
 
 // CVEngineServer
 extern int ClientCommand;
+
+//CBaseHudChat
+extern int ChatPrintf;
 
 // CSteam3Client
 extern int OnGameOverlayActivated;

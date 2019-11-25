@@ -58,6 +58,7 @@ void Portal2::LoadOffsets()
     demorecorder = 106; // CClientState::Disconnect
     GetCurrentMap = 26; // CEngineTool
     m_szLevelName = 72; // CEngineTool::GetCurrentMap
+    PrecacheModel = 61; // CEngineTool::PrecacheModel
     AddListener = 4; // CGameEventManager
     RemoveListener = 6; // CGameEventManager
     FireEventClientSide = 9; // CGameEventManager
@@ -70,6 +71,7 @@ void Portal2::LoadOffsets()
     Frame = 6; // CEngine
     m_bLoadGame = 440; // CGameClient::ActivatePlaye/CBaseServer::m_szLevelName
     ScreenPosition = 11; // CIVDebugOverlay
+    //AddEntityTextOverlay = 0; // CIVDebugOverlay
     MAX_SPLITSCREEN_PLAYERS = 2; // maxplayers
     OnGameOverlayActivated = 152; // CSteam3Client
 
@@ -121,7 +123,6 @@ void Portal2::LoadOffsets()
     SetKeyValueVector = 14; // CServerTools::SetKeyValue (const Vector &vecValue )
     CreateEntityByName = 15; // CServerTools::CreateEntityByName
     DispatchSpawn = 16; //CServerTool::DispatchSpawn
-    RemoveEntity = 22; //CServerTool::RemoveEntity
     ClientCommand = 39; // CVEngineServer
     IsPlayer = 86; // CBasePlayer
     m_pSurfaceData = 4116; // CGameMovement::CheckJumpButton
@@ -141,9 +142,10 @@ void Portal2::LoadOffsets()
     GetName = 11; // CHud
     GetHud = 104; // cc_leaderboard_enable
     FindElement = 120; // cc_leaderboard_enable
+    ChatPrintf = 25; // CBaseHudChat
     DecodeUserCmdFromBuffer = 7; // CInput
     PerUserInput_tSize = 344; // CInput::DecodeUserCmdFromBuffer
-    m_pCommands = 236; // CInput::DecodeUserCmdFromBuffer
+    m_pCommands = 228; // CInput::DecodeUserCmdFromBuffer
     CUserCmdSize = 96; // CInput::DecodeUserCmdFromBuffer
     MULTIPLAYER_BACKUP = 150; // CInput::DecodeUserCmdFromBuffer
     IN_ActivateMouse = 15; // CHLClient

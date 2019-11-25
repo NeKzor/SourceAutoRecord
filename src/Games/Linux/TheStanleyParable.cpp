@@ -36,7 +36,6 @@ void TheStanleyParable::LoadOffsets()
     // client.so
 
     GetClientMode = 11; // CHLClient::HudProcessInput
-    m_pCommands = 228; // CInput::DecodeUserCmdFromBuffer
     IN_ActivateMouse = 15; // CHLClient
     g_Input = 1; // CHLClient::IN_ActivateMouse
     GetButtonBits = 2; // CInput

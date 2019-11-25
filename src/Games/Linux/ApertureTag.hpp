@@ -4,7 +4,6 @@
 class ApertureTag : public Portal2 {
 public:
     ApertureTag();
-    void LoadOffsets() override;
     const char* Version() override;
 
     static const char* GameDir();
