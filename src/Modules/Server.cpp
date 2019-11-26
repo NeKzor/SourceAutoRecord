@@ -34,6 +34,10 @@ Variable sv_stopspeed;
 Variable sv_maxvelocity;
 Variable sv_gravity;
 
+Variable sar_pause("sar_pause", "0", "Enable pause after a load.\n");
+Variable sar_pause_at("sar_pause_at", "0", 0, "Pause at the specified tick.\n");
+Variable sar_pause_for("sar_pause_for", "0", 0, "Pause for this amount of ticks.\n");
+
 REDECL(Server::CheckJumpButton);
 REDECL(Server::CheckJumpButtonBase);
 REDECL(Server::PlayerMove);
@@ -283,6 +287,22 @@ DETOUR(Server::GameFrame, bool simulating)
 #else
     auto result = Server::GameFrame(thisptr, simulating);
 #endif
+
+    if (sar_pause.GetBool()) {
+        if (!server->paused && sar_pause_at.GetInt() == session->GetTick() && simulating) {
+            engine->ExecuteCommand("pause");
+            server->paused = true;
+            server->pauseTick = engine->GetTick();
+        } else if (server->paused && !simulating) {
+            if (sar_pause_for.GetInt() > 0 && sar_pause_for.GetInt() + engine->GetTick() == server->pauseTick) {
+                engine->ExecuteCommand("unpause");
+                server->paused = false;
+            }
+            ++server->pauseTick;
+        } else if (server->paused && simulating && engine->GetTick() > server->pauseTick + 5) {
+            server->paused = false;
+        }
+    }
 
     if (session->isRunning && pauseTimer->IsActive()) {
         pauseTimer->Increment();
