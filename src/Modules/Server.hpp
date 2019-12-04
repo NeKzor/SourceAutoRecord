@@ -86,7 +86,7 @@ public:
 
     bool Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("server"); }
+    const char* Name() override { return MODULE("server_sixense"); }
 };
 
 extern Server* server;
