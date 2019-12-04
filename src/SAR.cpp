@@ -252,6 +252,9 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
 }
 
 #pragma region Unused callbacks
+void SAR::Unload()
+{
+}
 void SAR::Pause()
 {
 }

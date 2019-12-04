@@ -197,6 +197,7 @@ void Variable::Register()
 
         if (sar.game->Is(SourceGame_BlackMesa)) {
             tier1->Create2(this->ptr,
+                0,
                 this->ptr->m_pszName,
                 this->ptr->m_pszDefaultValue,
                 this->ptr->m_nFlags,

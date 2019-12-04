@@ -93,7 +93,6 @@ public:
     // CClientState::Disconnect
     DECL_DETOUR(Disconnect, bool bShowMainMenu);
 #ifdef _WIN32
-    DECL_DETOUR(Disconnect2, int unk1, int unk2, int unk3);
     DECL_DETOUR_COMMAND(connect);
 #else
     DECL_DETOUR(Disconnect2, int unk, bool bShowMainMenu);

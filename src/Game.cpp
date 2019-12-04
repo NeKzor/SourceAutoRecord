@@ -119,7 +119,7 @@ std::string Game::VersionToString(int version)
         HAS_GAME_FLAG(SourceGame_ApertureTag,                      "Aperture Tag")
         HAS_GAME_FLAG(SourceGame_PortalStoriesMel,                 "Portal Stories: Mel")
         HAS_GAME_FLAG(SourceGame_INFRA,                            "INFRA")
-        HAS_GAME_FLAG(SourceGame_BlackMesa,                        "INFRA")
+        HAS_GAME_FLAG(SourceGame_BlackMesa,                        "Black Mesa")
     }
     return games;
 }

@@ -21,7 +21,9 @@ Variable host_framerate;
 Variable net_showmsg;
 
 REDECL(Engine::Disconnect);
+#ifndef _WIN32
 REDECL(Engine::Disconnect2);
+#endif
 REDECL(Engine::SetSignonState);
 REDECL(Engine::SetSignonState2);
 REDECL(Engine::Frame);
@@ -135,11 +137,6 @@ DETOUR(Engine::Disconnect, bool bShowMainMenu)
     return Engine::Disconnect(thisptr, bShowMainMenu);
 }
 #ifdef _WIN32
-DETOUR(Engine::Disconnect2, int unk1, int unk2, int unk3)
-{
-    session->Ended();
-    return Engine::Disconnect2(thisptr, unk1, unk2, unk3);
-}
 DETOUR_COMMAND(Engine::connect)
 {
     session->Ended();
@@ -333,7 +330,11 @@ bool Engine::Init()
                 this->cl->Hook(Engine::SetSignonState_Hook, Engine::SetSignonState, Offsets::Disconnect - 1);
                 this->cl->Hook(Engine::Disconnect_Hook, Engine::Disconnect, Offsets::Disconnect);
             } else if (sar.game->Is(SourceGame_HalfLife2Engine)) {
-                //this->cl->Hook(Engine::SetSignonState2_Hook, Engine::SetSignonState2, Offsets::Disconnect - 1);
+                if (sar.game->Is(SourceGame_BlackMesa)) {
+                    this->cl->Hook(Engine::SetSignonState_Hook, Engine::SetSignonState, Offsets::Disconnect - 1);
+                } else {
+                    this->cl->Hook(Engine::SetSignonState2_Hook, Engine::SetSignonState2, Offsets::Disconnect - 1);
+                }
 #ifdef _WIN32
                 Command::Hook("connect", Engine::connect_callback_hook, Engine::connect_callback);
 #else
@@ -369,7 +370,7 @@ bool Engine::Init()
 
         if (this->eng = Interface::Create(engAddr)) {
             if (this->tickcount && this->hoststate && this->m_szLevelName) {
-                //this->eng->Hook(Engine::Frame_Hook, Engine::Frame, Offsets::Frame);
+                this->eng->Hook(Engine::Frame_Hook, Engine::Frame, Offsets::Frame);
             }
         }
         Interface::Delete(s_EngineAPI);

@@ -22,7 +22,7 @@ void BlackMesa::LoadOffsets()
     GetScreenSize = 5; // CEngineClient
     ClientCmd = 7; // CEngineClient
     Cbuf_AddText = 58; // CEngineClient::ClientCmd
-    s_CommandBuffer = 78; // Cbuf_AddText
+    s_CommandBuffer = 64; // Cbuf_AddText
     AddText = 69; // Cbuf_AddText
     GetLocalPlayer = 12; // CEngineClient
     GetViewAngles = 19; // CEngineClient
@@ -79,7 +79,7 @@ void BlackMesa::LoadOffsets()
     // server.dll
 
     PlayerMove = 17; // CGameMovement
-    CheckJumpButton = 30; // CGameMovement
+    CheckJumpButton = 39; // CGameMovement
     FullTossMove = 31; // CGameMovement
     mv = 8; // CGameMovement::CheckJumpButton
     player = 4; // CGameMovement::PlayerMove
