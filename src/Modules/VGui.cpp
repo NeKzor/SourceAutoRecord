@@ -290,7 +290,7 @@ bool VGui::Init()
 {
     this->enginevgui = Interface::Create(this->Name(), "VEngineVGui0");
     if (this->enginevgui) {
-        //this->enginevgui->Hook(VGui::Paint_Hook, VGui::Paint, Offsets::Paint);
+        this->enginevgui->Hook(VGui::Paint_Hook, VGui::Paint, Offsets::Paint);
     }
 
     this->huds.push_back(inputHud = new InputHud());

@@ -35,7 +35,7 @@ public:
     using _Create = int(__func*)(ConVar* thisptr, const char* pName, const char* pDefaultValue, int flags, const char* pHelpString, bool bMin, float fMin, bool bMax,
         float fMax, FnChangeCallback_t callback);
     using _Create2 = int(__fastcall*)(ConVar* thisptr, int edx, const char* pName, const char* pDefaultValue, int flags, const char* pHelpString, bool bMin, float fMin, bool bMax,
-        float fMax, FnChangeCallback_t callback, int unk0, int unk1, int unk2, int unk3);
+        float fMax, bool bCompMin, float fCompMin, bool bCompMax, float fCompMax, FnChangeCallback_t callback);
 
     _Dtor Dtor = nullptr;
     _Create Create = nullptr;

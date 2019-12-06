@@ -102,11 +102,12 @@ bool Variable::GetBool()
 }
 int Variable::GetInt()
 {
-    return this->ptr->m_nValue;
+    return this->ptr->m_nValue ^ (uintptr_t)this->ptr->m_pParent;
 }
 float Variable::GetFloat()
 {
-    return this->ptr->m_fValue;
+    auto result = *(int*)&this->ptr->m_fValue ^ (uintptr_t)this->ptr->m_pParent;
+    return *(float*)&result;
 }
 const char* Variable::GetString()
 {
@@ -206,11 +207,11 @@ void Variable::Register()
                 this->ptr->m_fMinVal,
                 this->ptr->m_bHasMax,
                 this->ptr->m_fMaxVal,
-                nullptr,
-                0,
-                0,
-                0,
-                0);
+                false,
+                0.0f,
+                false,
+                0.0f,
+                nullptr);
         } else {
             tier1->Create(this->ptr,
                 this->ptr->m_pszName,
