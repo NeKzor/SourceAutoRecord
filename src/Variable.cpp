@@ -70,7 +70,7 @@ void Variable::Realloc()
             this->ptr->m_fMaxVal);
         delete this->ptr;
         this->ptr = reinterpret_cast<ConVar*>(newptr);
-    } else if(sar.game->Is(SourceGame_BlackMesa)) {
+    } else if (sar.game->Is(SourceGame_BlackMesa)) {
         auto newptr = new ConVar3(
             this->ptr->m_pszName,
             this->ptr->m_pszDefaultValue,

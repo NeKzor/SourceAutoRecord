@@ -53,7 +53,7 @@ DETOUR(VGui::Paint, int mode)
     auto spacing = sar_hud_default_spacing.GetInt();
 
     auto font = scheme->GetDefaultFont() + sar_hud_default_font_index.GetInt();
-    auto fontSize = 10; //surface->GetFontHeight(font);
+    auto fontSize = surface->GetFontHeight(font);
 
     int r, g, b, a;
     sscanf(sar_hud_default_font_color.GetString(), "%i%i%i%i", &r, &g, &b, &a);

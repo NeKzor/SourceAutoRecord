@@ -33,7 +33,7 @@ TasTools::TasTools()
         std::strncpy(this->className, "CBasePlayer", sizeof(this->className));
     }
 
-    //offsetFinder->ServerSide(this->className, this->propName, &this->propOffset);
+    offsetFinder->ServerSide(this->className, this->propName, &this->propOffset);
 
     this->hasLoaded = true;
 }
