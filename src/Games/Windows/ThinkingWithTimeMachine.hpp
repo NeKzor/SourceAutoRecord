@@ -1,11 +1,11 @@
 #pragma once
 #include "Portal2.hpp"
 
-class PortalStoriesMel : public Portal2 {
+class ThinkingWithTimeMachine : public Portal2 {
 public:
-    PortalStoriesMel();
+    ThinkingWithTimeMachine();
     void LoadOffsets() override;
     const char* Version() override;
 
-    static const char* ModDir();
+    static const char* GameDir();
 };
