@@ -47,15 +47,25 @@ struct Vector {
     {
         return ((float*)this)[i];
     }
-    static inline float DotProduct(const Vector& a, const Vector& b) 
+    static inline float DotProduct(const Vector& a, const Vector& b)
     {
-        return a.x*b.x + a.y*b.y + a.z*b.z; 
+        return a.x*b.x + a.y*b.y + a.z*b.z;
     }
 };
 
 struct QAngle {
     float x, y, z;
 };
+
+inline QAngle VectorToQAngle(const Vector& v)
+{
+    return { v.x, v.y, v.z };
+}
+
+inline Vector QAngleToVector(const QAngle& a)
+{
+    return { a.x, a.y, a.z };
+}
 
 struct Color {
     Color()
@@ -82,6 +92,12 @@ struct Color {
     inline int b() const { return _color[2]; }
     inline int a() const { return _color[3]; }
     unsigned char _color[4] = { 0, 0, 0, 0 };
+};
+
+enum class TextColor {
+    GREEN = 4,
+    LIGHT_GREEN,
+	ORANGE
 };
 
 #define FCVAR_DEVELOPMENTONLY (1 << 1)

@@ -303,6 +303,14 @@
     </ClCompile>
     <ClCompile Include="Features\Speedrun\Rules\ThinkingWithTimeMachineRules.cpp">
       <Filter>SourceAutoRecord\Features\Speedrun\Rules</Filter>
+    <ClCompile Include="Features\Demo\GhostEntity.cpp">
+      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    </ClCompile>
+    <ClCompile Include="Features\Demo\GhostPlayer.cpp">
+      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    </ClCompile>
+  <ClCompile Include="Features\Demo\NetworkGhostPlayer.cpp">
+      <Filter>SourceAutoRecord\Features\Demo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -635,6 +643,14 @@
     </ClInclude>
     <ClInclude Include="Features\Speedrun\Rules\ThinkingWithTimeMachineRules.hpp">
       <Filter>SourceAutoRecord\Features\Speedrun\Rules</Filter>
+    <ClInclude Include="Features\Demo\GhostEntity.hpp">
+      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    </ClInclude>
+    <ClInclude Include="Features\Demo\GhostPlayer.hpp">
+      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    </ClInclude>
+  <ClInclude Include="Features\Demo\NetworkGhostPlayer.hpp">
+      <Filter>SourceAutoRecord\Features\Demo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstring>
 
+#include "Features/Demo/GhostPlayer.hpp"
+#include "Features/Demo/NetworkGhostPlayer.hpp"
 #include "Features/OffsetFinder.hpp"
 #include "Features/Routing/EntityInspector.hpp"
 #include "Features/Session.hpp"
@@ -14,6 +16,7 @@
 #include "Features/Timer/PauseTimer.hpp"
 #include "Features/Timer/Timer.hpp"
 
+#include "Client.hpp"
 #include "Engine.hpp"
 
 #include "Game.hpp"
@@ -33,6 +36,13 @@ Variable sv_maxspeed;
 Variable sv_stopspeed;
 Variable sv_maxvelocity;
 Variable sv_gravity;
+
+Variable sar_record_at("sar_record_at", "0", 0, "Start recording a demo at the tick specified. Will use sar_record_at_demo_name.\n");
+Variable sar_record_at_demo_name("sar_record_at_demo_name", "test", "Name of the demo automatically recorded.\n", 0);
+Variable sar_record_at_increment("sar_record_at_increment", "0", "Increment automatically the demo name.\n");
+Variable sar_pause("sar_pause", "0", "Enable pause after a load.\n");
+Variable sar_pause_at("sar_pause_at", "0", 0, "Pause at the specified tick.\n");
+Variable sar_pause_for("sar_pause_for", "0", 0, "Pause for this amount of ticks.\n");
 
 REDECL(Server::CheckJumpButton);
 REDECL(Server::CheckJumpButtonBase);
@@ -269,6 +279,51 @@ DETOUR_STD(void, Server::GameFrame, bool simulating)
 DETOUR(Server::GameFrame, bool simulating)
 #endif
 {
+    if (ghostPlayer->IsReady() && !ghostPlayer->IsNetworking() && simulating) {
+        ghostPlayer->Run();
+    }
+
+    if (simulating && networkGhostPlayer->pausedByServer && networkGhostPlayer->isInLevel && networkGhostPlayer->runThread) {
+        networkGhostPlayer->StartThinking();
+        networkGhostPlayer->pausedByServer = false;
+    } else if (!simulating && !networkGhostPlayer->pausedByServer && networkGhostPlayer->isInLevel && networkGhostPlayer->runThread) {
+        networkGhostPlayer->PauseThinking();
+        networkGhostPlayer->pausedByServer = true;
+    }
+
+    if (!networkGhostPlayer->pausedByServer) {
+        for (auto& ghost : networkGhostPlayer->ghostPool) {
+            if (ghost->ghost_entity != nullptr) {
+                auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - ghost->lastUpdate).count();
+                ghost->Lerp(ghost->oldPos, ghost->newPos, ((float)time / (ghost->loopTime)));
+            }
+        }
+    }
+
+    if (networkGhostPlayer->isCountdownReady) {
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - networkGhostPlayer->startCountdown).count() >= 1000) { //Every seconds
+            if (networkGhostPlayer->countdown == 0) {
+                client->Chat(TextColor::GREEN, "0 ! GO !");
+                std::string commands;
+                if (!networkGhostPlayer->commandPostCountdown.empty()) {
+                    commands += ";" + networkGhostPlayer->commandPostCountdown;
+                    engine->ExecuteCommand(commands.c_str());
+                }
+                networkGhostPlayer->isCountdownReady = false;
+            } else {
+                client->Chat(TextColor::LIGHT_GREEN, "%d...", networkGhostPlayer->countdown);
+            }
+            networkGhostPlayer->countdown--;
+            networkGhostPlayer->startCountdown = now;
+        }
+    }
+
+    if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
+        std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();
+        engine->ExecuteCommand(cmd.c_str());
+    }
+
     if (!server->IsRestoring()) {
         if (!simulating && !pauseTimer->IsActive()) {
             pauseTimer->Start();
@@ -283,6 +338,22 @@ DETOUR(Server::GameFrame, bool simulating)
 #else
     auto result = Server::GameFrame(thisptr, simulating);
 #endif
+
+    if (sar_pause.GetBool()) {
+        if (!server->paused && sar_pause_at.GetInt() == session->GetTick() && simulating) {
+            engine->ExecuteCommand("pause");
+            server->paused = true;
+            server->pauseTick = engine->GetTick();
+        } else if (server->paused && !simulating) {
+            if (sar_pause_for.GetInt() > 0 && sar_pause_for.GetInt() + engine->GetTick() == server->pauseTick) {
+                engine->ExecuteCommand("unpause");
+                server->paused = false;
+            }
+            ++server->pauseTick;
+        } else if (server->paused && simulating && engine->GetTick() > server->pauseTick + 5) {
+            server->paused = false;
+        }
+    }
 
     if (session->isRunning && pauseTimer->IsActive()) {
         pauseTimer->Increment();
@@ -345,6 +416,13 @@ bool Server::Init()
     if (auto g_ServerTools = Interface::Create(this->Name(), "VSERVERTOOLS0")) {
         auto GetIServerEntity = g_ServerTools->Original(Offsets::GetIServerEntity);
         Memory::Deref(GetIServerEntity + Offsets::m_EntPtrArray, &this->m_EntPtrArray);
+
+        this->CreateEntityByName = g_ServerTools->Original<_CreateEntityByName>(Offsets::CreateEntityByName);
+        this->DispatchSpawn = g_ServerTools->Original<_DispatchSpawn>(Offsets::DispatchSpawn);
+        this->SetKeyValueChar = g_ServerTools->Original<_SetKeyValueChar>(Offsets::SetKeyValueChar);
+        this->SetKeyValueFloat = g_ServerTools->Original<_SetKeyValueFloat>(Offsets::SetKeyValueFloat);
+        this->SetKeyValueVector = g_ServerTools->Original<_SetKeyValueVector>(Offsets::SetKeyValueVector);
+
         Interface::Delete(g_ServerTools);
     }
 

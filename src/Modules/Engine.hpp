@@ -34,11 +34,18 @@ public:
     using _AddText = void(__func*)(void* thisptr, const char* pText, int nTickDelay);
     using _ClientCommand = int (*)(void* thisptr, void* pEdict, const char* szFmt, ...);
     using _GetLocalClient = int (*)(int index);
+    using _PrecacheModel = bool(__stdcall*)(const char*, bool);
 #ifdef _WIN32
     using _GetScreenSize = int(__stdcall*)(int& width, int& height);
     using _GetActiveSplitScreenPlayerSlot = int (*)();
+    using _AddBoxOverlay = int(__stdcall*)(const Vector& origin, const Vector& mins, const Vector& MAX, QAngle const& orientation, int r, int g, int b, int a, float duration);
+    using _AddSphereOverlay = int(__stdcall*)(const Vector& vOrigin, float flRadius, int nTheta, int nPhi, int r, int g, int b, int a, float flDuration);
+    using _AddTriangleOverlay = int(__stdcall*)(const Vector& p1, const Vector& p2, const Vector& p3, int r, int g, int b, int a, bool noDepthTest, float duration);
+    using _AddLineOverlay = int(__stdcall*)(const Vector& origin, const Vector& dest, int r, int g, int b, bool noDepthText, float duration);
     using _ScreenPosition = int(__stdcall*)(const Vector& point, Vector& screen);
     using _ConPrintEvent = int(__stdcall*)(IGameEvent* ev);
+    using _AddScreenTextOverlay = void(__stdcall*)(float flXPos, float flYPos, float flDuration, int r, int g, int b, int a, const char* text);
+    using _ClearAllOverlays = void(__stdcall*)();
 #else
     using _GetScreenSize = int(__cdecl*)(void* thisptr, int& width, int& height);
     using _GetActiveSplitScreenPlayerSlot = int (*)(void* thisptr);
@@ -59,9 +66,16 @@ public:
     _Cbuf_AddText Cbuf_AddText = nullptr;
     _AddText AddText = nullptr;
     _ScreenPosition ScreenPosition = nullptr;
+    _AddBoxOverlay AddBoxOverlay = nullptr;
+    _AddSphereOverlay AddSphereOverlay = nullptr;
+    _AddTriangleOverlay AddTriangleOverlay = nullptr;
+    _AddLineOverlay AddLineOverlay = nullptr;
+    _AddScreenTextOverlay AddScreenTextOverlay = nullptr;
+    _ClearAllOverlays ClearAllOverlays = nullptr;
     _ConPrintEvent ConPrintEvent = nullptr;
     _ClientCommand ClientCommand = nullptr;
     _GetLocalClient GetLocalClient = nullptr;
+    _PrecacheModel PrecacheModel = nullptr;
 
     EngineDemoPlayer* demoplayer = nullptr;
     EngineDemoRecorder* demorecorder = nullptr;

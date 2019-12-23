@@ -1,0 +1,48 @@
+TextBox.log {
+    HorizontalScrollbarPolicy = Never;
+    MaximumCharacters = 0;
+    Position = (10, 10);
+    ReadOnly = true;
+    Size = (780, 546.424);
+    Text = "";
+    TextSize = 13;
+
+    Renderer {
+        caretcolor = rgb(110, 110, 255);
+        padding = (3, 3, 3, 3);
+        selectedtextbackgroundcolor = rgb( 10, 110, 255);
+        selectedtextcolor = White;
+        textcolor = rgb(190, 190, 190);
+        texturebackground = "themes/Black.png" Part(0, 154, 48, 48) Middle(16, 16, 16, 16);
+
+        scrollbar {
+            texturearrowdown = "themes/Black.png" Part(163, 174, 20, 20) Middle(0, 1, 20, 19);
+            texturearrowdownhover = "themes/Black.png" Part(183, 174, 20, 20) Middle(0, 1, 20, 19);
+            texturearrowup = "themes/Black.png" Part(163, 154, 20, 20) Middle(0, 0, 20, 19);
+            texturearrowuphover = "themes/Black.png" Part(183, 154, 20, 20) Middle(0, 0, 20, 19);
+            texturethumb = "themes/Black.png" Part(143, 154, 20, 20);
+            texturethumbhover = "themes/Black.png" Part(143, 174, 20, 20);
+            texturetrack = "themes/Black.png" Part(123, 154, 20, 20);
+            texturetrackhover = "themes/Black.png" Part(123, 174, 20, 20);
+        }
+    }
+}
+
+EditBox.commandEdit {
+    Position = (10, 558.625);
+    Size = (780, 33.375);
+    TextSize = 13;
+
+    Renderer {
+        caretcolor = rgb(110, 110, 255);
+        defaulttextcolor = rgb(120, 120, 120);
+        padding = (6, 4, 6, 4);
+        selectedtextbackgroundcolor = rgb( 10, 110, 255);
+        selectedtextcolor = White;
+        textcolor = rgb(190, 190, 190);
+        texture = "themes/Black.png" Part(0, 114, 60, 40) Middle(15, 0, 30, 40);
+        texturedisabled = None;
+        texturefocused = "themes/Black.png" Part(120, 114, 60, 40) Middle(15, 0, 30, 40);
+        texturehover = "themes/Black.png" Part(60, 114, 60, 40) Middle(15, 0, 30, 40);
+    }
+}

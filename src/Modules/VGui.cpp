@@ -1,5 +1,8 @@
 #include "VGui.hpp"
 
+#include "Features/Demo/GhostEntity.hpp"
+#include "Features/Demo/GhostPlayer.hpp"
+#include "Features/Demo/NetworkGhostPlayer.hpp"
 #include "Features/EntityList.hpp"
 #include "Features/Hud/InputHud.hpp"
 #include "Features/Hud/InspectionHud.hpp"
@@ -44,6 +47,11 @@ DETOUR(VGui::Paint, int mode)
             hud->Draw();
         }
     }
+    if (sar_ghost_show_name.GetBool()) {
+        for (auto const& hud : vgui->ghostHuds) {
+            hud->Draw();
+        }
+    }
 
     surface->StartDrawing(surface->matsurface->ThisPtr());
 
@@ -78,6 +86,72 @@ DETOUR(VGui::Paint, int mode)
 
         ++elements;
     };
+
+    auto DrawGhostNames = [font, fontSize, spacing, textColor, &elements](const float xPos, const float yPos, const char* fmt, ...) {
+        va_list argptr;
+        va_start(argptr, fmt);
+        char data[1024];
+        vsnprintf(data, sizeof(data), fmt, argptr);
+        va_end(argptr);
+
+        surface->DrawTxt(font,
+            xPos - sizeof(fmt) * fontSize,
+            yPos - sar_ghost_height.GetInt() - sar_ghost_name_offset.GetInt() + elements * (fontSize + spacing),
+            textColor,
+            data);
+
+        ++elements;
+    };
+
+    //Ghosts
+    if (!networkGhostPlayer->ghostPool.empty()) { //Netork ghosts
+        if (sar_ghost_show_name.GetBool()) {
+            auto player = client->GetPlayer(slot + 1);
+            if (player) {
+                auto pos = client->GetAbsOrigin(player);
+                for (auto& ghost : networkGhostPlayer->ghostPool) {
+                    Vector screenPos;
+                    engine->PointToScreen(ghost->currentPos, screenPos);
+                    DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
+                    if (sar_ghost_show_distance.GetBool()) {
+                        DrawGhostNames(screenPos.x, screenPos.y, "Dist: %.3f", Math::Distance(pos, ghost->currentPos));
+                    }
+                }
+            }
+        }
+    } else if (!ghostPlayer->ghost.empty() && ghostPlayer->GetFirstGhost()->isPlaying) { //Demo ghost
+        if (sar_ghost_show_name.GetBool()) {
+            auto player = client->GetPlayer(slot + 1);
+            if (player) {
+                auto pos = client->GetAbsOrigin(player);
+                auto ghost = ghostPlayer->GetFirstGhost();
+                Vector screenPos;
+                engine->PointToScreen(ghost->currentPos, screenPos);
+                DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
+                if (sar_ghost_show_distance.GetBool()) {
+                    DrawGhostNames(screenPos.x, screenPos.y, "Dist: %.3f", Math::Distance(pos, ghost->currentPos));
+                }
+            }
+        }
+    } else if (engine->demoplayer->IsPlaying() && !ghostPlayer->ghost.empty()) { //Playing demo with ghost
+        if (sar_ghost_show_name.GetBool()) {
+            auto player = client->GetPlayer(slot + 1);
+            if (player) {
+                auto pos = client->GetAbsOrigin(player);
+                auto ghost = ghostPlayer->GetFirstGhost();
+                int tick = ghost->GetTickCount();
+                if (tick < 0) {
+                    tick = 0;
+                }
+                Vector screenPos;
+                engine->PointToScreen(ghost->positionList[tick], screenPos);
+                DrawGhostNames(screenPos.x, screenPos.y, ghost->name.c_str());
+                if (sar_ghost_show_distance.GetBool()) {
+                    DrawGhostNames(screenPos.x, screenPos.y, "Dist: %.3f", Math::Distance(pos, ghost->currentPos));
+                }
+            }
+        }
+    }
 
     // cl_showpos replacement
     if (sar_hud_text.GetString()[0] != '\0') {
@@ -295,6 +369,7 @@ bool VGui::Init()
 
     this->huds.push_back(inputHud = new InputHud());
     this->huds2.push_back(inputHud2 = new InputHud());
+    this->ghostHuds.push_back(ghostInputHud = new InputHud());
     this->huds.push_back(inspectionHud = new InspectionHud());
 
     if (sar.game->Is(SourceGame_Portal2Game | SourceGame_Portal)) {
@@ -317,8 +392,12 @@ void VGui::Shutdown()
     for (auto const& hud : this->huds2) {
         delete hud;
     }
+    for (auto const& hud : this->ghostHuds) {
+        delete hud;
+    }
     this->huds.clear();
     this->huds2.clear();
+    this->ghostHuds.clear();
 }
 
 VGui* vgui;

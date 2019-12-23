@@ -6,6 +6,8 @@
 #include "Utils.hpp"
 #include "Variable.hpp"
 
+#include <chrono>
+
 #ifdef _WIN32
 #define AirMove_Mid_Offset 679
 #define AirMove_Signature "F3 0F 10 50 40"
@@ -21,10 +23,20 @@ public:
     using _UTIL_PlayerByIndex = void*(__cdecl*)(int index);
     using _GetAllServerClasses = ServerClass* (*)();
     using _IsRestoring = bool(*)();
+    using _CreateEntityByName = void*(__stdcall*)(const char *);
+    using _DispatchSpawn = void(__stdcall*)(void*);
+    using _SetKeyValueChar = bool(__stdcall*)(void*, const char*, const char*);
+    using _SetKeyValueFloat = bool(__stdcall*)(void*, const char*, float);
+    using _SetKeyValueVector = bool(__stdcall*)(void*, const char*, const Vector&);
 
     _UTIL_PlayerByIndex UTIL_PlayerByIndex = nullptr;
     _GetAllServerClasses GetAllServerClasses = nullptr;
     _IsRestoring IsRestoring = nullptr;
+    _CreateEntityByName CreateEntityByName = nullptr;
+    _DispatchSpawn DispatchSpawn = nullptr;
+    _SetKeyValueChar SetKeyValueChar = nullptr;
+    _SetKeyValueFloat SetKeyValueFloat = nullptr;
+    _SetKeyValueVector SetKeyValueVector = nullptr;
 
     CGlobalVars* gpGlobals = nullptr;
     CEntInfo* m_EntPtrArray = nullptr;
@@ -33,6 +45,8 @@ private:
     bool jumpedLastTime = false;
     float savedVerticalVelocity = 0.0f;
     bool callFromCheckJumpButton = false;
+    bool paused = false;
+    int pauseTick;
 
 public:
     DECL_M(GetPortals, int);
@@ -102,3 +116,10 @@ extern Variable sv_maxspeed;
 extern Variable sv_stopspeed;
 extern Variable sv_maxvelocity;
 extern Variable sv_gravity;
+
+extern Variable sar_record_at;
+extern Variable sar_record_at_demo_name;
+extern Variable sar_record_at_increment;
+extern Variable sar_pause;
+extern Variable sar_pause_at;
+extern Variable sar_pause_for;
