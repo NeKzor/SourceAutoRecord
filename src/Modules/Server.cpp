@@ -37,12 +37,12 @@ Variable sv_stopspeed;
 Variable sv_maxvelocity;
 Variable sv_gravity;
 
-Variable sar_record_at("sar_record_at", "0", 0, "Start recording a demo at the tick specified. Will use sar_record_at_demo_name.\n");
-Variable sar_record_at_demo_name("sar_record_at_demo_name", "test", "Name of the demo automatically recorded.\n", 0);
-Variable sar_record_at_increment("sar_record_at_increment", "0", "Increment automatically the demo name.\n");
 Variable sar_pause("sar_pause", "0", "Enable pause after a load.\n");
 Variable sar_pause_at("sar_pause_at", "0", 0, "Pause at the specified tick.\n");
 Variable sar_pause_for("sar_pause_for", "0", 0, "Pause for this amount of ticks.\n");
+Variable sar_record_at("sar_record_at", "0", 0, "Start recording a demo at the tick specified. Will use sar_record_at_demo_name.\n");
+Variable sar_record_at_demo_name("sar_record_at_demo_name", "chamber", "Name of the demo automatically recorded.\n", 0);
+Variable sar_record_at_increment("sar_record_at_increment", "0", "Increment automatically the demo name.\n");
 
 REDECL(Server::CheckJumpButton);
 REDECL(Server::CheckJumpButtonBase);
@@ -318,7 +318,7 @@ DETOUR(Server::GameFrame, bool simulating)
             networkGhostPlayer->startCountdown = now;
         }
     }
-
+  
     if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
         std::string cmd = std::string("record ") + sar_record_at_demo_name.GetString();
         engine->ExecuteCommand(cmd.c_str());
