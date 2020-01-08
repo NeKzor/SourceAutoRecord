@@ -77,8 +77,6 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
                 this->cheats->Init();
 
                 this->features->AddFeature<TasTools>(&tasTools);
-                this->features->AddFeature<GhostPlayer>(&ghostPlayer);
-                this->features->AddFeature<NetworkGhostPlayer>(&networkGhostPlayer);
 
                 if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
                     this->features->AddFeature<Listener>(&listener);
@@ -227,13 +225,6 @@ CON_COMMAND(sar_rename, "Changes your name. Usage: sar_rename <name>\n")
 }
 CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloads the module.\n")
 {
-    if (networkGhostPlayer->runThread) {
-        networkGhostPlayer->runThread = false;
-		if (networkGhostPlayer->IsConnected())
-        {
-            networkGhostPlayer->Disconnect();
-        }
-    }
     if (sar.cheats) {
         sar.cheats->Shutdown();
     }
@@ -249,7 +240,7 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
 
     if (sar.modules) {
         sar.modules->ShutdownAll();
-    }
+    }    
 
     SAFE_DELETE(sar.features)
     SAFE_DELETE(sar.cheats)

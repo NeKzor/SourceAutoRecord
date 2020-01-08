@@ -123,7 +123,6 @@ int Paint;
 
 // CEngineTool
 int GetCurrentMap;
-int PrecacheModel;
 
 // CSchemeManager
 int GetIScheme;
@@ -158,29 +157,15 @@ int IsRunningSimulation;
 
 // CIVDebugOverlay
 int ScreenPosition;
-int AddBoxOverlay;
-int AddSphereOverlay;
-int AddTriangleOverlay;
-int AddLineOverlay;
-int AddScreenTextOverlay;
-int ClearAllOverlays;
 
 // CCommandBuffer
 int m_bWaitEnabled;
 
 // CServerTools
 int GetIServerEntity;
-int CreateEntityByName;
-int DispatchSpawn;
-int SetKeyValueChar;
-int SetKeyValueFloat;
-int SetKeyValueVector;
 
 // CVEngineServer
 int ClientCommand;
-
-// CBaseHudChat
-int ChatPrintf;
 
 // CSteam3Client
 int OnGameOverlayActivated;

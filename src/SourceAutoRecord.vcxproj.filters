@@ -303,14 +303,18 @@
     </ClCompile>
     <ClCompile Include="Features\Speedrun\Rules\ThinkingWithTimeMachineRules.cpp">
       <Filter>SourceAutoRecord\Features\Speedrun\Rules</Filter>
-    <ClCompile Include="Features\Demo\GhostEntity.cpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
     </ClCompile>
-    <ClCompile Include="Features\Demo\GhostPlayer.cpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    <ClCompile Include="Games\Windows\HalfLife2Episodic.cpp">
+      <Filter>SourceAutoRecord\Games\Windows</Filter>
     </ClCompile>
-  <ClCompile Include="Features\Demo\NetworkGhostPlayer.cpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    <ClCompile Include="Games\Linux\HalfLife2Episodic.cpp">
+      <Filter>SourceAutoRecord\Games\Linux</Filter>
+    </ClCompile>
+    <ClCompile Include="Games\Windows\HalfLifeSource.cpp">
+      <Filter>SourceAutoRecord\Games\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Games\Linux\HalfLifeSource.cpp">
+      <Filter>SourceAutoRecord\Games\Linux</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -643,14 +647,18 @@
     </ClInclude>
     <ClInclude Include="Features\Speedrun\Rules\ThinkingWithTimeMachineRules.hpp">
       <Filter>SourceAutoRecord\Features\Speedrun\Rules</Filter>
-    <ClInclude Include="Features\Demo\GhostEntity.hpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
     </ClInclude>
-    <ClInclude Include="Features\Demo\GhostPlayer.hpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    <ClInclude Include="Games\Windows\HalfLife2Episodic.hpp">
+      <Filter>SourceAutoRecord\Games\Windows</Filter>
     </ClInclude>
-  <ClInclude Include="Features\Demo\NetworkGhostPlayer.hpp">
-      <Filter>SourceAutoRecord\Features\Demo</Filter>
+    <ClInclude Include="Games\Linux\HalfLife2Episodic.hpp">
+      <Filter>SourceAutoRecord\Games\Linux</Filter>
+    </ClInclude>
+    <ClInclude Include="Games\Windows\HalfLifeSource.hpp">
+      <Filter>SourceAutoRecord\Games\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Games\Linux\HalfLifeSource.hpp">
+      <Filter>SourceAutoRecord\Games\Linux</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
