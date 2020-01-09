@@ -24,6 +24,11 @@ int Surface::GetFontLength(HFont font, const char* fmt, ...)
     va_end(argptr);
     return this->DrawTextLen(this->matsurface->ThisPtr(), font, data);
 }
+void Surface::Drawline(Color clr, int x0, int y0, int x1, int y1)
+{
+    this->DrawSetColor(this->matsurface->ThisPtr(), clr.r(), clr.g(), clr.b(), clr.a());
+    this->DrawLine(this->matsurface->ThisPtr(), x0, y0, x1, y1);
+}
 void Surface::DrawTxt(HFont font, int x, int y, Color clr, const char* fmt, ...)
 {
     va_list argptr;

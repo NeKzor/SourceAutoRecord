@@ -12,6 +12,7 @@
 #include "Features/Session.hpp"
 #include "Features/Tas/AutoStrafer.hpp"
 #include "Features/Tas/CommandQueuer.hpp"
+#include "Features/Hud/Crosshair.hpp"
 
 #include "Console.hpp"
 #include "Engine.hpp"

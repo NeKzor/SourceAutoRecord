@@ -316,6 +316,9 @@
     <ClCompile Include="Games\Linux\HalfLifeSource.cpp">
       <Filter>SourceAutoRecord\Games\Linux</Filter>
     </ClCompile>
+    <ClCompile Include="Features\Hud\Crosshair.cpp">
+      <Filter>SourceAutoRecord\Features\Hud</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\lib\minhook\buffer.h">
@@ -659,6 +662,9 @@
     </ClInclude>
     <ClInclude Include="Games\Linux\HalfLifeSource.hpp">
       <Filter>SourceAutoRecord\Games\Linux</Filter>
+    </ClInclude>
+    <ClInclude Include="Features\Hud\Crosshair.hpp">
+      <Filter>SourceAutoRecord\Features\Hud</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
