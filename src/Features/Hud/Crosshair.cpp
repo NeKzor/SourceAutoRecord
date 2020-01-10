@@ -2,8 +2,8 @@
 
 #include "Variable.hpp"
 
-#include "Modules/Surface.hpp"
 #include "Modules/Engine.hpp"
+#include "Modules/Surface.hpp"
 
 Variable sar_crosshair("sar_crosshair", "0", "Enable custom crosshair.\n");
 Variable cl_crosshair_t("cl_crosshair_t", "0", "Removes the top line from the crosshair :"
@@ -41,14 +41,14 @@ void Crosshair::Draw()
     xCenter = xScreen / 2;
     yCenter = yScreen / 2;
 
-	int gap = cl_crosshairgap.GetInt();
+    int gap = cl_crosshairgap.GetInt();
     int size = cl_crosshairsize.GetInt();
     int thickness = cl_crosshairthickness.GetInt();
 
     int x1_start, x1_end;
     x1_start = xCenter - gap;
     x1_end = x1_start - size;
-    surface->DrawRect(c, x1_end, yCenter-thickness, x1_start, yCenter+thickness+1);
+    surface->DrawRect(c, x1_end, yCenter - thickness, x1_start, yCenter + thickness + 1);
 
     int x2_start, x2_end;
     x2_start = xCenter + gap;
@@ -70,6 +70,6 @@ void Crosshair::Draw()
     if (cl_crosshairdot.GetBool()) {
         surface->DrawRect(c, xCenter, yCenter, xCenter + 1, yCenter + 1);
     }
-    
-	surface->FinishDrawing();
+
+    surface->FinishDrawing();
 }
