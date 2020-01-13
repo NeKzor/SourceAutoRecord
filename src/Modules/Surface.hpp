@@ -42,6 +42,7 @@ public:
 public:
     int GetFontHeight(HFont font);
     int GetFontLength(HFont font, const char* fmt, ...);
+    void Drawline(Color clr, int x0, int x1, int y0, int y1);
     void DrawTxt(HFont font, int x, int y, Color clr, const char* fmt, ...);
     void DrawRect(Color clr, int x0, int y0, int x1, int y1);
     void DrawRectAndCenterTxt(Color clr, int x0, int y0, int x1, int y1, HFont font, Color fontClr, const char* fmt, ...);

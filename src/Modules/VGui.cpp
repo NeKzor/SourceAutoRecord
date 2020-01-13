@@ -18,6 +18,7 @@
 #include "Features/Timer/Timer.hpp"
 #include "Features/Timer/TimerAverage.hpp"
 #include "Features/Timer/TimerCheckPoints.hpp"
+#include "Features/Hud/Crosshair.hpp"
 
 #include "Client.hpp"
 #include "Console.hpp"
@@ -371,6 +372,7 @@ bool VGui::Init()
     this->huds2.push_back(inputHud2 = new InputHud());
     this->ghostHuds.push_back(ghostInputHud = new InputHud());
     this->huds.push_back(inspectionHud = new InspectionHud());
+    this->huds.push_back(crosshair = new Crosshair());
 
     if (sar.game->Is(SourceGame_Portal2Game | SourceGame_Portal)) {
         this->huds.push_back(speedrunHud = new SpeedrunHud());
