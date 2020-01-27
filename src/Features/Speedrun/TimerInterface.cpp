@@ -4,12 +4,13 @@
 #include "TimerAction.hpp"
 
 TimerInterface::TimerInterface()
-    : version(SAR_TIMER_PUB_INTERFACE)
+    : version()
     , total(0)
     , ipt(0)
     , action(TimerAction::DoNothing)
     , actionId(0)
 {
+    std::snprintf(this->version, sizeof(this->version), "SAR_TIMER_00%i", SAR_TIMER_PUB_INTERFACE_VERSION);
 }
 void TimerInterface::Reset()
 {

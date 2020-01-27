@@ -3,7 +3,7 @@
 
 #include "Utils/SDK.hpp"
 
-#define SAR_TIMER_PUB_INTERFACE "SAR_TIMER_001"
+#define SAR_TIMER_PUB_INTERFACE_VERSION 1
 
 class SpeedrunTimer;
 

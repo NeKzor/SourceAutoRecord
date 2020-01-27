@@ -24,8 +24,6 @@
 #include <chrono>
 #include <ctime>
 
-std::chrono::high_resolution_clock::time_point prof_split_to_resume = std::chrono::high_resolution_clock::now();
-
 Variable sar_speedrun_autostart("sar_speedrun_autostart", "0",
     "Starts speedrun timer automatically on first frame after a load.\n");
 Variable sar_speedrun_autostop("sar_speedrun_autostop", "0",
@@ -104,7 +102,6 @@ void SpeedrunTimer::Resume(const int engineTicks)
     if (this->state == TimerState::Paused) {
         this->StatusReport("Speedrun resumed!\n");
         pubInterface()->SetAction(TimerAction::Resume);
-        console->PrintActive("[PROF] prof_split_to_resume: %ims\n", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - prof_split_to_resume));
         this->state = TimerState::Running;
         this->base = engineTicks;
         this->pause = 0;
@@ -213,7 +210,6 @@ void SpeedrunTimer::Split(bool visited)
         this->pb.get()->UpdateSplit(this->GetCurrentMap());
         if (!visited) {
             pubInterface()->SetAction(TimerAction::Split);
-            prof_split_to_resume = std::chrono::high_resolution_clock::now();
         }
     }
 }
