@@ -21,6 +21,11 @@
 #include "Game.hpp"
 #include "Variable.hpp"
 
+#include <chrono>
+#include <ctime>
+
+std::chrono::high_resolution_clock::time_point prof_split_to_resume = std::chrono::high_resolution_clock::now();
+
 Variable sar_speedrun_autostart("sar_speedrun_autostart", "0",
     "Starts speedrun timer automatically on first frame after a load.\n");
 Variable sar_speedrun_autostop("sar_speedrun_autostop", "0",
@@ -33,6 +38,12 @@ Variable sar_speedrun_smartsplit("sar_speedrun_smartsplit", "0",
     "Timer interface only splits once per level change.\n");
 
 SpeedrunTimer* speedrun;
+
+TimerInterface* pubInterface()
+{
+    static TimerInterface pubInterface;
+    return &pubInterface;
+}
 
 SpeedrunTimer::SpeedrunTimer()
     : session(0)
@@ -48,7 +59,6 @@ SpeedrunTimer::SpeedrunTimer()
     , pause(0)
     , visitedMaps()
 {
-    this->pubInterface = std::make_unique<TimerInterface>();
     this->result = std::make_unique<TimerResult>();
     this->pb = std::make_unique<TimerResult>();
 
@@ -65,9 +75,9 @@ void SpeedrunTimer::Start(const int engineTicks)
     this->base = engineTicks;
 
     if (this->IsActive()) {
-        this->pubInterface.get()->SetAction(TimerAction::Restart);
+        pubInterface()->SetAction(TimerAction::Restart);
     } else {
-        this->pubInterface.get()->SetAction(TimerAction::Start);
+        pubInterface()->SetAction(TimerAction::Start);
     }
 
     this->total = this->prevTotal = this->offset;
@@ -83,7 +93,7 @@ void SpeedrunTimer::Pause()
 {
     if (this->state == TimerState::Running) {
         this->StatusReport("Speedrun paused!\n");
-        this->pubInterface.get()->SetAction(TimerAction::Pause);
+        pubInterface()->SetAction(TimerAction::Pause);
         this->state = TimerState::Paused;
         this->prevTotal = this->total;
         this->result.get()->AddSegment(this->session + this->pause);
@@ -93,7 +103,8 @@ void SpeedrunTimer::Resume(const int engineTicks)
 {
     if (this->state == TimerState::Paused) {
         this->StatusReport("Speedrun resumed!\n");
-        this->pubInterface.get()->SetAction(TimerAction::Resume);
+        pubInterface()->SetAction(TimerAction::Resume);
+        console->PrintActive("[PROF] prof_split_to_resume: %ims\n", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - prof_split_to_resume));
         this->state = TimerState::Running;
         this->base = engineTicks;
         this->pause = 0;
@@ -131,7 +142,7 @@ void SpeedrunTimer::PostUpdate(const int engineTicks, const char* engineMap)
     if (this->state == TimerState::Running) {
         this->session = engineTicks - this->base;
         this->total = this->prevTotal + this->session + this->pause;
-        this->pubInterface.get()->Update(this);
+        pubInterface()->Update(this);
     }
 }
 void SpeedrunTimer::CheckRules(const int engineTicks)
@@ -171,7 +182,7 @@ void SpeedrunTimer::Stop(bool addSegment)
 {
     if (this->IsActive()) {
         this->StatusReport("Speedrun stopped!\n");
-        this->pubInterface.get()->SetAction(TimerAction::End);
+        pubInterface()->SetAction(TimerAction::End);
         this->state = TimerState::NotRunning;
         if (addSegment) {
             this->result.get()->AddSegment(this->session + this->pause);
@@ -180,7 +191,7 @@ void SpeedrunTimer::Stop(bool addSegment)
         this->pause = 0;
     } else {
         console->Print("Ready for new speedun!\n");
-        this->pubInterface.get()->SetAction(TimerAction::Reset);
+        pubInterface()->SetAction(TimerAction::Reset);
         this->Reset();
     }
 }
@@ -192,6 +203,7 @@ void SpeedrunTimer::Reset()
     this->pause = 0;
     TimerCategory::ResetAll();
     this->InitRules();
+    pubInterface()->Reset();
 }
 void SpeedrunTimer::Split(bool visited)
 {
@@ -200,7 +212,8 @@ void SpeedrunTimer::Split(bool visited)
         this->result.get()->Split(this->total, this->GetCurrentMap());
         this->pb.get()->UpdateSplit(this->GetCurrentMap());
         if (!visited) {
-            this->pubInterface.get()->SetAction(TimerAction::Split);
+            pubInterface()->SetAction(TimerAction::Split);
+            prof_split_to_resume = std::chrono::high_resolution_clock::now();
         }
     }
 }
@@ -262,7 +275,7 @@ const std::vector<TimerRule*>& SpeedrunTimer::GetRules()
 void SpeedrunTimer::SetIntervalPerTick(const float* ipt)
 {
     this->ipt = *ipt;
-    this->pubInterface->SetIntervalPerTick(ipt);
+    pubInterface()->SetIntervalPerTick(ipt);
 }
 const float SpeedrunTimer::GetIntervalPerTick()
 {
@@ -403,7 +416,6 @@ void SpeedrunTimer::StatusReport(const char* message)
 }
 SpeedrunTimer::~SpeedrunTimer()
 {
-    this->pubInterface.reset();
     this->result.reset();
     this->pb.reset();
 }

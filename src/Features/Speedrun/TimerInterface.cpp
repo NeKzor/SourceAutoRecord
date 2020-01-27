@@ -4,12 +4,16 @@
 #include "TimerAction.hpp"
 
 TimerInterface::TimerInterface()
-    : start("SAR_TIMER_START")
+    : version(SAR_TIMER_PUB_INTERFACE)
     , total(0)
     , ipt(0)
     , action(TimerAction::DoNothing)
-    , end("SAR_TIMER_END")
+    , actionId(0)
 {
+}
+void TimerInterface::Reset()
+{
+    this->actionId = 0;
 }
 void TimerInterface::SetIntervalPerTick(const float* ipt)
 {
@@ -22,4 +26,5 @@ void TimerInterface::Update(SpeedrunTimer* timer)
 void TimerInterface::SetAction(TimerAction action)
 {
     this->action = action;
+    ++this->actionId;
 }

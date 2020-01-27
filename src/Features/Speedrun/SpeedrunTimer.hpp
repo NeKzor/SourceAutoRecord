@@ -21,9 +21,6 @@
 #define SAR_SPEEDRUN_EXPORT_HEADER "Map,Ticks,Time,Map Ticks,Map Time,Total Ticks,Total Time,Segment"
 
 class SpeedrunTimer : public Feature {
-public:
-    std::unique_ptr<TimerInterface> pubInterface;
-
 private:
     int session;
     int base;
