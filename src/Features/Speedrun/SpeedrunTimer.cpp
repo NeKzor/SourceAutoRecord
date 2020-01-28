@@ -21,9 +21,6 @@
 #include "Game.hpp"
 #include "Variable.hpp"
 
-#include <chrono>
-#include <ctime>
-
 Variable sar_speedrun_autostart("sar_speedrun_autostart", "0",
     "Starts speedrun timer automatically on first frame after a load.\n");
 Variable sar_speedrun_autostop("sar_speedrun_autostop", "0",
