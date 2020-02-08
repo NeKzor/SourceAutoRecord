@@ -37,6 +37,7 @@ Variable sar_duckjump("sar_duckjump", "0", "Allows duck-jumping even when fully 
 Variable sar_disable_challenge_stats_hud("sar_disable_challenge_stats_hud", "0", "Disables opening the challenge mode stats HUD.\n");
 Variable sar_disable_steam_pause("sar_disable_steam_pause", "0", "Prevents pauses from steam overlay.\n");
 Variable sar_disable_no_focus_sleep("sar_disable_no_focus_sleep", "0", "Does not yield the CPU when game is not focused.\n");
+Variable sar_portalable_nodraw("sar_portalable_nodraw", "0", "Makes toolsnodraw texture portalable.");
 
 Variable sv_laser_cube_autoaim;
 Variable ui_loadingscreen_transition_time;
@@ -141,6 +142,7 @@ void Cheats::Init()
     sar_speedrun_time_pauses.UniqueFor(s3);
     sar_speedrun_smartsplit.UniqueFor(s3);
     sar_disable_no_focus_sleep.UniqueFor(SourceGame_Portal2Engine);
+    sar_portalable_nodraw.UniqueFor(SourceGame_Portal2Game);
 
     startbhop.UniqueFor(SourceGame_TheStanleyParable);
     endbhop.UniqueFor(SourceGame_TheStanleyParable);

@@ -173,6 +173,9 @@ int OnGameOverlayActivated;
 // surfacedata_t
 int jumpFactor;
 
+// IEngineTrace
+int TraceRay;
+
 // Others
 int tickcount;
 int interval_per_tick;

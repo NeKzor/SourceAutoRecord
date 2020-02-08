@@ -72,6 +72,7 @@ void Portal2::LoadOffsets()
     ScreenPosition = 12; // CIVDebugOverlay
     MAX_SPLITSCREEN_PLAYERS = 2; // maxplayers
     OnGameOverlayActivated = 144; // CSteam3Client
+    TraceRay = 5; // IEngineTrace
 
     // vstdlib.dll
 

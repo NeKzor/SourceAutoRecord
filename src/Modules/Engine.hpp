@@ -21,6 +21,7 @@ public:
     Interface* eng = nullptr;
     Interface* debugoverlay = nullptr;
     Interface* s_ServerPlugin = nullptr;
+    Interface* engineTrace = nullptr;
 
     using _ClientCmd = int(__func*)(void* thisptr, const char* szCmdString);
     using _GetLocalPlayer = int(__func*)(void* thisptr);
@@ -108,6 +109,9 @@ public:
 
     // CSteam3Client::OnGameOverlayActivated
     DECL_DETOUR_B(OnGameOverlayActivated, GameOverlayActivated_t* pGameOverlayActivated);
+
+    // IEngineTrace::TraceRay
+    DECL_DETOUR(TraceRay, const Ray_t &ray, unsigned int fMask, void* pTraceFilter, CGameTrace *pTrace);
 
     DECL_DETOUR_COMMAND(plugin_load);
     DECL_DETOUR_COMMAND(plugin_unload);

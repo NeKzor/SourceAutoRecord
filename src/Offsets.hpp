@@ -173,6 +173,9 @@ extern int OnGameOverlayActivated;
 // surfacedata_t
 extern int jumpFactor;
 
+// IEngineTrace
+extern int TraceRay;
+
 // Others
 extern int tickcount;
 extern int interval_per_tick;
