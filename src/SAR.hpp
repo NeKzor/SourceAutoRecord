@@ -59,6 +59,9 @@ public:
     inline const char* Build() { return SAR_BUILD; }
     inline const char* Website() { return SAR_WEB; }
 
+    void HookAll();
+    void UnhookAll();
+    bool Cleanup();
     bool GetPlugin();
     void SearchPlugin();
 };

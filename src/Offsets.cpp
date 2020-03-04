@@ -158,9 +158,6 @@ int IsRunningSimulation;
 // CIVDebugOverlay
 int ScreenPosition;
 
-// CCommandBuffer
-int m_bWaitEnabled;
-
 // CServerTools
 int GetIServerEntity;
 

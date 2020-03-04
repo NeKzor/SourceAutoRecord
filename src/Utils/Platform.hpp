@@ -3,6 +3,34 @@
 #include "minhook/MinHook.h"
 #endif
 
+class _Hook {
+public:
+    uintptr_t* original;
+    uintptr_t detour;
+
+public:
+    _Hook(uintptr_t* original, uintptr_t detour)
+        : original(original)
+        , detour(detour)
+    {
+    }
+};
+
+class _HookBase {
+public:
+    uintptr_t* original;
+    uintptr_t* originalBase;
+    uintptr_t detour;
+
+public:
+    _HookBase(uintptr_t* original, uintptr_t* originalBase, uintptr_t detour)
+        : original(original)
+        , originalBase(originalBase)
+        , detour(detour)
+    {
+    }
+};
+
 #define _GAME_PATH(x) #x
 
 #ifdef _WIN32
@@ -12,66 +40,34 @@
 // clang-format on
 #define __rescall __thiscall
 #define DLL_EXPORT extern "C" __declspec(dllexport)
+#define SEEK_DIR_CUR std::ios_base::_Seekdir::_Seekcur
 
-#define DECL_DETOUR(name, ...)                                  \
-    using _##name = int(__rescall*)(void* thisptr, ##__VA_ARGS__); \
-    static _##name name;                                        \
-    static int __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__)
-#define DECL_DETOUR_T(type, name, ...)                           \
-    using _##name = type(__rescall*)(void* thisptr, ##__VA_ARGS__); \
-    static _##name name;                                         \
-    static type __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__)
-#define DECL_DETOUR_B(name, ...)                                \
-    using _##name = int(__rescall*)(void* thisptr, ##__VA_ARGS__); \
-    static _##name name;                                        \
-    static _##name name##Base;                                  \
-    static int __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__)
-
-#define DETOUR(name, ...) \
+#define DETOUR(name, ...)                                                                          \
+    using _##name = int(__thiscall*)(void* thisptr, ##__VA_ARGS__);                                \
+    _##name name;                                                                                  \
+    int __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__);                             \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
     int __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__)
-#define DETOUR_T(type, name, ...) \
+#define DETOUR_T(type, name, ...)                                                                  \
+    using _##name = type(__thiscall*)(void* thisptr, ##__VA_ARGS__);                               \
+    _##name name;                                                                                  \
+    type __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__);                            \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
     type __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__)
-#define DETOUR_B(name, ...) \
+#define DETOUR_B(name, ...)                                                                        \
+    using _##name = int(__thiscall*)(void* thisptr, ##__VA_ARGS__);                                \
+    _##name name;                                                                                  \
+    _##name name##Base;                                                                            \
+    int __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__);                             \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
     int __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__)
-
-namespace {
-bool mhInitialized = false;
-}
-#define MH_HOOK(name, target)                                                                                    \
-    if (!mhInitialized) {                                                                                        \
-        MH_Initialize();                                                                                         \
-        mhInitialized = true;                                                                                    \
-    }                                                                                                            \
-    name = reinterpret_cast<decltype(name)>(target);                                                             \
-    MH_CreateHook(reinterpret_cast<LPVOID>(target), name##_Hook, reinterpret_cast<LPVOID*>(&name##_Trampoline)); \
-    MH_EnableHook(reinterpret_cast<LPVOID>(target));
-#define MH_HOOK_MID(name, target)                                                                              \
-    if (!mhInitialized) {                                                                                      \
-        MH_Initialize();                                                                                       \
-        mhInitialized = true;                                                                                  \
-    }                                                                                                          \
-    name = target;                                                                                             \
-    MH_CreateHook(reinterpret_cast<LPVOID>(name), name##_Hook, reinterpret_cast<LPVOID*>(&name##_Trampoline)); \
-    MH_EnableHook(reinterpret_cast<LPVOID>(name));
-#define MH_UNHOOK(name)                                 \
-    if (name) {                                         \
-        MH_DisableHook(reinterpret_cast<LPVOID>(name)); \
-        MH_RemoveHook(reinterpret_cast<LPVOID>(name));  \
-    }
-#define DECL_DETOUR_MID_MH(name)        \
-    static uintptr_t name;              \
-    static uintptr_t name##_Trampoline; \
-    static void name##_Hook()
-#define DECL_DETOUR_MH(name, ...)                                 \
-    using _##name = int(__thiscall*)(void* thisptr, __VA_ARGS__); \
-    static _##name name;                                          \
-    static _##name name##_Trampoline;                             \
-    static int __fastcall name##_Hook(void* thisptr, int edx, __VA_ARGS__)
-
-#define DETOUR_MID_MH(name) \
-    __declspec(naked) void name##_Hook()
-#define DETOUR_MH(name, ...) \
-    int __fastcall name##_Hook(void* thisptr, int edx, __VA_ARGS__)
+#define DETOUR_BT(type, name, ...)                                                                 \
+    using _##name = type(__thiscall*)(void* thisptr, ##__VA_ARGS__);                               \
+    _##name name;                                                                                  \
+    _##name name##Base;                                                                            \
+    type __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__);                            \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
+    type __fastcall name##_Hook(void* thisptr, int edx, ##__VA_ARGS__)
 #else
 #define MODULE_EXTENSION ".so"
 // clang-format off
@@ -82,32 +78,43 @@ bool mhInitialized = false;
 #define __stdcall __attribute__((__stdcall__))
 #define __fastcall __attribute__((__fastcall__))
 #define DLL_EXPORT extern "C" __attribute__((visibility("default")))
+#define SEEK_DIR_CUR std::ios_base::seekdir::_S_cur
 
-#define DECL_DETOUR(name, ...)                                  \
-    using _##name = int(__rescall*)(void* thisptr, ##__VA_ARGS__); \
-    static _##name name;                                        \
-    static int __rescall name##_Hook(void* thisptr, ##__VA_ARGS__)
-#define DECL_DETOUR_T(type, name, ...)                           \
-    using _##name = type(__rescall*)(void* thisptr, ##__VA_ARGS__); \
-    static _##name name;                                         \
-    static type __rescall name##_Hook(void* thisptr, ##__VA_ARGS__)
-#define DECL_DETOUR_B(name, ...)                                \
-    using _##name = int(__rescall*)(void* thisptr, ##__VA_ARGS__); \
-    static _##name name;                                        \
-    static _##name name##Base;                                  \
-    static int __rescall name##_Hook(void* thisptr, ##__VA_ARGS__)
+#define DECL_DETOUR(name, ...)
 
-#define DETOUR(name, ...) \
-    int __rescall name##_Hook(void* thisptr, ##__VA_ARGS__)
-#define DETOUR_T(type, name, ...) \
-    type __rescall name##_Hook(void* thisptr, ##__VA_ARGS__)
-#define DETOUR_B(name, ...) \
-    int __rescall name##_Hook(void* thisptr, ##__VA_ARGS__)
+#define DECL_DETOUR_B(name, ...)
+
+#define DETOUR(name, ...)                                                                          \
+    using _##name = int(__cdecl*)(void* thisptr, ##__VA_ARGS__);                                   \
+    _##name name;                                                                                  \
+    int __cdecl name##_Hook(void* thisptr, ##__VA_ARGS__);                                         \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
+    int __cdecl name##_Hook(void* thisptr, ##__VA_ARGS__)
+#define DETOUR_T(type, name, ...)                                                                  \
+    using _##name = type(__cdecl*)(void* thisptr, ##__VA_ARGS__);                                  \
+    _##name name;                                                                                  \
+    type __cdecl name##_Hook(void* thisptr, ##__VA_ARGS__);                                        \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
+    type __cdecl name##_Hook(void* thisptr, ##__VA_ARGS__)
+#define DETOUR_B(name, ...)                                                                        \
+    using _##name = int(__cdecl*)(void* thisptr, ##__VA_ARGS__);                                   \
+    _##name name;                                                                                  \
+    _##name name##Base;                                                                            \
+    int __cdecl name##_Hook(void* thisptr, ##__VA_ARGS__);                                         \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
+    int __cdecl name##_Hook(void* thisptr, ##__VA_ARGS__)
+#define DETOUR_BT(type, name, ...)                                                                 \
+    using _##name = type(__cdecl*)(void* thisptr, ##__VA_ARGS__);                                  \
+    _##name name;                                                                                  \
+    _##name name##Base;                                                                            \
+    type __cdecl name##_Hook(void* thisptr, ##__VA_ARGS__);                                        \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
+    type __cdecl name##_Hook(void* thisptr, ##__VA_ARGS__)
 #endif
 
-#define DECL_DETOUR_STD(type, name, ...)             \
-    using _##name = type(__stdcall*)(##__VA_ARGS__); \
-    static _##name name;                             \
-    static type __stdcall name##_Hook(##__VA_ARGS__)
-#define DETOUR_STD(type, name, ...) \
+#define DETOUR_STD(type, name, ...)                                                                \
+    using _##name = type(__stdcall*)(##__VA_ARGS__);                                               \
+    _##name name;                                                                                  \
+    type __stdcall name##_Hook(##__VA_ARGS__);                                                     \
+    _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
     type __stdcall name##_Hook(##__VA_ARGS__)

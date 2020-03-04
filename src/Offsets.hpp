@@ -158,9 +158,6 @@ extern int IsRunningSimulation;
 // CIVDebugOverlay
 extern int ScreenPosition;
 
-// CCommandBuffer
-extern int m_bWaitEnabled;
-
 // CServerTools
 extern int GetIServerEntity;
 

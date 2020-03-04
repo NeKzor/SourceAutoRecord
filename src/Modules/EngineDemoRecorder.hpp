@@ -26,15 +26,14 @@ public:
 public:
     int GetTick();
 
-    // CDemoRecorder::SetSignonState
-    DECL_DETOUR(SetSignonState, int state);
+    EngineDemoRecorder()
+        : Module(MODULE("engine"))
+    {
+        this->isHookable = true;
+    }
 
-    // CDemoRecorder::StopRecording
-    DECL_DETOUR(StopRecording);
-
-    DECL_DETOUR_COMMAND(stop);
-
-    bool Init() override;
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("engine"); }
 };
+
+extern EngineDemoRecorder* demorecorder;

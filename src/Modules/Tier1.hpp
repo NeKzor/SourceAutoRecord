@@ -39,9 +39,13 @@ public:
     _Create Create = nullptr;
 
 public:
-    bool Init() override;
+    Tier1()
+        : Module(MODULE(TIER1))
+    {
+    }
+
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE(TIER1); }
 };
 
 extern Tier1* tier1;

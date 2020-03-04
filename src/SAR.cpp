@@ -26,107 +26,142 @@ SAR::SAR()
 bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
 {
     console = new Console();
-    if (!console->Init())
-        return false;
+    if (!console->Load()) {
+        return this->Cleanup();
+    }
 
-    if (this->game) {
-        this->game->LoadOffsets();
-
-        tier1 = new Tier1();
-        if (tier1->Init()) {
-            this->features->AddFeature<Config>(&config);
-            this->features->AddFeature<Cvars>(&cvars);
-            this->features->AddFeature<Rebinder>(&rebinder);
-            this->game->Is(SourceGame_INFRA)
-                ? this->features->AddFeature<InfraSession>(reinterpret_cast<InfraSession**>(&session))
-                : this->features->AddFeature<Session>(&session);
-            this->features->AddFeature<StepCounter>(&stepCounter);
-            this->features->AddFeature<Summary>(&summary);
-            this->features->AddFeature<Teleporter>(&teleporter);
-            this->features->AddFeature<Tracer>(&tracer);
-            this->features->AddFeature<SpeedrunTimer>(&speedrun);
-            this->features->AddFeature<Stats>(&stats);
-            this->features->AddFeature<CommandQueuer>(&cmdQueuer);
-            this->features->AddFeature<ReplayRecorder>(&replayRecorder1);
-            this->features->AddFeature<ReplayRecorder>(&replayRecorder2);
-            this->features->AddFeature<ReplayPlayer>(&replayPlayer1);
-            this->features->AddFeature<ReplayPlayer>(&replayPlayer2);
-            this->features->AddFeature<ReplayProvider>(&replayProvider);
-            this->features->AddFeature<Timer>(&timer);
-            this->features->AddFeature<EntityInspector>(&inspector);
-            this->features->AddFeature<ClassDumper>(&classDumper);
-            this->features->AddFeature<EntityList>(&entityList);
-            this->features->AddFeature<OffsetFinder>(&offsetFinder);
-            this->features->AddFeature<AutoStrafer>(&autoStrafer);
-            this->features->AddFeature<PauseTimer>(&pauseTimer);
-            this->features->AddFeature<DataMapDumper>(&dataMapDumper);
-            this->features->AddFeature<FovChanger>(&fovChanger);
-
-            this->modules->AddModule<InputSystem>(&inputSystem);
-            this->modules->AddModule<Scheme>(&scheme);
-            this->modules->AddModule<Surface>(&surface);
-            this->modules->AddModule<VGui>(&vgui);
-            this->modules->AddModule<Engine>(&engine);
-            this->modules->AddModule<Client>(&client);
-            this->modules->AddModule<Server>(&server);
-            this->modules->InitAll();
-
-            if (engine && engine->hasLoaded) {
-                engine->demoplayer->Init();
-                engine->demorecorder->Init();
-
-                this->cheats->Init();
-
-                this->features->AddFeature<TasTools>(&tasTools);
-
-                if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
-                    this->features->AddFeature<Listener>(&listener);
-                    this->features->AddFeature<WorkshopList>(&workshop);
-                    this->features->AddFeature<Imitator>(&imitator);
-                }
-
-                if (listener) {
-                    listener->Init();
-                }
-
-                speedrun->LoadRules(this->game);
-
-                config->Load();
-
-                this->SearchPlugin();
-
-                console->PrintActive("Loaded SourceAutoRecord, Version %s\n", SAR_VERSION);
-                return true;
-            } else {
-                console->Warning("SAR: Failed to load engine module!\n");
-            }
-        } else {
-            console->Warning("SAR: Failed to load tier1 module!\n");
-        }
-    } else {
+    if (!this->game) {
         console->Warning("SAR: Game not supported!\n");
+        return this->Cleanup();
     }
 
-    console->Warning("SAR: Failed to load SourceAutoRecord!\n");
+    this->game->LoadOffsets();
 
-    if (sar.cheats) {
-        sar.cheats->Shutdown();
-    }
-    if (sar.features) {
-        sar.features->DeleteAll();
+    try {
+        tier1 = new Tier1();
+        tier1->Load();
+
+        this->features->AddFeature<>(&config);
+        this->features->AddFeature<>(&cvars);
+        this->features->AddFeature<>(&rebinder);
+        this->game->Is(SourceGame_INFRA)
+            ? this->features->AddFeature<>(reinterpret_cast<InfraSession**>(&session))
+            : this->features->AddFeature<>(&session);
+        this->features->AddFeature<>(&stepCounter);
+        this->features->AddFeature<>(&summary);
+        this->features->AddFeature<>(&teleporter);
+        this->features->AddFeature<>(&tracer);
+        this->features->AddFeature<>(&speedrun);
+        this->features->AddFeature<>(&stats);
+        this->features->AddFeature<>(&cmdQueuer);
+        this->features->AddFeature<>(&replayRecorder1);
+        this->features->AddFeature<>(&replayRecorder2);
+        this->features->AddFeature<>(&replayPlayer1);
+        this->features->AddFeature<>(&replayPlayer2);
+        this->features->AddFeature<>(&replayProvider);
+        this->features->AddFeature<>(&timer);
+        this->features->AddFeature<>(&inspector);
+        this->features->AddFeature<>(&classDumper);
+        this->features->AddFeature<>(&entityList);
+        this->features->AddFeature<>(&offsetFinder);
+        this->features->AddFeature<>(&autoStrafer);
+        this->features->AddFeature<>(&pauseTimer);
+        this->features->AddFeature<>(&dataMapDumper);
+        this->features->AddFeature<>(&fovChanger);
+
+        this->modules->AddModule<>(&inputSystem);
+        this->modules->AddModule<>(&scheme);
+        this->modules->AddModule<>(&surface);
+        this->modules->AddModule<>(&vgui);
+        this->modules->AddModule<>(&engine);
+        this->modules->AddModule<>(&demoplayer);
+        this->modules->AddModule<>(&demorecorder);
+        this->modules->AddModule<>(&client);
+        this->modules->AddModule<>(&server);
+
+        this->modules->LoadAll();
+
+        this->cheats->Init();
+
+        this->features->AddFeature<>(&tasTools);
+
+        if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
+            this->features->AddFeature<>(&listener);
+            this->features->AddFeature<>(&workshop);
+            this->features->AddFeature<>(&imitator);
+        }
+
+        if (listener) {
+            listener->Init();
+        }
+
+        speedrun->LoadRules(this->game);
+
+        config->Load();
+
+        this->SearchPlugin();
+
+        this->HookAll();
+
+        console->PrintActive("Loaded SourceAutoRecord, Version %s\n", SAR_VERSION);
+    } catch (std::exception& ex) {
+        console->Warning("SAR: %s\n", ex.what());
+        return this->Cleanup();
     }
 
-    if (sar.modules) {
-        sar.modules->ShutdownAll();
+    return true;
+}
+void SAR::HookAll()
+{
+    for (auto& mod : this->modules->list) {
+        if (mod->CanHook()) {
+            for (auto& interfaceHook : mod->interfaces) {
+                interfaceHook->EnableHooks();
+            }
+
+            for (auto& cmdHook : mod->cmdHooks) {
+                cmdHook->Hook();
+            }
+        } else if (!mod->interfaces.empty()) {
+            console->Warning("SAR: Unable to hook functions in non-hookable module %s\n", mod->filename);
+        }
+    }
+}
+void SAR::UnhookAll()
+{
+    for (auto& mod : this->modules->list) {
+        for (auto& interfaceHook : mod->interfaces) {
+            interfaceHook->DisableHooks();
+        }
+
+        for (auto& cmdHook : mod->cmdHooks) {
+            cmdHook->Unhook();
+        }
+    }
+}
+bool SAR::Cleanup()
+{
+    if (this->modules) {
+        this->UnhookAll();
+    }
+    if (this->cheats) {
+        this->cheats->Shutdown();
+    }
+    if (this->features) {
+        this->features->DeleteAll();
+    }
+    if (this->modules) {
+        this->modules->UnloadAll();
     }
 
-    SAFE_DELETE(sar.features)
-    SAFE_DELETE(sar.cheats)
-    SAFE_DELETE(sar.modules)
-    SAFE_DELETE(sar.plugin)
-    SAFE_DELETE(sar.game)
-    SAFE_DELETE(tier1)
-    SAFE_DELETE(console)
+    sdelete(this->features);
+    sdelete(this->cheats);
+    sdelete(this->modules);
+    sdelete(this->plugin);
+    sdelete(this->game);
+    sdelete(tier1);
+    sdelete(console);
+
     return false;
 }
 
@@ -166,12 +201,12 @@ CON_COMMAND(sar_session, "Prints the current tick of the server since it has loa
 {
     auto tick = session->GetTick();
     console->Print("Session Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
-    if (*engine->demorecorder->m_bRecording) {
-        tick = engine->demorecorder->GetTick();
+    if (*demorecorder->m_bRecording) {
+        tick = demorecorder->GetTick();
         console->Print("Demo Recorder Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
     }
-    if (engine->demoplayer->IsPlaying()) {
-        tick = engine->demoplayer->GetTick();
+    if (demoplayer->IsPlaying()) {
+        tick = demoplayer->GetTick();
         console->Print("Demo Player Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
     }
 }
@@ -240,6 +275,8 @@ CON_COMMAND(sar_rename, "Changes your name. Usage: sar_rename <name>\n")
 }
 CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloads the module.\n")
 {
+    sar.UnhookAll();
+
     if (sar.cheats) {
         sar.cheats->Shutdown();
     }
@@ -254,24 +291,25 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
     }
 
     if (sar.modules) {
-        sar.modules->ShutdownAll();
-    }    
+        sar.modules->UnloadAll();
+    }
 
-    SAFE_DELETE(sar.features)
-    SAFE_DELETE(sar.cheats)
-    SAFE_DELETE(sar.modules)
-    SAFE_DELETE(sar.plugin)
-    SAFE_DELETE(sar.game)
+    sdelete(sar.features);
+    sdelete(sar.cheats);
+    sdelete(sar.modules);
+    sdelete(sar.plugin);
+    sdelete(sar.game);
 
     console->Print("Cya :)\n");
 
-    SAFE_DELETE(tier1)
-    SAFE_DELETE(console)
+    sdelete(tier1);
+    sdelete(console);
 }
 
 #pragma region Unused callbacks
 void SAR::Unload()
 {
+    this->Cleanup();
 }
 void SAR::Pause()
 {

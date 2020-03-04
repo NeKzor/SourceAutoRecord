@@ -26,7 +26,7 @@ Listener::Listener()
 }
 void Listener::Init()
 {
-    if (engine->hasLoaded && engine->AddListener && !this->m_bRegisteredForEvents) {
+    if (engine && engine->AddListener && !this->m_bRegisteredForEvents) {
         for (const auto& event : EVENTS) {
             this->m_bRegisteredForEvents = engine->AddListener(engine->s_GameEventManager->ThisPtr(), this, event, true);
 
@@ -46,7 +46,7 @@ void Listener::Init()
 }
 void Listener::Shutdown()
 {
-    if (engine->hasLoaded && engine->RemoveListener && this->m_bRegisteredForEvents) {
+    if (engine && engine->RemoveListener && this->m_bRegisteredForEvents) {
         engine->RemoveListener(engine->s_GameEventManager->ThisPtr(), this);
         this->m_bRegisteredForEvents = false;
     }

@@ -4,6 +4,8 @@
 #include <cstring>
 #include <vector>
 
+#include "Modules/Module.hpp"
+
 #include "Game.hpp"
 
 class Command {
@@ -37,11 +39,33 @@ public:
     static void UnregisterAll();
     static Command* Find(const char* name);
 
-    static bool Hook(const char* name, _CommandCallback detour, _CommandCallback& original);
-    static bool Unhook(const char* name, _CommandCallback original);
     static bool ActivateAutoCompleteFile(const char* name, _CommandCompletionCallback callback);
     static bool DectivateAutoCompleteFile(const char* name);
 };
+
+class CommandHook {
+public:
+    const char* target;
+    _CommandCallback* original;
+    _CommandCallback detour;
+
+private:
+    bool isRegistered;
+    bool isHooked;
+
+public:
+    CommandHook(const char* target, _CommandCallback* original, _CommandCallback detour);
+    void Register(Module* mod);
+    void Unregister();
+    void Hook();
+    void Unhook();
+};
+
+#define DETOUR_COMMAND(name)                                                  \
+    _CommandCallback name##_callback;                                         \
+    void name##_callback_detour(const CCommand& args);                        \
+    CommandHook name##_hook(#name, &name##_callback, name##_callback_detour); \
+    void name##_callback_detour(const CCommand& args)
 
 #define CON_COMMAND(name, description)                           \
     void name##_callback(const CCommand& args);                  \
@@ -75,12 +99,6 @@ public:
 #define CON_COMMAND_AUTOCOMPLETEFILE(name, description, flags, subdirectory, extension) \
     DECLARE_AUTOCOMPLETION_FUNCTION(name, subdirectory, extension)                      \
     CON_COMMAND_F_COMPLETION(name, description, flags, AUTOCOMPLETION_FUNCTION(name))
-
-#define DECL_DETOUR_COMMAND(name)            \
-    static _CommandCallback name##_callback; \
-    static void name##_callback_hook(const CCommand& args)
-#define DETOUR_COMMAND(name) \
-    void name##_callback_hook(const CCommand& args)
 
 #define DECL_COMMAND_COMPLETION(command)                \
     DECL_DECLARE_AUTOCOMPLETION_FUNCTION(command)       \

@@ -61,14 +61,6 @@ DECLARE_AUTOCOMPLETION_FUNCTION(map, "maps", bsp);
 DECLARE_AUTOCOMPLETION_FUNCTION(changelevel, "maps", bsp);
 DECLARE_AUTOCOMPLETION_FUNCTION(changelevel2, "maps", bsp);
 
-// P2 only
-CON_COMMAND(sar_togglewait, "Enables or disables \"wait\" for the command buffer.\n")
-{
-    auto state = !*engine->m_bWaitEnabled;
-    *engine->m_bWaitEnabled = *engine->m_bWaitEnabled2 = state;
-    console->Print("%s wait!\n", (state) ? "Enabled" : "Disabled");
-}
-
 // P2, INFRA and HL2 only
 #ifdef _WIN32
 #define TRACE_SHUTDOWN_PATTERN "6A 00 68 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? "
@@ -85,7 +77,7 @@ CON_COMMAND(sar_delete_alias_cmds, "Deletes all alias commands.\n")
     static _Cmd_Shutdown Cmd_Shutdown = nullptr;
 
     if (!Cmd_Shutdown) {
-        auto result = Memory::MultiScan(engine->Name(), TRACE_SHUTDOWN_PATTERN, TRACE_SHUTDOWN_OFFSET1);
+        auto result = Memory::MultiScan(engine->filename, TRACE_SHUTDOWN_PATTERN, TRACE_SHUTDOWN_OFFSET1);
         if (!result.empty()) {
             for (auto const& addr : result) {
                 if (!std::strcmp(*reinterpret_cast<char**>(addr), "Cmd_Shutdown()")) {
@@ -117,29 +109,25 @@ void Cheats::Init()
         Command::ActivateAutoCompleteFile("changelevel2", changelevel2_CompletionFunc);
     }
 
-    auto s3 = SourceGame_Portal2Game | SourceGame_Portal;
-
     sar_jumpboost.UniqueFor(SourceGame_Portal2Engine);
     sar_aircontrol.UniqueFor(SourceGame_Portal2Engine);
-    //sar_hud_portals.UniqueFor(SourceGame_Portal2Game | SourceGame_Portal);
     sar_disable_challenge_stats_hud.UniqueFor(SourceGame_Portal2);
     sar_disable_steam_pause.UniqueFor(SourceGame_Portal2Game);
     sar_debug_listener.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
-    sar_sr_hud.UniqueFor(s3);
-    sar_sr_hud_x.UniqueFor(s3);
-    sar_sr_hud_y.UniqueFor(s3);
-    sar_sr_hud_font_color.UniqueFor(s3);
-    sar_sr_hud_font_index.UniqueFor(s3);
-    sar_speedrun_autostart.UniqueFor(s3);
-    sar_speedrun_autostop.UniqueFor(s3);
-    sar_speedrun_standard.UniqueFor(s3);
+    sar_sr_hud.UniqueFor(SourceGame_SupportsS3);
+    sar_sr_hud_x.UniqueFor(SourceGame_SupportsS3);
+    sar_sr_hud_y.UniqueFor(SourceGame_SupportsS3);
+    sar_sr_hud_font_color.UniqueFor(SourceGame_SupportsS3);
+    sar_sr_hud_font_index.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_autostart.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_autostop.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_standard.UniqueFor(SourceGame_SupportsS3);
     sar_duckjump.UniqueFor(SourceGame_Portal2Engine);
     sar_replay_viewmode.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_mimic.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_tas_ss_forceuser.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
-    //sar_hud_pause_timer.UniqueFor(s3);
-    sar_speedrun_time_pauses.UniqueFor(s3);
-    sar_speedrun_smartsplit.UniqueFor(s3);
+    sar_speedrun_time_pauses.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_smartsplit.UniqueFor(SourceGame_SupportsS3);
     sar_disable_no_focus_sleep.UniqueFor(SourceGame_Portal2Engine);
 
     startbhop.UniqueFor(SourceGame_TheStanleyParable);
@@ -148,19 +136,18 @@ void Cheats::Init()
     sar_workshop.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_workshop_update.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_workshop_list.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
-    sar_speedrun_result.UniqueFor(s3);
-    sar_speedrun_export.UniqueFor(s3);
-    sar_speedrun_export_pb.UniqueFor(s3);
-    sar_speedrun_import.UniqueFor(s3);
-    sar_speedrun_category.UniqueFor(s3);
-    sar_speedrun_offset.UniqueFor(s3);
-    sar_speedrun_start.UniqueFor(s3);
-    sar_speedrun_stop.UniqueFor(s3);
-    sar_speedrun_split.UniqueFor(s3);
-    sar_speedrun_pause.UniqueFor(s3);
-    sar_speedrun_resume.UniqueFor(s3);
-    sar_speedrun_reset.UniqueFor(s3);
-    sar_togglewait.UniqueFor(SourceGame_Portal2Game | SourceGame_INFRA);
+    sar_speedrun_result.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_export.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_export_pb.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_import.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_category.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_offset.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_start.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_stop.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_split.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_pause.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_resume.UniqueFor(SourceGame_SupportsS3);
+    sar_speedrun_reset.UniqueFor(SourceGame_SupportsS3);
     sar_tas_ss.UniqueFor(SourceGame_Portal2 | SourceGame_ApertureTag);
     sar_delete_alias_cmds.UniqueFor(SourceGame_Portal2Game | SourceGame_HalfLife2Engine);
     sar_tas_strafe.UniqueFor(SourceGame_Portal2Engine);

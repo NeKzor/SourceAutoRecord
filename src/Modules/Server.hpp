@@ -6,13 +6,6 @@
 #include "Utils.hpp"
 #include "Variable.hpp"
 
-#ifdef _WIN32
-#define AirMove_Mid_Offset 679
-#define AirMove_Signature "F3 0F 10 50 40"
-#define AirMove_Continue_Offset 5
-#define AirMove_Skip_Offset 142
-#endif
-
 class Server : public Module {
 public:
     Interface* g_GameMovement = nullptr;
@@ -29,66 +22,38 @@ public:
     CGlobalVars* gpGlobals = nullptr;
     CEntInfo* m_EntPtrArray = nullptr;
 
-private:
     bool jumpedLastTime = false;
     float savedVerticalVelocity = 0.0f;
     bool callFromCheckJumpButton = false;
     bool paused = false;
-    int pauseTick;
+    int pauseTick = 0;
 
 public:
-    DECL_M(GetPortals, int);
-    DECL_M(GetAbsOrigin, Vector);
-    DECL_M(GetAbsAngles, QAngle);
-    DECL_M(GetLocalVelocity, Vector);
-    DECL_M(GetFlags, int);
-    DECL_M(GetEFlags, int);
-    DECL_M(GetMaxSpeed, float);
-    DECL_M(GetGravity, float);
-    DECL_M(GetViewOffset, Vector);
-    DECL_M(GetEntityName, char*);
-    DECL_M(GetEntityClassName, char*);
+    ENTPROP(GetPortals, int, iNumPortalsPlaced);
+    ENTPROP(GetAbsOrigin, Vector, S_m_vecAbsOrigin);
+    ENTPROP(GetAbsAngles, QAngle, S_m_angAbsRotation);
+    ENTPROP(GetLocalVelocity, Vector, S_m_vecVelocity);
+    ENTPROP(GetFlags, int, m_fFlags);
+    ENTPROP(GetEFlags, int, m_iEFlags);
+    ENTPROP(GetMaxSpeed, float, m_flMaxspeed);
+    ENTPROP(GetGravity, float, m_flGravity);
+    ENTPROP(GetViewOffset, Vector, S_m_vecViewOffset);
+    ENTPROP(GetEntityName, char*, m_iName);
+    ENTPROP(GetEntityClassName, char*, m_iClassName);
 
     void* GetPlayer(int index);
     bool IsPlayer(void* entity);
     bool AllowsMovementChanges();
     int GetSplitScreenPlayerSlot(void* entity);
 
-public:
-    // CGameMovement::ProcessMovement
-    DECL_DETOUR(ProcessMovement, void* pPlayer, CMoveData* pMove);
+    Server()
+        : Module(MODULE("server"))
+    {
+        this->isHookable = true;
+    }
 
-    // CGameMovement::CheckJumpButton
-    DECL_DETOUR_T(bool, CheckJumpButton);
-
-    static _CheckJumpButton CheckJumpButtonBase;
-
-    // CGameMovement::PlayerMove
-    DECL_DETOUR(PlayerMove);
-
-    // CGameMovement::FinishGravity
-    DECL_DETOUR(FinishGravity);
-
-    // CGameMovement::AirMove
-    DECL_DETOUR_B(AirMove);
-
-#ifdef _WIN32
-    // CGameMovement::AirMove
-    static uintptr_t AirMove_Skip;
-    static uintptr_t AirMove_Continue;
-    DECL_DETOUR_MID_MH(AirMove_Mid);
-#endif
-
-// CServerGameDLL::GameFrame
-#ifdef _WIN32
-    DECL_DETOUR_STD(void, GameFrame, bool simulating);
-#else
-    DECL_DETOUR(GameFrame, bool simulating);
-#endif
-
-    bool Init() override;
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("server"); }
 };
 
 extern Server* server;

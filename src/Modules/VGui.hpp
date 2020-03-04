@@ -12,24 +12,22 @@ class VGui : public Module {
 public:
     Interface* enginevgui = nullptr;
 
-private:
     HudContext context = HudContext();
     std::vector<Hud*> huds = std::vector<Hud*>();
-
-public:
     std::vector<HudElement*> elements = std::vector<HudElement*>();
 
-private:
+public:
     void Draw(Hud* const& hud);
     void Draw(HudElement* const& element);
 
-public:
-    // CEngineVGui::Paint
-    DECL_DETOUR(Paint, PaintMode_t mode);
+    VGui()
+        : Module(MODULE("engine"))
+    {
+        this->isHookable = true;
+    }
 
-    bool Init() override;
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("engine"); }
 };
 
 extern VGui* vgui;

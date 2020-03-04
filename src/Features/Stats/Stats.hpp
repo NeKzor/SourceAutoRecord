@@ -29,9 +29,9 @@ struct PlayerStats {
     }
     ~PlayerStats()
     {
-        SAFE_DELETE(this->jumps);
-        SAFE_DELETE(this->steps);
-        SAFE_DELETE(this->velocity);
+        sdelete(this->jumps);
+        sdelete(this->steps);
+        sdelete(this->velocity);
     }
 };
 

@@ -216,8 +216,8 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_time_demo, "Parses a demo and prints some infor
 
     std::string name;
     if (args[1][0] == '\0') {
-        if (engine->demoplayer->DemoName[0] != '\0') {
-            name = std::string(engine->demoplayer->DemoName);
+        if (demoplayer->DemoName[0] != '\0') {
+            name = std::string(demoplayer->DemoName);
         } else {
             return console->Print("No demo was recorded or played back!\n");
         }
@@ -290,14 +290,14 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_time_demos, "Parses multiple demos and prints t
 
 HUD_ELEMENT(demo, "0", "Draws name, tick and time of current demo.\n", HudType_InGame | HudType_Paused | HudType_LoadingScreen)
 {
-    if (!*engine->m_bLoadgame && *engine->demorecorder->m_bRecording && !engine->demorecorder->currentDemo.empty()) {
-        auto tick = engine->demorecorder->GetTick();
+    if (!*engine->m_bLoadgame && *demorecorder->m_bRecording && !demorecorder->currentDemo.empty()) {
+        auto tick = demorecorder->GetTick();
         auto time = engine->ToTime(tick);
-        ctx->DrawElement("demo: %s %i (%.3f)", engine->demorecorder->currentDemo.c_str(), tick, time);
-    } else if (!*engine->m_bLoadgame && engine->demoplayer->IsPlaying()) {
-        auto tick = engine->demoplayer->GetTick();
+        ctx->DrawElement("demo: %s %i (%.3f)", demorecorder->currentDemo.c_str(), tick, time);
+    } else if (!*engine->m_bLoadgame && demoplayer->IsPlaying()) {
+        auto tick = demoplayer->GetTick();
         auto time = engine->ToTime(tick);
-        ctx->DrawElement("demo: %s %i (%.3f)", engine->demoplayer->DemoName, tick, time);
+        ctx->DrawElement("demo: %s %i (%.3f)", demoplayer->DemoName, tick, time);
     } else {
         ctx->DrawElement("demo: -");
     }

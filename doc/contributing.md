@@ -7,7 +7,7 @@
   - [Linux](#linux)
 - [Pull Requests](#pull-requests)
 - [Coding Style](#coding-style)
-- [Coding](#coding)
+- [API](#api)
   - [Interfaces](#interfaces)
   - [Offsets](#offsets)
   - [Hooking](#hooking)
@@ -25,7 +25,7 @@
     - [Buttons](#buttons)
   - [HUD](#hud)
     - [Elements](#elements)
-	- [Separate](#separate)
+    - [Separate](#separate)
   - [Game Support](#game-support)
     - [Versions](#versions)
     - [Unique Console Commands](#unique-console-commands)
@@ -61,7 +61,7 @@
 ### Quick Tutorial with git
 
 - Fork this repository on GitHub
-- git clone https://github.com/<your_account>/SourceAutoRecord
+- git clone https://github.com/\<your_account\>/SourceAutoRecord
 - git remote add upstream https://github.com/NeKzor/SourceAutoRecord
 - git fetch remotes/upstream/master
 - git checkout -b feature/something remotes/upstream/master
@@ -94,21 +94,68 @@ A `.clang-format` file is included. I'd highly recommend using an extension:
 
 Note: You'll sometimes see a mix with Valve's coding style.
 
-## Coding
+## API
 
 SAR was designed to be able to load for multiple Source Engine games on Windows and Linux.
 
-### Interfaces
+### Modules
 
-Engine interfaces can easily be obtained and hooked:
+Modules represent the game engine. They are used to initialize all game states and hooks. By default a module will not enable hooked functions automatically unless `isHookable` is set to true.
 
 ```cpp
-this->g_ClientDLL = Interface::Create(this->Name(), "VClient0");
+// Modules/Engine.hpp
+
+Engine()
+    : Module(MODULE("engine")) // Macro will resolve .dll/.so extension
+{
+    // Only required when calling Interface::Hookable
+    this->isHookable = true;
+}
 ```
 
-SAR will resolve the interface version automatically. Use `VClient0` instead of `VClient001` etc.
+```cpp
+// Modules/Engine.cpp
 
-Note: Modules implement `Module::Name` which returns their module name. For example: `client.so` for Linux and `client.dll` for Windows. There's also the `MODULE` macro that helps you with that.
+void Engine::Init()
+{
+    // Hook, game specific init logic
+    // Should throw exception if an error occurs
+}
+
+void Engine::Shutdown()
+{
+    // Destroy stuff
+}
+```
+
+### Interfaces
+
+The interface class can be used to wrap a game object. They are used to walk through vtables to get specific engine functions but also for intercepting function calls (see [hooking](#hooking)). Engine interfaces can easily be obtained too. SAR will resolve the interface version automatically:
+Note: Only static objects should be hooked with this.
+
+```cpp
+// Wrap pointer
+auto wrapped = Interface::CreateNew(this, someObjectPointer);
+
+// Find interface in current module
+this->g_ClientDLL = Interface::CreateNew(this, "VClient0"); // VClient001
+```
+
+In order to call the `Interface::Hook(_Hook hook, int offset)` method of interfaces, the module needs to be hookable (see [Modules](#modules)).
+
+```cpp
+this->g_ClientDLL = Interface::Hookable(this, "VClient0");
+```
+
+The static `Temp` method can be useful if a temporary instance should be created in cases where only the functions are needed.
+
+```cpp
+Interface::Temp(this, "VClient0", [this](const Inteface* g_ClientDLL) {
+    this->SomeMethod = g_ClientDLL->Original<_SomeMethod>(Offsets::SomeMethod);
+});
+```
+
+Note: These methods will throw an exception on error. SAR will automatically catch them on load and return an error message. Hookable interfaces will be acitvated as the last initialization step of the plugin.
 
 ### Offsets
 
@@ -149,24 +196,22 @@ Read [Game Support](#game-support) for initialization.
 Functions will be hooked through virtual method tables (VMT). SAR provides useful macros for declaration:
 
 ```cpp
-// Client.hpp
-DECL_DETOUR(CreateMove, float flInputSampleTime, CUserCmd* cmd)
-
 // Client.cpp
-REDECL(Client::CreateMove);
 
-// int __cdecl Client::CreateMove_Hook(void* thisptr, float flInputSampleTime, CUserCmd* cmd)
-DETOUR(Client::CreateMove, float flInputSampleTime, CUserCmd* cmd)
+// int __cdecl CreateMove_Hook(void* thisptr, float flInputSampleTime, CUserCmd* cmd)
+DETOUR(CreateMove, float flInputSampleTime, CUserCmd* cmd)
 {
     // Always call/return original function/value unless you know what you're doing
-    return Client::CreateMove(thisptr, flInputSampleTime, cmd);
+    return CreateMove(thisptr, flInputSampleTime, cmd);
 }
 
 // Somewhere in Client::Init
-this->g_ClientDLL->Hook(Client::HudUpdate_Hook, Client::HudUpdate, Offsets::HudUpdate);
+this->g_ClientDLL->Hook(&hkHudUpdate, Offsets::HudUpdate);
 ```
 
 Calling conventions will automatically be resolved using the `__rescall` macro. On Linux it will be `__cdecl` and on Windows `__thiscall`. Hooks on Windows will be declared as `__fastcall` with unused `edx` register. Use `DETOUR_T` for custom return types and `DETOUR_STD` for `__stdcall`.
+
+TODO: command hooks
 
 ### Features
 
@@ -187,7 +232,9 @@ public:
 };
 
 extern MyFeature* myFeature;
+```
 
+```cpp
 // src/Features/MyFeature.cpp
 #include "MyFeature.hpp"
 
@@ -196,7 +243,6 @@ MyFeature* myFeature;
 MyFeature::MyFeature()
     : state(0)
 {
-    this->hasLoaded = true;
 }
 void MyFeature::ChangeState(int newState)
 {
@@ -206,7 +252,9 @@ int MyFeature::GetState()
 {
     return this->state;
 }
+```
 
+```cpp
 // src/Features.hpp
 #include "Features/MyFeature.hpp"
 
@@ -250,7 +298,7 @@ Memory::CloseModuleHandle(tier0);
 #### Access Virtual Function
 
 ```cpp
-auto IsCommand = Memory::VMT<bool (*)(void*)>(cmd, Offsets::IsCommand));
+auto IsCommand = Memory::VMT<bool (*)(void*)>(cmd, Offsets::IsCommand);
 ```
 
 #### Signature-Scanning aka AOB-Scan
@@ -263,12 +311,15 @@ uintptr_t firstResult = Memory::Scan(MODULE("engine"), "55 8B EC 0F 57 C0 81 EC 
 std::vector<uintptr_t> allResults = Memory::MultiScan(engine->Name(), TRACE_SHUTDOWN_PATTERN, TRACE_SHUTDOWN_OFFSET1);
 
 // Multiple patterns with different offsets
+// Note: This is not a pointer path
 PATTERN(DATAMAP_PATTERN1, "B8 ? ? ? ? C7 05", 11, 1);
 PATTERN(DATAMAP_PATTERN2, "C7 05 ? ? ? ? ? ? ? ? B8", 6, 11);
 
 PATTERNS(DATAMAP_PATTERNS, &DATAMAP_PATTERN1, &DATAMAP_PATTERN2);
 
 auto result = Memory::MultiScan(moduleName, &DATAMAP_PATTERNS);
+
+// TODO
 ```
 
 #### Relative to Absolute Address
@@ -328,18 +379,18 @@ CON_COMMAND(sar_hello, "Useful help description.\n")
 // Last argument is type of std::vector<std::string>. It is required to wrap it with ()
 CON_COMMAND_COMPLETION(sar_force_fov, "Description.\n", ({ "0", "50", "60", "70", "80", "90", "100", "110", "120", "130", "140" }))
 {
-	// Command callback
+    // Command callback
 }
 
 // Use this macro in order to call some initialization logic
 DECL_COMMAND_COMPLETION(sar_workshop)
 {
-	// Init some stuff
+    // Init some stuff
     if (workshop->maps.empty()) {
         workshop->Update();
     }
 
-	// Basic filtering logic
+    // Basic filtering logic
     for (auto& map : workshop->maps) {
         if (items.size() == COMMAND_COMPLETION_MAXITEMS) {
             break;
@@ -359,7 +410,7 @@ DECL_COMMAND_COMPLETION(sar_workshop)
 
 CON_COMMAND_F_COMPLETION(sar_workshop, "Description.\n", 0, sar_workshop_CompletionFunc)
 {
-	// Command callback
+    // Command callback
 }
 ```
 
@@ -381,11 +432,11 @@ HUD_ELEMENT(frame, "0", "Default example.\n", HudType_InGame | HudType_Paused)
 // Called if: sar_hud_some_mode > 0
 HUD_ELEMENT_MODE(some_mode, "0", 0, 5, "Mode example.\n", HudType_InGame | HudType_Paused)
 {
-	if (mode == 4) {
-		ctx->DrawElement("mode: 4");
-	} else {
-		ctx->DrawElement("mode: 1-3 or 5");
-	}
+    if (mode == 4) {
+        ctx->DrawElement("mode: 4");
+    } else {
+        ctx->DrawElement("mode: 1-3 or 5");
+    }
 }
 
 // Called if: sar_hud_some_text[0] != '\0' (not empty)
@@ -397,15 +448,15 @@ HUD_ELEMENT_STRING(some_text, "", 0, 5, "Text example.\n", HudType_InGame | HudT
 // Splitscreen support needs a 2 at the end of the macro
 HUD_ELEMENT2(splitscreen, "0", "Slot example.\n", HudType_InGame | HudType_Paused)
 {
-	// Do something with slot
-	auto slot = ctx->slot;
+    // Do something with slot
+    auto slot = ctx->slot;
 }
 
 // Limit an element for a specific game
 HUD_ELEMENT3(game_version, "0", "Game specific example.\n",
-	HudType_InGame | HudType_Paused, // Where to draw
-	false,							 // no splitscreens
-	SourceGame_Portal)				 // Portal only
+    HudType_InGame | HudType_Paused, // Where to draw
+    false,							 // no splitscreens
+    SourceGame_Portal)				 // Portal only
 {
 }
 ```
@@ -415,12 +466,12 @@ Last step is to add the element name to the ordered list. It is used for autocom
 ```
 // Features/Hud/Hud.cpp
 std::vector<std::string> elementOrder = {
-	// ...
-	"frame",
-	"some_mode",
-	"some_text",
-	"splitscreen",
-	"game_version"
+    // ...
+    "frame",
+    "some_mode",
+    "some_text",
+    "splitscreen",
+    "game_version"
 };
 ```
 
@@ -470,15 +521,15 @@ MyHud myHud;
 
 MyHud::MyHud()
     : Hud(HudType_InGame,         // Only when session is running (no-pauses)
-		false,                    // Do not draw for splitscreen (default)
-		SourceGame_Portal2Engine) // Support specific game verison (default is for every game)
+        false,                    // Do not draw for splitscreen (default)
+        SourceGame_Portal2Engine) // Support specific game verison (default is for every game)
 {
 }
 
 // Implement a more complex drawing logic if needed
 bool MyHud::ShouldDraw()
 {
-	// Calling the base function will resolve the HUD type condition
+    // Calling the base function will resolve the HUD type condition
     return sar_my_hud.GetBool() && Hud::ShouldDraw();
 }
 
@@ -500,7 +551,7 @@ void MyHud::Paint(int slot)
 // See Feature/Hud/InputHud.cpp
 bool MyHud::GetCurrentSize(int& xSize, int& ySize)
 {
-	// Calc size and return value if hud is active
+    // Calc size and return value if hud is active
     return false;
 }
 ```

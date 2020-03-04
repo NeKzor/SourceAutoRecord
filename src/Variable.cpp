@@ -26,7 +26,7 @@ Variable::Variable()
 Variable::~Variable()
 {
     if (!this->isReference) {
-        SAFE_DELETE(this->ptr)
+        sdelete(this->ptr)
     }
 }
 Variable::Variable(const char* name)
@@ -206,7 +206,7 @@ void Variable::Unregister()
 #else
         tier1->Dtor(this->ptr);
 #endif
-        SAFE_DELETE(this->ptr)
+        sdelete(this->ptr)
     }
 }
 bool Variable::operator!()

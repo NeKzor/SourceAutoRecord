@@ -18,10 +18,7 @@ bool StartsWith(const char* str, const char* subStr);
 bool ICompare(const std::string& a, const std::string& b);
 }
 
-#define REDECL(name) \
-    decltype(name) name
-
-#define SAFE_DELETE(ptr) \
+#define sdelete(ptr) \
     if (ptr) {           \
         delete ptr;      \
         ptr = nullptr;   \

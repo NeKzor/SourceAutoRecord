@@ -74,8 +74,8 @@ void Session::Start()
     speedrun->Resume(tick);
 
     if (rebinder->isSaveBinding || rebinder->isReloadBinding) {
-        if (engine->demorecorder->isRecordingDemo) {
-            rebinder->UpdateIndex(*engine->demorecorder->m_nDemoNumber);
+        if (demorecorder->isRecordingDemo) {
+            rebinder->UpdateIndex(*demorecorder->m_nDemoNumber);
         } else {
             rebinder->UpdateIndex(rebinder->lastIndexNumber + 1);
         }
@@ -160,7 +160,7 @@ void Session::Ended()
         stats->ResetAll();
     }
 
-    engine->demorecorder->currentDemo = "";
+    demorecorder->currentDemo = "";
     this->lastFrame = this->currentFrame;
     this->currentFrame = 0;
 

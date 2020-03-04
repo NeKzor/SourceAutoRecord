@@ -5,6 +5,7 @@
 
 #include "Command.hpp"
 #include "Interface.hpp"
+#include "Offsets.hpp"
 #include "Utils.hpp"
 #include "Variable.hpp"
 
@@ -31,40 +32,22 @@ public:
     void* in_jump = nullptr;
 
 public:
-    DECL_M(GetAbsOrigin, Vector);
-    DECL_M(GetAbsAngles, QAngle);
-    DECL_M(GetLocalVelocity, Vector);
-    DECL_M(GetViewOffset, Vector);
+    ENTPROP(GetAbsOrigin, Vector, C_m_vecAbsOrigin);
+    ENTPROP(GetAbsAngles, QAngle, C_m_angAbsRotation);
+    ENTPROP(GetLocalVelocity, Vector, C_m_vecVelocity);
+    ENTPROP(GetViewOffset, Vector, C_m_vecViewOffset);
 
     void* GetPlayer(int index);
     void CalcButtonBits(int nSlot, int& bits, int in_button, int in_ignore, kbutton_t* button, bool reset);
 
-public:
-    // CHLClient::HudUpdate
-    DECL_DETOUR(HudUpdate, unsigned int a2);
+    Client()
+        : Module(MODULE("client"))
+    {
+        this->isHookable = true;
+    }
 
-    // ClientModeShared::CreateMove
-    DECL_DETOUR(CreateMove, float flInputSampleTime, CUserCmd* cmd);
-    DECL_DETOUR(CreateMove2, float flInputSampleTime, CUserCmd* cmd);
-
-    // CHud::GetName
-    DECL_DETOUR_T(const char*, GetName);
-
-    // CInput::_DecodeUserCmdFromBuffer
-    DECL_DETOUR(DecodeUserCmdFromBuffer, int nSlot, int buf, signed int sequence_number);
-    DECL_DETOUR(DecodeUserCmdFromBuffer2, int buf, signed int sequence_number);
-
-    // CInput::CreateMove
-    DECL_DETOUR(CInput_CreateMove, int sequence_number, float input_sample_frametime, bool active);
-
-    // CInput::GetButtonBits
-    DECL_DETOUR(GetButtonBits, bool bResetState);
-
-    DECL_DETOUR_COMMAND(playvideo_end_level_transition);
-
-    bool Init() override;
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("client"); }
 };
 
 extern Client* client;

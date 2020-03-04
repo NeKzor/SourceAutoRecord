@@ -16,6 +16,7 @@
 #include "Modules/Server.hpp"
 
 #include "Utils/SDK.hpp"
+#include "Utils/Platform.hpp"
 
 #include "SAR.hpp"
 
@@ -54,7 +55,7 @@ void ClassDumper::Dump(bool dumpServer)
         }
     }
 
-    file.seekp(-1, std::ios_base::_Seekcur);
+    file.seekp(-1, SEEK_DIR_CUR);
     file << "]}";
     file.close();
 
@@ -105,7 +106,7 @@ void ClassDumper::DumpSendTable(std::ofstream& file, SendTable* table)
     }
 
     if (table->m_nProps != 0) {
-        file.seekp(-1, std::ios_base::_Seekcur);
+        file.seekp(-1, SEEK_DIR_CUR);
     }
     file << "]}";
 }
@@ -146,7 +147,7 @@ void ClassDumper::DumpRecvTable(std::ofstream& file, RecvTable* table)
     }
 
     if (table->m_nProps != 0) {
-        file.seekp(-1, std::ios_base::_Seekcur);
+        file.seekp(-1, SEEK_DIR_CUR);
     }
     file << "]}";
 }

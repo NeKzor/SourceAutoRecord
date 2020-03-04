@@ -11,8 +11,6 @@
 #include "SAR.hpp"
 #include "Utils.hpp"
 
-REDECL(EngineDemoPlayer::StartPlayback);
-
 int EngineDemoPlayer::GetTick()
 {
     return this->GetPlaybackTick(this->s_ClientDemoPlayer->ThisPtr());
@@ -23,15 +21,15 @@ bool EngineDemoPlayer::IsPlaying()
 }
 
 // CDemoRecorder::StartPlayback
-DETOUR(EngineDemoPlayer::StartPlayback, const char* filename, bool bAsTimeDemo)
+DETOUR(StartPlayback, const char* filename, bool bAsTimeDemo)
 {
-    auto result = EngineDemoPlayer::StartPlayback(thisptr, filename, bAsTimeDemo);
+    auto result = StartPlayback(thisptr, filename, bAsTimeDemo);
 
     if (result) {
         DemoParser parser;
         Demo demo;
         auto dir = std::string(engine->GetGameDirectory()) + std::string("/")
-            + std::string(engine->demoplayer->DemoName);
+            + std::string(demoplayer->DemoName);
         if (parser.Parse(dir, &demo)) {
             parser.Adjust(&demo);
             console->Print("Client:   %s\n", demo.clientName);
@@ -40,27 +38,31 @@ DETOUR(EngineDemoPlayer::StartPlayback, const char* filename, bool bAsTimeDemo)
             console->Print("Time:     %.3f\n", demo.playbackTime);
             console->Print("Tickrate: %.3f\n", demo.Tickrate());
         } else {
-            console->Print("Could not parse \"%s\"!\n", engine->demoplayer->DemoName);
+            console->Print("Could not parse \"%s\"!\n", demoplayer->DemoName);
         }
     }
     return result;
 }
 
-bool EngineDemoPlayer::Init()
+void EngineDemoPlayer::Init()
 {
-    auto disconnect = engine->cl->Original(Offsets::Disconnect);
-    auto demoplayer = Memory::DerefDeref<void*>(disconnect + Offsets::demoplayer);
-    if (this->s_ClientDemoPlayer = Interface::Create(demoplayer)) {
-        this->s_ClientDemoPlayer->Hook(EngineDemoPlayer::StartPlayback_Hook, EngineDemoPlayer::StartPlayback, Offsets::StartPlayback);
-
-        this->GetPlaybackTick = s_ClientDemoPlayer->Original<_GetPlaybackTick>(Offsets::GetPlaybackTick);
-        this->IsPlayingBack = s_ClientDemoPlayer->Original<_IsPlayingBack>(Offsets::IsPlayingBack);
-        this->DemoName = reinterpret_cast<char*>((uintptr_t)demoplayer + Offsets::m_szFileName);
+    if (!engine->Loaded()) {
+        throw std::runtime_error("engine module is required to be loaded");
     }
 
-    return this->hasLoaded = this->s_ClientDemoPlayer;
+    auto disconnect = engine->cl->Original(Offsets::Disconnect);
+    auto demoplayer = Memory::DerefDeref<uintptr_t>(disconnect + Offsets::demoplayer);
+
+    this->s_ClientDemoPlayer = Interface::Hookable(this, demoplayer);
+    this->s_ClientDemoPlayer->Hook(&hkStartPlayback, Offsets::StartPlayback);
+
+    this->GetPlaybackTick = s_ClientDemoPlayer->Original<_GetPlaybackTick>(Offsets::GetPlaybackTick);
+    this->IsPlayingBack = s_ClientDemoPlayer->Original<_IsPlayingBack>(Offsets::IsPlayingBack);
+    this->DemoName = reinterpret_cast<char*>(demoplayer + Offsets::m_szFileName);
 }
 void EngineDemoPlayer::Shutdown()
 {
-    Interface::Delete(this->s_ClientDemoPlayer);
+    Interface::Destroy(this->s_ClientDemoPlayer);
 }
+
+EngineDemoPlayer* demoplayer;
