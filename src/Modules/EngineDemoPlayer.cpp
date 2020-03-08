@@ -1,5 +1,7 @@
 #include "EngineDemoPlayer.hpp"
 
+#include <stdexcept>
+
 #include "Features/Demo/Demo.hpp"
 #include "Features/Demo/DemoParser.hpp"
 

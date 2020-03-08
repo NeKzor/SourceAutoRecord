@@ -21,11 +21,11 @@
 #define getBits(x) (INRANGE((x & (~0x20)), 'A', 'F') ? ((x & (~0x20)) - 'A' + 0xA) : (INRANGE(x, '0', '9') ? x - '0' : 0))
 #define getByte(x) (getBits(x[0]) << 4 | getBits(x[1]))
 
-std::vector<Memory::ModuleInfo> Memory::moduleList;
-
 bool Memory::TryGetModule(const char* moduleName, Memory::ModuleInfo* info)
 {
-    if (Memory::moduleList.empty()) {
+    static auto moduleList = std::vector<Memory::ModuleInfo>();
+
+    if (moduleList.empty()) {
 #ifdef _WIN32
         HMODULE hMods[1024];
         HANDLE pHandle = GetCurrentProcess();
@@ -42,42 +42,42 @@ bool Memory::TryGetModule(const char* moduleName, Memory::ModuleInfo* info)
                     continue;
                 }
 
-                auto module = ModuleInfo();
+                auto mod = ModuleInfo();
 
                 auto temp = std::string(buffer);
                 auto index = temp.find_last_of("\\/");
                 temp = temp.substr(index + 1, temp.length() - index);
 
-                std::snprintf(module.name, sizeof(module.name), "%s", temp.c_str());
-                module.base = (uintptr_t)modinfo.lpBaseOfDll;
-                module.size = (uintptr_t)modinfo.SizeOfImage;
-                std::snprintf(module.path, sizeof(module.path), "%s", buffer);
+                std::snprintf(mod.name, sizeof(mod.name), "%s", temp.c_str());
+                mod.base = (uintptr_t)modinfo.lpBaseOfDll;
+                mod.size = (uintptr_t)modinfo.SizeOfImage;
+                std::snprintf(mod.path, sizeof(mod.path), "%s", buffer);
 
-                Memory::moduleList.push_back(module);
+                moduleList.push_back(mod);
             }
         }
 
 #else
         dl_iterate_phdr([](struct dl_phdr_info* info, size_t, void*) {
-            auto module = Memory::ModuleInfo();
+            auto mod = Memory::ModuleInfo();
 
             auto temp = std::string(info->dlpi_name);
             auto index = temp.find_last_of("\\/");
             temp = temp.substr(index + 1, temp.length() - index);
-            std::snprintf(module.name, sizeof(module.name), "%s", temp.c_str());
+            std::snprintf(mod.name, sizeof(mod.name), "%s", temp.c_str());
 
-            module.base = info->dlpi_addr + info->dlpi_phdr[0].p_paddr;
-            module.size = info->dlpi_phdr[0].p_memsz;
-            std::strncpy(module.path, info->dlpi_name, sizeof(module.path));
+            mod.base = info->dlpi_addr + info->dlpi_phdr[0].p_paddr;
+            mod.size = info->dlpi_phdr[0].p_memsz;
+            std::strncpy(mod.path, info->dlpi_name, sizeof(mod.path));
 
-            Memory::moduleList.push_back(module);
+            moduleList.push_back(mod);
             return 0;
         },
             nullptr);
 #endif
     }
 
-    for (Memory::ModuleInfo& item : Memory::moduleList) {
+    for (Memory::ModuleInfo& item : moduleList) {
         if (!std::strcmp(item.name, moduleName)) {
             if (info) {
                 *info = item;
@@ -239,57 +239,3 @@ std::vector<std::vector<uintptr_t>> Memory::MultiScan(const char* moduleName, co
     }
     return results;
 }
-
-#ifdef _WIN32
-Memory::Patch::~Patch()
-{
-    if (this->original) {
-        this->Restore();
-        delete this->original;
-        this->original = nullptr;
-    }
-}
-bool Memory::Patch::Execute(uintptr_t location, unsigned char* bytes)
-{
-    this->location = location;
-    this->size = sizeof(bytes) / sizeof(bytes[0]) - 1;
-    this->original = new unsigned char[this->size];
-
-    for (size_t i = 0; i < this->size; ++i) {
-        if (!ReadProcessMemory(GetCurrentProcess(),
-                reinterpret_cast<LPVOID>(this->location + i),
-                &this->original[i],
-                1,
-                0)) {
-            return false;
-        }
-    }
-
-    for (size_t i = 0; i < this->size; ++i) {
-        if (!WriteProcessMemory(GetCurrentProcess(),
-                reinterpret_cast<LPVOID>(this->location + i),
-                &bytes[i],
-                1,
-                0)) {
-            return false;
-        }
-    }
-    return true;
-}
-bool Memory::Patch::Restore()
-{
-    if (this->location && this->original) {
-        for (size_t i = 0; i < this->size; ++i) {
-            if (!WriteProcessMemory(GetCurrentProcess(),
-                    reinterpret_cast<LPVOID>(this->location + i),
-                    &this->original[i],
-                    1,
-                    0)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    return false;
-}
-#endif

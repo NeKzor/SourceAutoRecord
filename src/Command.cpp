@@ -1,6 +1,7 @@
 #include "Command.hpp"
 
 #include <cstring>
+#include <stdexcept>
 
 #include "Modules/Console.hpp"
 #include "Modules/Module.hpp"

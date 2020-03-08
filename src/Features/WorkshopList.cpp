@@ -1,7 +1,13 @@
 #include "WorkshopList.hpp"
 
 #include <cstring>
+#if _WIN32
+#include <filesystem>
+#define fs std::filesystem
+#else
 #include <experimental/filesystem>
+#define fs std::experimental::filesystem
+#endif
 #include <stdlib.h>
 
 #include "Modules/Engine.hpp"
@@ -26,10 +32,10 @@ int WorkshopList::Update()
     auto index = path.length() + 1;
 
     // Scan through all directories and find the map file
-    for (auto& dir : std::experimental::filesystem::recursive_directory_iterator(path)) {
-        if (dir.status().type() == std::experimental::filesystem::file_type::directory) {
+    for (auto& dir : fs::recursive_directory_iterator(path)) {
+        if (dir.status().type() == fs::file_type::directory) {
             auto curdir = dir.path().string();
-            for (auto& dirdir : std::experimental::filesystem::directory_iterator(curdir)) {
+            for (auto& dirdir : fs::directory_iterator(curdir)) {
                 auto file = dirdir.path().string();
                 if (Utils::EndsWith(file, std::string(".bsp"))) {
                     auto map = file.substr(index);

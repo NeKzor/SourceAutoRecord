@@ -1,5 +1,7 @@
 #include "Tier1.hpp"
 
+#include <stdexcept>
+
 #include "Game.hpp"
 #include "Interface.hpp"
 #include "Offsets.hpp"

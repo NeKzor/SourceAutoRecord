@@ -1,7 +1,4 @@
 #pragma once
-#ifdef _WIN32
-#include "minhook/MinHook.h"
-#endif
 
 class _Hook {
 public:

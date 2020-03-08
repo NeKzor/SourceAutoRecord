@@ -8,7 +8,6 @@
 #include "Utils/Memory.hpp"
 #include "Utils/Platform.hpp"
 
-class _Hook;
 class Module;
 
 class Interface {
@@ -20,7 +19,7 @@ public:
 private:
     bool isHooked = false;
     uintptr_t* copy = nullptr;
-    std::map<int, _Hook*> hooks = std::map<int, _Hook*>();
+    std::map<int, class _Hook*> hooks = std::map<int, class _Hook*>();
 
 public:
     Interface(void* baseclass);

@@ -1,5 +1,6 @@
 #include "Module.hpp"
 
+#include <stdexcept>
 #include <vector>
 
 Module::Module(const char* filename)

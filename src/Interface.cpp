@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <functional>
+#include <stdexcept>
 
 #include "Modules/Console.hpp"
 #include "Modules/Module.hpp"
