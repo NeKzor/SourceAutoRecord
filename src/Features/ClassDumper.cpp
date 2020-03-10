@@ -27,7 +27,6 @@ ClassDumper::ClassDumper()
     , serverClassesFile("server_classes.json")
     , clientClassesFile("client_classes.json")
 {
-    this->hasLoaded = true;
 }
 void ClassDumper::Dump(bool dumpServer)
 {

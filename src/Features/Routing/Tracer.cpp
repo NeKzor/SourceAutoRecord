@@ -20,7 +20,6 @@ Tracer::Tracer()
     for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
         this->traces.push_back(new TraceResult());
     }
-    this->hasLoaded = true;
 }
 Tracer::~Tracer()
 {

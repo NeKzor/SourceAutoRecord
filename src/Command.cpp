@@ -10,26 +10,46 @@
 #include "Game.hpp"
 #include "SAR.hpp"
 
-std::vector<Command*>& Command::GetList()
+std::vector<CommandBase*>& CommandBase::GetList()
 {
-    static std::vector<Command*> list;
+    static std::vector<CommandBase*> list;
     return list;
 }
 
-Command::Command()
+CommandBase::CommandBase(int version)
     : ptr(nullptr)
-    , version(SourceGame_Unknown)
+    , version(version)
     , isRegistered(false)
     , isReference(false)
 {
 }
-Command::~Command()
+CommandBase::~CommandBase()
 {
     if (!this->isReference) {
         sdelete(this->ptr)
     }
 }
+int CommandBase::RegisterAll()
+{
+    auto result = 0;
+    for (const auto& command : CommandBase::GetList()) {
+        if (command->version != SourceGame_Unknown && !sar.game->Is(command->version)) {
+            continue;
+        }
+        command->Register();
+        ++result;
+    }
+    return result;
+}
+void CommandBase::UnregisterAll()
+{
+    for (const auto& command : CommandBase::GetList()) {
+        command->Unregister();
+    }
+}
+
 Command::Command(const char* name)
+    : CommandBase(SourceGame_Unknown)
 {
     this->ptr = reinterpret_cast<ConCommand*>(tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), name));
     if (!this->ptr) {
@@ -38,19 +58,13 @@ Command::Command(const char* name)
 
     this->isReference = true;
 }
-Command::Command(const char* pName, _CommandCallback callback, const char* pHelpString, int flags, _CommandCompletionCallback completionFunc)
+Command::Command(const char* pName, _CommandCallback callback, const char* pHelpString, int version, int flags,
+    _CommandCompletionCallback completionFunc)
+    : CommandBase(version)
 {
     this->ptr = new ConCommand(pName, callback, pHelpString, flags, completionFunc);
 
-    Command::GetList().push_back(this);
-}
-ConCommand* Command::ThisPtr()
-{
-    return this->ptr;
-}
-void Command::UniqueFor(int version)
-{
-    this->version = version;
+    CommandBase::GetList().push_back(this);
 }
 void Command::Register()
 {
@@ -68,44 +82,13 @@ void Command::Unregister()
     }
     this->isRegistered = false;
 }
-bool Command::operator!()
-{
-    return this->ptr == nullptr;
-}
-int Command::RegisterAll()
-{
-    auto result = 0;
-    for (const auto& command : Command::GetList()) {
-        if (command->version != SourceGame_Unknown && !sar.game->Is(command->version)) {
-            continue;
-        }
-        command->Register();
-        ++result;
-    }
-    return result;
-}
-void Command::UnregisterAll()
-{
-    for (const auto& command : Command::GetList()) {
-        command->Unregister();
-    }
-}
-Command* Command::Find(const char* name)
-{
-    for (const auto& command : Command::GetList()) {
-        if (!std::strcmp(command->ThisPtr()->m_pszName, name)) {
-            return command;
-        }
-    }
-    return nullptr;
-}
-
 bool Command::ActivateAutoCompleteFile(const char* name, _CommandCompletionCallback callback)
 {
     auto cc = Command(name);
     if (!!cc) {
-        cc.ThisPtr()->m_bHasCompletionCallback = true;
-        cc.ThisPtr()->m_fnCompletionCallback = callback;
+        auto ptr = cc.ThisPtr();
+        ptr->m_bHasCompletionCallback = true;
+        ptr->m_fnCompletionCallback = callback;
         return true;
     }
     return false;
@@ -114,8 +97,9 @@ bool Command::DectivateAutoCompleteFile(const char* name)
 {
     auto cc = Command(name);
     if (!!cc) {
-        cc.ThisPtr()->m_bHasCompletionCallback = false;
-        cc.ThisPtr()->m_fnCompletionCallback = nullptr;
+        auto ptr = cc.ThisPtr();
+        ptr->m_bHasCompletionCallback = false;
+        ptr->m_fnCompletionCallback = nullptr;
         return true;
     }
     return false;

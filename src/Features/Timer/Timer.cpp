@@ -27,7 +27,6 @@ Timer::Timer()
     , avg(new TimerAverage())
     , cps(new TimerCheckPoints())
 {
-    this->hasLoaded = this->avg && this->cps;
 }
 Timer::~Timer()
 {

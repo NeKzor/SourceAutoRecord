@@ -28,7 +28,6 @@ Session::Session()
     , lastFrame(0)
     , prevState(HS_RUN)
 {
-    this->hasLoaded = true;
 }
 int Session::GetTick()
 {

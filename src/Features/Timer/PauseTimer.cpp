@@ -10,7 +10,6 @@ PauseTimer::PauseTimer()
     : isActive(false)
     , ticks(0)
 {
-    this->hasLoaded = true;
 }
 void PauseTimer::Start()
 {

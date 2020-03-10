@@ -11,8 +11,11 @@
 #include "Command.hpp"
 #include "Variable.hpp"
 
-Variable sar_tas_autostart("sar_tas_autostart", "1", "Starts queued commands automatically on first frame after a load.\n");
-Variable sar_tas_ss_forceuser("sar_tas_ss_forceuser", "0", "Forces engine to calculate movement for every splitescreen client.\n");
+Variable sar_tas_autostart("sar_tas_autostart", "1",
+    "Starts queued commands automatically on first frame after a load.\n");
+Variable sar_tas_ss_forceuser("sar_tas_ss_forceuser", "0",
+    "Forces engine to calculate movement for every splitescreen client.\n",
+    SourceGame_Portal2 | SourceGame_ApertureTag);
 
 CommandQueuer* cmdQueuer;
 
@@ -26,7 +29,6 @@ CommandQueuer::CommandQueuer()
     , floatRegex("\\[" + numberRegex + ":" + numberRegex + "\\]")
     , intRegex("\\{" + numberRegex + ":" + numberRegex + "\\}")
 {
-    this->hasLoaded = true;
 }
 void CommandQueuer::AddFrame(int framesLeft, std::string command, bool relative)
 {
@@ -96,7 +98,6 @@ void CommandQueuer::RandomRegex(std::string& input)
         float rand = Math::RandomNumber(std::stof(m.str(1)), std::stof(m.str(6)));
         input = std::regex_replace(input, this->floatRegex, std::to_string(rand), std::regex_constants::format_first_only);
     }
-
 
     for (std::sregex_iterator it = std::sregex_iterator(input.begin(), input.end(), this->intRegex); it != std::sregex_iterator(); ++it) {
         std::smatch m = *it;
@@ -220,8 +221,10 @@ CON_COMMAND(sar_tas_reset, "Stops executing commands and clears them from the qu
 
     cmdQueuer->Reset();
 }
-CON_COMMAND(sar_tas_ss, "Select split screen index for command buffer (0 or 1).\n"
-                        "Usage: sar_tas_ss <index>\n")
+CON_COMMAND_U(sar_tas_ss,
+    "Select split screen index for command buffer (0 or 1).\n"
+    "Usage: sar_tas_ss <index>\n",
+    SourceGame_Portal2 | SourceGame_ApertureTag)
 {
     IGNORE_DEMO_PLAYER();
 

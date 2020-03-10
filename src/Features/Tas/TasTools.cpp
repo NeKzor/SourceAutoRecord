@@ -35,8 +35,6 @@ TasTools::TasTools()
     }
 
     offsetFinder->ServerSide(this->className, this->propName, &this->propOffset);
-
-    this->hasLoaded = true;
 }
 TasTools::~TasTools()
 {

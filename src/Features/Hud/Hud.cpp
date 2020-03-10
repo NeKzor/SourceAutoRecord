@@ -194,7 +194,9 @@ CON_COMMAND_COMPLETION(sar_hud_default_order_top, "Orders hud element to top. Us
 
     console->Print("Moved HUD element %s to top.\n", args[1]);
 }
-CON_COMMAND_COMPLETION(sar_hud_default_order_bottom, "Orders hud element to bottom : sar_hud_default_order_bottom <name>\n", (elementOrder))
+CON_COMMAND_COMPLETION(sar_hud_default_order_bottom,
+    "Orders hud element to bottom : sar_hud_default_order_bottom <name>\n",
+    (elementOrder))
 {
     if (args.ArgC() != 2) {
         return console->Print("Set!\n");

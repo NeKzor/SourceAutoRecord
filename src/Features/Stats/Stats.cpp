@@ -32,7 +32,6 @@ Stats::Stats()
         this->playerStats.push_back(new PlayerStats());
     }
 
-    this->hasLoaded = true;
 }
 Stats::~Stats()
 {

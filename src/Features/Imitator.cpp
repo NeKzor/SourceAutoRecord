@@ -2,16 +2,16 @@
 
 #include "Utils/SDK.hpp"
 
+#include "Game.hpp"
 #include "Variable.hpp"
 
-Variable sar_mimic("sar_mimic", "0", "Copies inputs to secondary split screen. Similar to ss_mimic.\n");
+Variable sar_mimic("sar_mimic", "0", "Copies inputs to secondary split screen. Similar to ss_mimic.\n", SourceGame_Portal2 | SourceGame_ApertureTag);
 
 Imitator* imitator;
 
 Imitator::Imitator()
     : frame()
 {
-    this->hasLoaded = true;
 }
 void Imitator::Save(const CUserCmd* cmd)
 {

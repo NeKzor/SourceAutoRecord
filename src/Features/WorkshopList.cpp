@@ -21,7 +21,6 @@ WorkshopList::WorkshopList()
     : maps()
     , path(std::string(engine->GetGameDirectory()) + std::string("/maps/workshop"))
 {
-    this->hasLoaded = true;
 }
 int WorkshopList::Update()
 {
@@ -77,10 +76,10 @@ DECL_COMMAND_COMPLETION(sar_workshop)
 
 // Commands
 
-CON_COMMAND_F_COMPLETION(sar_workshop, "Same as \"map\" command but lists workshop maps.\n"
-                                       "Usage: sar_workshop <file> [ss/changelevel]\n",
-    0,
-    sar_workshop_CompletionFunc)
+CON_COMMAND_FU_COMPLETION(sar_workshop,
+    "Same as \"map\" command but lists workshop maps.\n"
+    "Usage: sar_workshop <file> [ss/changelevel]\n",
+    0, sar_workshop_CompletionFunc, SourceGame_Portal2 | SourceGame_ApertureTag)
 {
     if (args.ArgC() < 2) {
         return console->Print(sar_workshop.ThisPtr()->m_pszHelpString);
@@ -98,11 +97,11 @@ CON_COMMAND_F_COMPLETION(sar_workshop, "Same as \"map\" command but lists worksh
 
     engine->ExecuteCommand((command + std::string(" workshop/") + std::string(args[1])).c_str());
 }
-CON_COMMAND(sar_workshop_update, "Updates the workshop map list.\n")
+CON_COMMAND_U(sar_workshop_update, "Updates the workshop map list.\n", SourceGame_Portal2 | SourceGame_ApertureTag)
 {
     console->Print("Added or removed %i map(s) to or from the list.\n", workshop->Update());
 }
-CON_COMMAND(sar_workshop_list, "Prints all workshop maps.\n")
+CON_COMMAND_U(sar_workshop_list, "Prints all workshop maps.\n", SourceGame_Portal2 | SourceGame_ApertureTag)
 {
     if (workshop->maps.empty()) {
         workshop->Update();

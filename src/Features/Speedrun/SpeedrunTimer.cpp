@@ -22,15 +22,20 @@
 #include "Variable.hpp"
 
 Variable sar_speedrun_autostart("sar_speedrun_autostart", "0",
-    "Starts speedrun timer automatically on first frame after a load.\n");
+    "Starts speedrun timer automatically on first frame after a load.\n",
+    SourceGame_SupportsS3);
 Variable sar_speedrun_autostop("sar_speedrun_autostop", "0",
-    "Stops speedrun timer automatically when going into the menu.\n");
+    "Stops speedrun timer automatically when going into the menu.\n",
+    SourceGame_SupportsS3);
 Variable sar_speedrun_standard("sar_speedrun_standard", "1",
-    "Timer automatically starts, splits and stops.\n");
+    "Timer automatically starts, splits and stops.\n",
+    SourceGame_SupportsS3);
 Variable sar_speedrun_time_pauses("sar_speedrun_time_pauses", "1",
-    "Timer automatically adds non-simulated ticks when server pauses.\n");
+    "Timer automatically adds non-simulated ticks when server pauses.\n",
+    SourceGame_SupportsS3);
 Variable sar_speedrun_smartsplit("sar_speedrun_smartsplit", "0",
-    "Timer interface only splits once per level change.\n");
+    "Timer interface only splits once per level change.\n",
+    SourceGame_SupportsS3);
 
 SpeedrunTimer* speedrun;
 
@@ -52,7 +57,6 @@ SpeedrunTimer::SpeedrunTimer()
     this->result = std::make_unique<TimerResult>();
     this->pb = std::make_unique<TimerResult>();
 
-    this->hasLoaded = true;
 }
 bool SpeedrunTimer::IsActive()
 {
@@ -470,34 +474,34 @@ int sar_category_CompletionFunc(const char* partial,
 
 // Commands
 
-CON_COMMAND(sar_speedrun_start, "Starts speedrun timer manually.\n")
+CON_COMMAND_U(sar_speedrun_start, "Starts speedrun timer manually.\n", SourceGame_SupportsS3)
 {
     speedrun->Start(engine->GetTick());
 }
-CON_COMMAND(sar_speedrun_stop, "Stops speedrun timer manually.\n")
+CON_COMMAND_U(sar_speedrun_stop, "Stops speedrun timer manually.\n", SourceGame_SupportsS3)
 {
     speedrun->Stop();
 }
-CON_COMMAND(sar_speedrun_split, "Splits speedrun timer manually.\n")
+CON_COMMAND_U(sar_speedrun_split, "Splits speedrun timer manually.\n", SourceGame_SupportsS3)
 {
     speedrun->Split(false);
 }
-CON_COMMAND(sar_speedrun_pause, "Pauses speedrun timer manually.\n")
+CON_COMMAND_U(sar_speedrun_pause, "Pauses speedrun timer manually.\n", SourceGame_SupportsS3)
 {
     speedrun->Pause();
 }
-CON_COMMAND(sar_speedrun_resume, "Resumes speedrun timer manually.\n")
+CON_COMMAND_U(sar_speedrun_resume, "Resumes speedrun timer manually.\n", SourceGame_SupportsS3)
 {
     speedrun->Resume(engine->GetTick());
 }
-CON_COMMAND(sar_speedrun_reset, "Resets speedrun timer.\n")
+CON_COMMAND_U(sar_speedrun_reset, "Resets speedrun timer.\n", SourceGame_SupportsS3)
 {
     if (speedrun->IsActive()) {
         speedrun->Stop();
     }
     speedrun->Stop();
 }
-CON_COMMAND(sar_speedrun_result, "Prints result of speedrun.\n")
+CON_COMMAND_U(sar_speedrun_result, "Prints result of speedrun.\n", SourceGame_SupportsS3)
 {
     auto pb = (args.ArgC() == 2 && !std::strcmp(args[1], "pb"));
 
@@ -531,8 +535,10 @@ CON_COMMAND(sar_speedrun_result, "Prints result of speedrun.\n")
         console->Print("Total:    %s (%i)\n", SpeedrunTimer::Format(result->total * ipt).c_str(), result->total);
     }
 }
-CON_COMMAND(sar_speedrun_export, "Saves speedrun result to a csv file.\n"
-                                 "Usage: sar_speedrun_export <file_name>\n")
+CON_COMMAND_U(sar_speedrun_export,
+    "Saves speedrun result to a csv file.\n"
+    "Usage: sar_speedrun_export <file_name>\n",
+    SourceGame_SupportsS3)
 {
     if (args.ArgC() != 2) {
         return console->Print(sar_speedrun_export.ThisPtr()->m_pszHelpString);
@@ -548,8 +554,10 @@ CON_COMMAND(sar_speedrun_export, "Saves speedrun result to a csv file.\n"
         console->Warning("Failed to export result!\n");
     }
 }
-CON_COMMAND(sar_speedrun_export_pb, "Saves speedrun personal best to a csv file.\n"
-                                    "Usage: sar_speedrun_export_pb <file_name>\n")
+CON_COMMAND_U(sar_speedrun_export_pb,
+    "Saves speedrun personal best to a csv file.\n"
+    "Usage: sar_speedrun_export_pb <file_name>\n",
+    SourceGame_SupportsS3)
 {
     if (args.ArgC() != 2) {
         return console->Print(sar_speedrun_export_pb.ThisPtr()->m_pszHelpString);
@@ -565,9 +573,10 @@ CON_COMMAND(sar_speedrun_export_pb, "Saves speedrun personal best to a csv file.
         console->Warning("Failed to export personal best!\n");
     }
 }
-CON_COMMAND_AUTOCOMPLETEFILE(sar_speedrun_import, "Imports speedrun data file.\n"
-                                                  "Usage: sar_speedrun_import <file_name>\n",
-    0, 0, csv)
+CON_COMMAND_AUTOCOMPLETEFILE_U(sar_speedrun_import,
+    "Imports speedrun data file.\n"
+    "Usage: sar_speedrun_import <file_name>\n",
+    0, 0, csv, SourceGame_SupportsS3)
 {
     if (args.ArgC() != 2) {
         return console->Print(sar_speedrun_import.ThisPtr()->m_pszHelpString);
@@ -583,7 +592,9 @@ CON_COMMAND_AUTOCOMPLETEFILE(sar_speedrun_import, "Imports speedrun data file.\n
         console->Warning("Failed to import file!\n");
     }
 }
-CON_COMMAND_F_COMPLETION(sar_speedrun_category, "Sets the category for a speedrun.\n", 0, sar_category_CompletionFunc)
+CON_COMMAND_FU_COMPLETION(sar_speedrun_category,
+    "Sets the category for a speedrun.\n",
+    0, sar_category_CompletionFunc, SourceGame_SupportsS3)
 {
     if (!speedrun->GetCategory() || TimerCategory::GetList().empty()) {
         return console->Print("This game does not have any categories!\n");
@@ -611,7 +622,7 @@ CON_COMMAND_F_COMPLETION(sar_speedrun_category, "Sets the category for a speedru
 
     return PrintCategory();
 }
-CON_COMMAND(sar_speedrun_offset, "Sets offset in ticks at which the timer should start.\n")
+CON_COMMAND_U(sar_speedrun_offset, "Sets offset in ticks at which the timer should start.\n", SourceGame_SupportsS3)
 {
     if (args.ArgC() == 2) {
         if (speedrun->IsActive()) {
@@ -626,5 +637,6 @@ CON_COMMAND(sar_speedrun_offset, "Sets offset in ticks at which the timer should
         speedrun->SetOffset(offset);
     }
 
-    console->Print("Timer will start at: %s\n", SpeedrunTimer::Format(speedrun->GetOffset() * speedrun->GetIntervalPerTick()).c_str());
+    auto start = speedrun->GetOffset() * speedrun->GetIntervalPerTick();
+    console->Print("Timer will start at: %s\n", SpeedrunTimer::Format(start).c_str());
 }

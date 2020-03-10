@@ -18,7 +18,6 @@ Summary::Summary()
     , items()
     , totalTicks(0)
 {
-    this->hasLoaded = true;
 }
 void Summary::Start()
 {

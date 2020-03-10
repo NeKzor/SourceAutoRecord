@@ -24,7 +24,6 @@ Rebinder::Rebinder()
     , isReloadBinding(false)
     , lastIndexNumber(0)
 {
-    this->hasLoaded = true;
 }
 void Rebinder::SetSaveBind(int button, const char* name)
 {

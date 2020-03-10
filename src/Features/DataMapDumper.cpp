@@ -39,7 +39,6 @@ DataMapDumper::DataMapDumper()
     , serverResult()
     , clientResult()
 {
-    this->hasLoaded = true;
 }
 void DataMapDumper::Dump(bool dumpServer)
 {

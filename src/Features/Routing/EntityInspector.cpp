@@ -29,7 +29,6 @@ EntityInspector::EntityInspector()
     , latest()
     , data()
 {
-    this->hasLoaded = true;
 }
 void EntityInspector::Start()
 {

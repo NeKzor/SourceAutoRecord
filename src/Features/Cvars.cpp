@@ -21,7 +21,6 @@ Cvars* cvars;
 Cvars::Cvars()
     : locked(true)
 {
-    this->hasLoaded = true;
 }
 int Cvars::Dump(std::ofstream& file)
 {
@@ -77,15 +76,9 @@ int Cvars::DumpDoc(std::ofstream& file)
     };
 
     auto count = 0;
-    for (const auto& var : Variable::GetList()) {
-        if (var && !var->isReference) {
-            InternalDump(var->ThisPtr(), Game::VersionToString(var->version), false);
-            ++count;
-        }
-    }
-    for (const auto& com : Command::GetList()) {
-        if (com && !com->isReference) {
-            InternalDump(com->ThisPtr(), Game::VersionToString(com->version), true);
+    for (const auto& cmd : CommandBase::GetList()) {
+        if (cmd && !cmd->isReference) {
+            InternalDump(cmd->ThisPtr(), Game::VersionToString(cmd->version), false);
             ++count;
         }
     }
@@ -95,32 +88,35 @@ int Cvars::DumpDoc(std::ofstream& file)
 void Cvars::ListAll()
 {
     console->Msg("Commands:\n");
-    for (auto& command : Command::GetList()) {
-        if (!!command && command->isRegistered) {
-            auto ptr = command->ThisPtr();
+
+    for (auto& cmd : CommandBase::GetList()) {
+        if (!!cmd && cmd->IsCommand() && cmd->isRegistered) {
+            auto ptr = cmd->ThisPtr();
+
             console->Print("\n%s\n", ptr->m_pszName);
             console->Msg("%s", ptr->m_pszHelpString);
         }
     }
-    console->Msg("\nVariables:\n");
-    for (auto& variable : Variable::GetList()) {
-        if (!variable) {
-            continue;
-        }
 
-        auto ptr = variable->ThisPtr();
-        if (variable->isRegistered) {
-            console->Print("\n%s ", ptr->m_pszName);
-            if (ptr->m_bHasMin) {
-                console->Print("<number>\n");
-            } else {
-                console->Print("<string>\n");
-            }
-            console->Msg("%s", ptr->m_pszHelpString);
-        } else if (variable->isReference) {
-            console->Print("\n%s (unlocked)\n", ptr->m_pszName);
-            if (std::strlen(ptr->m_pszHelpString) != 0) {
-                console->Msg("%s\n", ptr->m_pszHelpString);
+    console->Msg("\nVariables:\n");
+    for (auto& cmd : CommandBase::GetList()) {
+        if (!!cmd && !cmd->IsCommand()) {
+            auto var = reinterpret_cast<Variable*>(cmd)->ThisPtr();
+
+            if (cmd->isRegistered) {
+                console->Print("\n%s ", var->m_pszName);
+
+                if (var->m_bHasMin) {
+                    console->Print("<number>\n");
+                } else {
+                    console->Print("<string>\n");
+                }
+                console->Msg("%s", var->m_pszHelpString);
+            } else if (cmd->isReference) {
+                console->Print("\n%s (unlocked)\n", var->m_pszName);
+                if (std::strlen(var->m_pszHelpString) != 0) {
+                    console->Msg("%s\n", var->m_pszHelpString);
+                }
             }
         }
     }

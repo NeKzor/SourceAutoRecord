@@ -7,7 +7,6 @@ StepCounter* stepCounter;
 StepCounter::StepCounter()
     : stepSoundTime(0)
 {
-    this->hasLoaded = true;
 }
 // Calculate when to play next step sound
 void StepCounter::ReduceTimer(float frametime)

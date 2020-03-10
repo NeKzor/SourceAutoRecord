@@ -13,7 +13,9 @@
 #include "Command.hpp"
 #include "Variable.hpp"
 
-Variable sar_debug_listener("sar_debug_listener", "0", "Prints event data of registered listener.\n");
+Variable sar_debug_listener("sar_debug_listener", "0",
+    "Prints event data of registered listener.\n",
+    SourceGame_Portal2 | SourceGame_ApertureTag);
 
 Listener* listener;
 
@@ -22,7 +24,6 @@ Listener::Listener()
     , installedChangeCallback(false)
     , changeCount(0)
 {
-    this->hasLoaded = true;
 }
 void Listener::Init()
 {
@@ -105,7 +106,9 @@ void Listener::OnCheatsChanged(IConVar* pVar, const char* pOldString, float flOl
 
 // Commands
 
-CON_COMMAND(sar_dump_events, "Dumps all registered game events of the game event manager.\n")
+CON_COMMAND_U(sar_dump_events,
+    "Dumps all registered game events of the game event manager.\n",
+    SourceGame_Portal2 | SourceGame_ApertureTag)
 {
     if (!engine->s_GameEventManager) {
         return;
