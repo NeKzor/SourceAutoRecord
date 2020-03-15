@@ -168,8 +168,6 @@ DETOUR_B(OnGameOverlayActivated, GameOverlayActivated_t* pGameOverlayActivated)
 
 DETOUR_COMMAND(plugin_load)
 {
-    // Prevent crash when trying to load SAR twice or try to find the module in
-    // the plugin list if the initial search thread failed
     if (args.ArgC() >= 2) {
         auto file = std::string(args[1]);
         if (Utils::EndsWith(file, std::string(MODULE("sar"))) || Utils::EndsWith(file, std::string("sar"))) {
@@ -287,11 +285,6 @@ void Engine::Init()
     Interface::Temp(this, "VENGINETOOL0", [this](const Interface* tool) {
         auto GetCurrentMap = tool->Original(Offsets::GetCurrentMap);
         this->m_szLevelName = Memory::Deref<char*>(GetCurrentMap + Offsets::m_szLevelName);
-
-        if (sar.game->Is(SourceGame_HalfLife2Engine) && std::strlen(this->m_szLevelName) != 0) {
-            throw std::runtime_error("tried to load the plugin when server is active");
-        }
-
         this->m_bLoadgame = reinterpret_cast<bool*>((uintptr_t)this->m_szLevelName + Offsets::m_bLoadGame);
     });
 

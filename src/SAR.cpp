@@ -12,27 +12,31 @@
 #include "Variable.hpp"
 
 SAR sar;
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR(SAR, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, sar);
+InterfaceReg __sar([]() -> void* { return &sar; }, INTERFACEVERSION_ISERVERPLUGINCALLBACKS);
 
 SAR::SAR()
-    : modules(new Modules())
+    : vtable(pluginVtable)
+    , modules(new Modules())
     , features(new Features())
     , cheats(new Cheats())
     , plugin(new Plugin())
     , game(Game::CreateNew())
 {
 }
-
-bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
+bool SAR::Init()
 {
     console = new Console();
     if (!console->Load()) {
-        return this->Cleanup();
+        return false;
     }
 
     if (!this->game) {
         console->Warning("SAR: Game not supported!\n");
-        return this->Cleanup();
+        return false;
+    }
+
+    if (game->Is(SourceGame_Portal2Engine)) {
+        this->vtable = pluginVtable2;
     }
 
     this->game->LoadOffsets();
@@ -99,14 +103,12 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
 
         config->Load();
 
-        this->SearchPlugin();
-
         this->HookAll();
 
         console->PrintActive("Loaded SourceAutoRecord, Version %s\n", SAR_VERSION);
     } catch (std::exception& ex) {
         console->Warning("SAR: %s\n", ex.what());
-        return this->Cleanup();
+        return false;
     }
 
     return true;
@@ -164,9 +166,6 @@ bool SAR::Cleanup()
 
     return false;
 }
-
-// SAR has to disable itself in the plugin list or the game might crash because of missing callbacks
-// This is a race condition though
 bool SAR::GetPlugin()
 {
     auto s_ServerPlugin = reinterpret_cast<uintptr_t>(engine->s_ServerPlugin->ThisPtr());
@@ -183,18 +182,6 @@ bool SAR::GetPlugin()
         }
     }
     return false;
-}
-void SAR::SearchPlugin()
-{
-    this->findPluginThread = std::thread([this]() {
-        GO_THE_FUCK_TO_SLEEP(1000);
-        if (this->GetPlugin()) {
-            this->plugin->ptr->m_bDisable = true;
-        } else {
-            console->DevWarning("SAR: Failed to find SAR in the plugin list!\nTry again with \"plugin_load\".\n");
-        }
-    });
-    this->findPluginThread.detach();
 }
 
 CON_COMMAND(sar_session, "Prints the current tick of the server since it has loaded.\n")
@@ -306,70 +293,119 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
     sdelete(console);
 }
 
-#pragma region Unused callbacks
-void SAR::Unload()
+VFUNC(bool, Load, CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
 {
-    this->Cleanup();
+    return sar.Init();
 }
-void SAR::Pause()
+VFUNC(void, Unload)
+{
+    sar.Cleanup();
+}
+VFUNC(void, Pause)
 {
 }
-void SAR::UnPause()
+VFUNC(void, UnPause)
 {
 }
-const char* SAR::GetPluginDescription()
+VFUNC(const char*, GetPluginDescription)
 {
     return SAR_PLUGIN_SIGNATURE;
 }
-void SAR::LevelInit(char const* pMapName)
+VFUNC(void, LevelInit, char const* pMapName)
 {
 }
-void SAR::ServerActivate(void* pEdictList, int edictCount, int clientMax)
+VFUNC(void, ServerActivate, void* pEdictList, int edictCount, int clientMax)
 {
 }
-void SAR::GameFrame(bool simulating)
+VFUNC(void, GameFrame, bool simulating)
 {
 }
-void SAR::LevelShutdown()
+VFUNC(void, LevelShutdown)
 {
 }
-void SAR::ClientFullyConnect(void* pEdict)
+VFUNC(void, ClientFullyConnect, void* pEdict)
 {
 }
-void SAR::ClientActive(void* pEntity)
+VFUNC(void, ClientActive, void* pEntity)
 {
 }
-void SAR::ClientDisconnect(void* pEntity)
+VFUNC(void, ClientDisconnect, void* pEntity)
 {
 }
-void SAR::ClientPutInServer(void* pEntity, char const* playername)
+VFUNC(void, ClientPutInServer, void* pEntity, char const* playername)
 {
 }
-void SAR::SetCommandClient(int index)
+VFUNC(void, SetCommandClient, int index)
 {
 }
-void SAR::ClientSettingsChanged(void* pEdict)
+VFUNC(void, ClientSettingsChanged, void* pEdict)
 {
 }
-int SAR::ClientConnect(bool* bAllowConnect, void* pEntity, const char* pszName, const char* pszAddress, char* reject, int maxrejectlen)
-{
-    return 0;
-}
-int SAR::ClientCommand(void* pEntity, const void*& args)
+VFUNC(int, ClientConnect, bool* bAllowConnect, void* pEntity, const char* pszName, const char* pszAddress, char* reject, int maxrejectlen)
 {
     return 0;
 }
-int SAR::NetworkIDValidated(const char* pszUserName, const char* pszNetworkID)
+VFUNC(int, ClientCommand, void* pEntity, const void*& args)
 {
     return 0;
 }
-void SAR::OnQueryCvarValueFinished(int iCookie, void* pPlayerEntity, int eStatus, const char* pCvarName, const char* pCvarValue)
+VFUNC(int, NetworkIDValidated, const char* pszUserName, const char* pszNetworkID)
+{
+    return 0;
+}
+VFUNC(void, OnQueryCvarValueFinished, int iCookie, void* pPlayerEntity, int eStatus, const char* pCvarName, const char* pCvarValue)
 {
 }
-void SAR::OnEdictAllocated(void* edict)
+VFUNC(void, OnEdictAllocated, void* edict)
 {
 }
-void SAR::OnEdictFreed(const void* edict)
+VFUNC(void, OnEdictFreed, const void* edict)
 {
 }
-#pragma endregion
+
+void* SAR::pluginVtable[20] = {
+    Load,
+    Unload,
+    Pause,
+    UnPause,
+    GetPluginDescription,
+    LevelInit,
+    ServerActivate,
+    GameFrame,
+    LevelShutdown,
+    ClientActive,
+    ClientDisconnect,
+    ClientPutInServer,
+    SetCommandClient,
+    ClientSettingsChanged,
+    ClientConnect,
+    ClientCommand,
+    NetworkIDValidated,
+    OnQueryCvarValueFinished,
+    OnEdictAllocated,
+    OnEdictFreed,
+};
+
+void* SAR::pluginVtable2[21] = {
+    Load,
+    Unload,
+    Pause,
+    UnPause,
+    GetPluginDescription,
+    LevelInit,
+    ServerActivate,
+    GameFrame,
+    LevelShutdown,
+    ClientFullyConnect,
+    ClientActive,
+    ClientDisconnect,
+    ClientPutInServer,
+    SetCommandClient,
+    ClientSettingsChanged,
+    ClientConnect,
+    ClientCommand,
+    NetworkIDValidated,
+    OnQueryCvarValueFinished,
+    OnEdictAllocated,
+    OnEdictFreed,
+};

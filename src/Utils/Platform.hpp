@@ -1,33 +1,5 @@
 #pragma once
 
-class _Hook {
-public:
-    uintptr_t* original;
-    uintptr_t detour;
-
-public:
-    _Hook(uintptr_t* original, uintptr_t detour)
-        : original(original)
-        , detour(detour)
-    {
-    }
-};
-
-class _HookBase {
-public:
-    uintptr_t* original;
-    uintptr_t* originalBase;
-    uintptr_t detour;
-
-public:
-    _HookBase(uintptr_t* original, uintptr_t* originalBase, uintptr_t detour)
-        : original(original)
-        , originalBase(originalBase)
-        , detour(detour)
-    {
-    }
-};
-
 #define _GAME_PATH(x) #x
 
 #ifdef _WIN32
@@ -38,6 +10,7 @@ public:
 #define __rescall __thiscall
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define SEEK_DIR_CUR std::ios_base::_Seekdir::_Seekcur
+#define VFUNC(type, name, ...) type __fastcall name(void* thisptr, int edx, ##__VA_ARGS__)
 
 #define DETOUR(name, ...)                                                                          \
     using _##name = int(__thiscall*)(void* thisptr, ##__VA_ARGS__);                                \
@@ -76,10 +49,7 @@ public:
 #define __fastcall __attribute__((__fastcall__))
 #define DLL_EXPORT extern "C" __attribute__((visibility("default")))
 #define SEEK_DIR_CUR std::ios_base::seekdir::_S_cur
-
-#define DECL_DETOUR(name, ...)
-
-#define DECL_DETOUR_B(name, ...)
+#define VFUNC(type, name, ...) type __cdecl name(void* thisptr, ##__VA_ARGS__)
 
 #define DETOUR(name, ...)                                                                          \
     using _##name = int(__cdecl*)(void* thisptr, ##__VA_ARGS__);                                   \
@@ -115,3 +85,31 @@ public:
     type __stdcall name##_Hook(##__VA_ARGS__);                                                     \
     _Hook hk##name(reinterpret_cast<uintptr_t*>(&name), reinterpret_cast<uintptr_t>(name##_Hook)); \
     type __stdcall name##_Hook(##__VA_ARGS__)
+
+class _Hook {
+public:
+    uintptr_t* original;
+    uintptr_t detour;
+
+public:
+    _Hook(uintptr_t* original, uintptr_t detour)
+        : original(original)
+        , detour(detour)
+    {
+    }
+};
+
+class _HookBase {
+public:
+    uintptr_t* original;
+    uintptr_t* originalBase;
+    uintptr_t detour;
+
+public:
+    _HookBase(uintptr_t* original, uintptr_t* originalBase, uintptr_t detour)
+        : original(original)
+        , originalBase(originalBase)
+        , detour(detour)
+    {
+    }
+};

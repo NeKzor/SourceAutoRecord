@@ -109,7 +109,9 @@ void Cheats::Init()
         Command::ActivateAutoCompleteFile("changelevel2", changelevel2_CompletionFunc);
     }
 
-    cvars->Unlock();
+    if (cvars) {
+        cvars->Unlock();
+    }
 
     CommandBase::RegisterAll();
 }
@@ -121,7 +123,9 @@ void Cheats::Shutdown()
         Command::DectivateAutoCompleteFile("changelevel2");
     }
 
-    cvars->Lock();
+    if (cvars) {
+        cvars->Lock();
+    }
 
     CommandBase::UnregisterAll();
 }

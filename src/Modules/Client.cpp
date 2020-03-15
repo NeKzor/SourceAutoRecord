@@ -271,8 +271,10 @@ void Client::Init()
     this->g_pClientMode = Interface::Hookable(this, clientMode);
     this->g_pClientMode->Hook(&hkCreateMove, Offsets::CreateMove);
 
-    this->g_pClientMode2 = Interface::Hookable(this, clientMode2);
-    this->g_pClientMode2->Hook(&hkCreateMove2, Offsets::CreateMove);
+    if (clientMode2) {
+        this->g_pClientMode2 = Interface::Hookable(this, clientMode2);
+        this->g_pClientMode2->Hook(&hkCreateMove2, Offsets::CreateMove);
+    }
 
     this->s_EntityList = Interface::CreateNew(this, "VClientEntityList0");
     this->GetClientEntity = this->s_EntityList->Original<_GetClientEntity>(Offsets::GetClientEntity, readJmp);
