@@ -12,13 +12,21 @@
 #include "Modules/Surface.hpp"
 #include "Modules/VGui.hpp"
 
+#include "Game.hpp"
 #include "Variable.hpp"
 
-Variable sar_hud_default_spacing("sar_hud_default_spacing", "1", 0, "Spacing between elements of HUD.\n");
-Variable sar_hud_default_padding_x("sar_hud_default_padding_x", "2", 0, "X padding of HUD.\n");
-Variable sar_hud_default_padding_y("sar_hud_default_padding_y", "2", 0, "Y padding of HUD.\n");
-Variable sar_hud_default_font_index("sar_hud_default_font_index", "0", 0, "Font index of HUD.\n");
-Variable sar_hud_default_font_color("sar_hud_default_font_color", "255 255 255 255", "RGBA font color of HUD.\n", 0);
+Variable sar_hud_default_spacing("sar_hud_default_spacing", "1", 0,
+    "Spacing between elements of HUD.\n");
+Variable sar_hud_default_padding_x("sar_hud_default_padding_x", "2", 0,
+    "X padding of HUD.\n");
+Variable sar_hud_default_padding_y("sar_hud_default_padding_y", "2", 0,
+    "Y padding of HUD.\n");
+Variable sar_hud_default_font_index("sar_hud_default_font_index", "0", 0,
+    "Font index of HUD.\n");
+Variable sar_hud_default_font_color("sar_hud_default_font_color", "255 255 255 255",
+    "RGBA font color of HUD.\n",
+    SourceGame_Unknown,
+    0);
 
 BaseHud::BaseHud(int type, bool drawSecondSplitScreen, int version)
     : type(type)
@@ -233,14 +241,17 @@ CON_COMMAND(sar_hud_default_order_reset, "Resets order of hud element.\n")
 
 // HUD
 
-HUD_ELEMENT_STRING(text, "", "Draws specified text when not empty.\n", HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
+HUD_ELEMENT_STRING(text, "",
+    "Draws specified text when not empty.\n",
+    HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
 {
     ctx->DrawElement("%s", text);
 }
-HUD_ELEMENT_MODE2(position, "0", 0, 2, "Draws absolute position of the client.\n"
-                                       "0 = Default,\n"
-                                       "1 = Player position,\n"
-                                       "2 = Camera position.\n",
+HUD_ELEMENT_MODE2(position, "0", 0, 2,
+    "Draws absolute position of the client.\n"
+    "0 = Default,\n"
+    "1 = Player position,\n"
+    "2 = Camera position.\n",
     HudType_InGame | HudType_Paused | HudType_LoadingScreen)
 {
     auto player = client->GetPlayer(ctx->slot + 1);
@@ -254,10 +265,11 @@ HUD_ELEMENT_MODE2(position, "0", 0, 2, "Draws absolute position of the client.\n
         ctx->DrawElement("pos: -");
     }
 }
-HUD_ELEMENT_MODE2(angles, "0", 0, 2, "Draws absolute view angles of the client.\n"
-                                     "0 = Default,\n"
-                                     "1 = XY,\n"
-                                     "2 = XYZ.\n",
+HUD_ELEMENT_MODE2(angles, "0", 0, 2,
+    "Draws absolute view angles of the client.\n"
+    "0 = Default,\n"
+    "1 = XY,\n"
+    "2 = XYZ.\n",
     HudType_InGame | HudType_Paused | HudType_LoadingScreen)
 {
     auto ang = engine->GetAngles(ctx->slot);
@@ -267,11 +279,12 @@ HUD_ELEMENT_MODE2(angles, "0", 0, 2, "Draws absolute view angles of the client.\
         ctx->DrawElement("ang: %.3f %.3f %.3f", ang.x, ang.y, ang.z);
     }
 }
-HUD_ELEMENT_MODE2(velocity, "0", 0, 3, "Draws velocity of the client.\n"
-                                       "0 = Default,\n"
-                                       "1 = X/Y/Z,\n"
-                                       "2 = X/Y,\n"
-                                       "3 = X : Y : Z.\n",
+HUD_ELEMENT_MODE2(velocity, "0", 0, 3,
+    "Draws velocity of the client.\n"
+    "0 = Default,\n"
+    "1 = X/Y/Z,\n"
+    "2 = X/Y,\n"
+    "3 = X : Y : Z.\n",
     HudType_InGame | HudType_Paused | HudType_LoadingScreen)
 {
     auto player = client->GetPlayer(ctx->slot + 1);

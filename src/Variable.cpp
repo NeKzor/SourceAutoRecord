@@ -21,11 +21,11 @@ Variable::Variable(int version)
 Variable::Variable(const char* name)
     : Variable(SourceGame_Unknown)
 {
-    this->ptr = reinterpret_cast<ConVar*>(tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), name));
+    this->ptr = tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), name);
     this->isReference = true;
 }
 // Boolean or String
-Variable::Variable(const char* name, const char* value, const char* helpstr, int flags, int version)
+Variable::Variable(const char* name, const char* value, const char* helpstr, int version, int flags)
     : Variable(version)
 {
     if (flags != 0)
@@ -34,13 +34,13 @@ Variable::Variable(const char* name, const char* value, const char* helpstr, int
         this->Create(name, value, flags, helpstr);
 }
 // Float
-Variable::Variable(const char* name, const char* value, float min, const char* helpstr, int flags, int version)
+Variable::Variable(const char* name, const char* value, float min, const char* helpstr, int version, int flags)
     : Variable(version)
 {
     this->Create(name, value, flags, helpstr, true, min);
 }
 // Float
-Variable::Variable(const char* name, const char* value, float min, float max, const char* helpstr, int flags, int version)
+Variable::Variable(const char* name, const char* value, float min, float max, const char* helpstr, int version, int flags)
     : Variable(version)
 {
     this->Create(name, value, flags, helpstr, true, min, true, max);
@@ -132,17 +132,17 @@ void Variable::EnableChange()
 }
 Variable Variable::FromString(const char* name, const char* value, const char* helpstr, int version)
 {
-    return Variable(name, value, helpstr, 0);
+    return Variable(name, value, helpstr, 0, version);
 }
 Variable Variable::FromBoolean(const char* name, const char* value, const char* helpstr, int version)
 {
-    return Variable(name, value, helpstr, FCVAR_NEVER_AS_STRING);
+    return Variable(name, value, helpstr, FCVAR_NEVER_AS_STRING, version);
 }
 Variable Variable::FromFloat(const char* name, const char* value, float min, const char* helpstr, int version)
 {
-    return Variable(name, value, helpstr, FCVAR_NEVER_AS_STRING);
+    return Variable(name, value, min, helpstr, FCVAR_NEVER_AS_STRING, version);
 }
 Variable Variable::FromFloatRange(const char* name, const char* value, float min, float max, const char* helpstr, int version)
 {
-    return Variable(name, value, helpstr, FCVAR_NEVER_AS_STRING);
+    return Variable(name, value, min, max, helpstr, FCVAR_NEVER_AS_STRING, version);
 }

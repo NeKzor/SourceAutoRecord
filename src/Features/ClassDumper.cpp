@@ -15,8 +15,8 @@
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
 
-#include "Utils/SDK.hpp"
 #include "Utils/Platform.hpp"
+#include "Utils/SDK.hpp"
 
 #include "SAR.hpp"
 

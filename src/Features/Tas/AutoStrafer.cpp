@@ -24,7 +24,6 @@ AutoStrafer::AutoStrafer()
     for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
         this->states.push_back(new StrafeState());
     }
-
 }
 AutoStrafer::~AutoStrafer()
 {

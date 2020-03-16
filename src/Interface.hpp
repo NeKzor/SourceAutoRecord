@@ -19,7 +19,7 @@ public:
 private:
     bool isHooked = false;
     uintptr_t* copy = nullptr;
-    std::map<int, class _Hook*> hooks = std::map<int, class _Hook*>();
+    std::map<int, struct VHook*> hooks = std::map<int, struct VHook*>();
 
 public:
     Interface(void* baseclass);
@@ -63,9 +63,7 @@ public:
         return reinterpret_cast<void*>(this->baseclass);
     }
 
-    // NEW API
-
-    void Hook(_Hook* hook, int index);
+    void Hook(VHook* hook, int index);
 
     inline uintptr_t ThisUPtr()
     {

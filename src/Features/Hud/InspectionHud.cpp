@@ -6,15 +6,27 @@
 #include "Modules/Scheme.hpp"
 #include "Modules/Surface.hpp"
 
+#include "Game.hpp"
 #include "Variable.hpp"
 
-Variable sar_ei_hud("sar_ei_hud", "0", 0, "Draws entity inspection data.\n");
-Variable sar_ei_hud_x("sar_ei_hud_x", "0", 0, "X offset of entity inspection HUD.\n");
-Variable sar_ei_hud_y("sar_ei_hud_y", "0", 0, "Y offset of entity inspection HUD.\n");
-Variable sar_ei_hud_z("sar_ei_hud_z", "0", 0, "Z offset of entity inspection HUD.\n");
-Variable sar_ei_hud_font_color("sar_ei_hud_font_color", "255 255 255 255", "RGBA font color of entity inspection HUD when not recording.\n", 0);
-Variable sar_ei_hud_font_color2("sar_ei_hud_font_color2", "153 23 9 255", "RGBA font color of entity inspection HUD when recording.\n", 0);
-Variable sar_ei_hud_font_index("sar_ei_hud_font_index", "1", 0, "Font index of entity inspection HUD.\n");
+Variable sar_ei_hud("sar_ei_hud", "0", 0,
+    "Draws entity inspection data.\n");
+Variable sar_ei_hud_x("sar_ei_hud_x", "0", 0,
+    "X offset of entity inspection HUD.\n");
+Variable sar_ei_hud_y("sar_ei_hud_y", "0", 0,
+    "Y offset of entity inspection HUD.\n");
+Variable sar_ei_hud_z("sar_ei_hud_z", "0", 0,
+    "Z offset of entity inspection HUD.\n");
+Variable sar_ei_hud_font_color("sar_ei_hud_font_color", "255 255 255 255",
+    "RGBA font color of entity inspection HUD when not recording.\n",
+    SourceGame_Unknown,
+    0);
+Variable sar_ei_hud_font_color2("sar_ei_hud_font_color2", "153 23 9 255",
+    "RGBA font color of entity inspection HUD when recording.\n",
+    SourceGame_Unknown,
+    0);
+Variable sar_ei_hud_font_index("sar_ei_hud_font_index", "1", 0,
+    "Font index of entity inspection HUD.\n");
 
 InspectionHud inspectionHud;
 
@@ -39,7 +51,7 @@ void InspectionHud::Paint(int slot)
 
     auto data = inspector->GetData();
 
-    auto offset = Vector {
+    auto offset = Vector{
         (float)sar_ei_hud_x.GetInt(),
         (float)sar_ei_hud_y.GetInt(),
         (float)sar_ei_hud_z.GetInt()

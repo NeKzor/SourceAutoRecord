@@ -127,7 +127,7 @@ void Cvars::PrintHelp(const CCommand& args)
         return console->Print("Prints help string of cvar. Usage: help <cvar>\n");
     }
 
-    auto cmd = reinterpret_cast<ConCommandBase*>(tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), args[1]));
+    auto cmd = tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), args[1]);
     if (cmd) {
         auto IsCommand = reinterpret_cast<bool (*)(void*)>(Memory::VMT(cmd, Offsets::IsCommand));
         if (!IsCommand(cmd)) {

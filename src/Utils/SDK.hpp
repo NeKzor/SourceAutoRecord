@@ -47,9 +47,9 @@ struct Vector {
     {
         return ((float*)this)[i];
     }
-    static inline float DotProduct(const Vector& a, const Vector& b) 
+    static inline float DotProduct(const Vector& a, const Vector& b)
     {
-        return a.x*b.x + a.y*b.y + a.z*b.z; 
+        return a.x * b.x + a.y * b.y + a.z * b.z;
     }
 };
 
@@ -952,7 +952,7 @@ using _InternalSetFloatValue = void(__rescalll*)(void* thisptr, float value);
 using _InternalSetIntValue = void(__rescalll*)(void* thisptr, int value);
 using _RegisterConCommand = void(__rescalll*)(void* thisptr, ConCommandBase* pCommandBase);
 using _UnregisterConCommand = void(__rescalll*)(void* thisptr, ConCommandBase* pCommandBase);
-using _FindCommandBase = void*(__rescalll*)(void* thisptr, const char* name);
+using _FindCommandBase = ConCommandBase*(__rescalll*)(void* thisptr, const char* name);
 using _InstallGlobalChangeCallback = void(__rescalll*)(void* thisptr, FnChangeCallback_t callback);
 using _RemoveGlobalChangeCallback = void(__rescalll*)(void* thisptr, FnChangeCallback_t callback);
 using _AutoCompletionFunc = int(__rescalll*)(void* thisptr, char const* partial, char commands[COMMAND_COMPLETION_MAXITEMS][COMMAND_COMPLETION_ITEM_LENGTH]);

@@ -11,6 +11,7 @@
   - [Interfaces](#interfaces)
   - [Offsets](#offsets)
   - [Hooking](#hooking)
+    - [Command Hooks](#command-hooks)
   - [Features](#features)
   - [Memory Utils](#memory-utils)
     - [Reading Pointer Paths](#reading-pointer-paths)
@@ -157,6 +158,12 @@ Interface::Temp(this, "VClient0", [this](const Inteface* g_ClientDLL) {
 
 Note: These methods will throw an exception on error. SAR will automatically catch them on load and return an error message. Hookable interfaces will be acitvated as the last initialization step of the plugin.
 
+In the end when a module unloads all its interfaces should be deleted wich can be done with `Destroy`.
+
+```cpp
+Interface::Destroy(this->someInterface);
+```
+
 ### Offsets
 
 An offset can be the number of bytes from one address to another, the index of a virtual function or the size of an object.
@@ -211,11 +218,29 @@ this->g_ClientDLL->Hook(&hkHudUpdate, Offsets::HudUpdate);
 
 Calling conventions will automatically be resolved using the `__rescall` macro. On Linux it will be `__cdecl` and on Windows `__thiscall`. Hooks on Windows will be declared as `__fastcall` with unused `edx` register. Use `DETOUR_T` for custom return types and `DETOUR_STD` for `__stdcall`.
 
-TODO: command hooks
+#### Command Hooks
+
+```cpp
+// Engine.cpp
+
+// "gameui_activate"
+DETOUR_COMMAND(gameui_activate)
+{
+    if (sar_disable_steam_pause.GetBool() && engine->overlayActivated) {
+        return;
+    }
+
+    // Call original
+    gameui_activate_callback(args);
+}
+
+// Engine::Init
+gameui_activate_hook.Register(this);
+```
 
 ### Features
 
-Simple example for adding a new SAR feature in OOP style.
+Every custom game state and code logic should be written as a features. They would then we be called by modules or commands.
 
 ```cpp
 // src/Features/MyFeature.hpp
@@ -259,8 +284,8 @@ int MyFeature::GetState()
 #include "Features/MyFeature.hpp"
 
 // src/SAR.cpp
-// SAR::Load
-this->features->AddFeature<MyFeature>(&myFeature);
+// SAR::Init
+this->features->AddFeature<>(&myFeature);
 ```
 
 ### Memory Utils
@@ -317,14 +342,17 @@ PATTERN(DATAMAP_PATTERN2, "C7 05 ? ? ? ? ? ? ? ? B8", 6, 11);
 
 PATTERNS(DATAMAP_PATTERNS, &DATAMAP_PATTERN1, &DATAMAP_PATTERN2);
 
-auto result = Memory::MultiScan(moduleName, &DATAMAP_PATTERNS);
+auto results = Memory::MultiScan(moduleName, &DATAMAP_PATTERNS);
 
-// TODO
+for (auto const& result : results) {
+    auto res1 = Memory::Deref<int>(result[0]); // 11, 6
+    auto res2 = Memory::Deref<void*>(result[1]); // 1, 11
+}
 ```
 
 #### Relative to Absolute Address
 
-Only use this in tests.
+Only use this in tests. Disabled by default for release builds.
 
 ```cpp
 auto funcAddress = Memory::Absolute(MODULE("engine"), 0xdeadbeef);
@@ -335,19 +363,28 @@ auto funcAddress = Memory::Absolute(MODULE("engine"), 0xdeadbeef);
 #### Variables
 
 ```cpp
-// Boolean
+// Simple on/off
 Variable sar_simple_mode("sar_simple_mode", "0",
     "Useful help description.\n");
-// Float
+
+// Number, game specific for Portal and Portal2
 Variable sar_mode("sar_mode", "0", 0
+    "Useful help description.\n",
+    SourceGame_Portal | SourceGame_Portal2);
+
+// Number range [0, 2]
+Variable sar_mode("sar_mode", "0", 0, 2
     "Useful help description.\n");
-// String
+
+// Specific flags
 Variable sar_text("sar_text", "a string",
-    "Useful help description.\n", 0);
+    "Useful help description.\n",
+    SourceGame_Unknown, // Available for every game
+    0); // Sets flags to interpret this as a string
 
 // From the engine
 auto sv_cheats = Variable("sv_cheats");
-if (sv_cheats.GetBool()) {
+if (!!sv_cheats && sv_cheats.GetBool()) {
     // Stop cheating
     sv_cheats.SetValue(0);
 }
@@ -357,16 +394,22 @@ Note: Keep a static version of a variable if it can be accessed more than once.
 
 #### Commands
 
-Commands should always return a useful message if something went wrong.
-
 ```cpp
 CON_COMMAND(sar_hello, "Useful help description.\n")
 {
+    // Always print a useful message for the user if not used correctly
     if (args.ArgC() != 2) {
         return console->Print("Please enter a string!\n");
     }
 
     console->Print("Hello %s!\n", args[1]);
+}
+
+// Limit a command to specfic games
+CON_COMMAND_U(sar_unique_command,
+    "Useful help description.\n",
+    SourceGame_Portal | SourceGame_Portal2)
+{
 }
 ```
 
@@ -424,13 +467,17 @@ HUD elements can be declared with just a few lines of code. All elements are gro
 #include "Features/Hud/Hud.hpp"
 
 // Called if: sar_hud_frame 1
-HUD_ELEMENT(frame, "0", "Default example.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT(frame, "0",
+    "Default example.\n",
+    HudType_InGame | HudType_Paused)
 {
     ctx->DrawElement("frame: %i", session->currentFrame);
 }
 
 // Called if: sar_hud_some_mode > 0
-HUD_ELEMENT_MODE(some_mode, "0", 0, 5, "Mode example.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT_MODE(some_mode, "0", 0, 5,
+    "Mode example.\n",
+    HudType_InGame | HudType_Paused)
 {
     if (mode == 4) {
         ctx->DrawElement("mode: 4");
@@ -440,13 +487,17 @@ HUD_ELEMENT_MODE(some_mode, "0", 0, 5, "Mode example.\n", HudType_InGame | HudTy
 }
 
 // Called if: sar_hud_some_text[0] != '\0' (not empty)
-HUD_ELEMENT_STRING(some_text, "", 0, 5, "Text example.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT_STRING(some_text, "", 0, 5,
+    "Text example.\n",
+    HudType_InGame | HudType_Paused)
 {
     ctx->DrawElement("mode: %s", text);
 }
 
 // Splitscreen support needs a 2 at the end of the macro
-HUD_ELEMENT2(splitscreen, "0", "Slot example.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT2(splitscreen, "0",
+    "Slot example.\n",
+    HudType_InGame | HudType_Paused)
 {
     // Do something with slot
     auto slot = ctx->slot;
@@ -511,11 +562,22 @@ extern Variable sar_my_hud_font_index;
 
 #include "Variable.hpp"
 
-Variable sar_my_hud("sar_sr_hud", "0", 0, "Draws my HUD.\n");
-Variable sar_my_hud_x("sar_sr_hud_x", "0", 0, "X offset of my HUD.\n");
-Variable sar_my_hud_y("sar_sr_hud_y", "100", 0, "Y offset of my HUD.\n");
-Variable sar_my_hud_font_color("sar_sr_hud_font_color", "255 255 255 255", "RGBA font color of my HUD.\n", 0);
-Variable sar_my_hud_font_index("sar_sr_hud_font_index", "70", 0, "Font index of my HUD.\n");
+Variable sar_sr_hud("sar_sr_hud", "0", 0,
+    "Draws speedrun timer.\n",
+    SourceGame_SupportsS3);
+Variable sar_sr_hud_x("sar_sr_hud_x", "0", 0,
+    "X offset of speedrun timer HUD.\n",
+    SourceGame_SupportsS3);
+Variable sar_sr_hud_y("sar_sr_hud_y", "100", 0,
+    "Y offset of speedrun timer HUD.\n",
+    SourceGame_SupportsS3);
+Variable sar_sr_hud_font_color("sar_sr_hud_font_color", "255 255 255 255",
+    "RGBA font color of speedrun timer HUD.\n",
+    SourceGame_SupportsS3,
+    0);
+Variable sar_sr_hud_font_index("sar_sr_hud_font_index", "70", 0,
+    "Font index of speedrun timer HUD.\n",
+    SourceGame_SupportsS3);
 
 MyHud myHud;
 
@@ -559,6 +621,7 @@ bool MyHud::GetCurrentSize(int& xSize, int& ySize)
 #### Buttons
 
 Portal 2 Engine only.
+
 ```cpp
 #define IN_AUTOSTRAFE (1 << 31) // Make sure to use a unique flag
 

@@ -16,6 +16,8 @@ TimerRule::TimerRule(const char* name, const char* mapName, const char* entityNa
     , name(name)
     , mapName(mapName)
     , entityName(entityName)
+    , className(nullptr)
+    , propName(nullptr)
     , callback0(callback)
     , entityPtr(nullptr)
     , callbackType(0)
@@ -45,7 +47,8 @@ TimerRule::TimerRule(const char* name, const char* mapName, const char* entityNa
 bool TimerRule::Load()
 {
     if (this->IsEmpty()) {
-        return this->isActive = true;
+        this->isActive = true;
+        return true;
     }
 
     auto info = (this->searchMode == SearchMode::Classes)

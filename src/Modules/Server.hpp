@@ -13,7 +13,7 @@ public:
 
     using _UTIL_PlayerByIndex = void*(__cdecl*)(int index);
     using _GetAllServerClasses = ServerClass* (*)();
-    using _IsRestoring = bool(*)();
+    using _IsRestoring = bool (*)();
 
     _UTIL_PlayerByIndex UTIL_PlayerByIndex = nullptr;
     _GetAllServerClasses GetAllServerClasses = nullptr;

@@ -37,18 +37,21 @@ struct Pattern {
 typedef std::vector<int> Offset;
 typedef std::vector<const Pattern*> Patterns;
 
-#define PATTERN(name, sig, ...) Memory::Pattern name { sig, Memory::Offset({ __VA_ARGS__ }) }
+#define PATTERN(name, sig, ...) \
+    Memory::Pattern name { sig, Memory::Offset({ __VA_ARGS__ }) }
 #define PATTERNS(name, ...) Memory::Patterns name({ __VA_ARGS__ })
 
 std::vector<uintptr_t> Scan(const char* moduleName, const Pattern* pattern);
 std::vector<std::vector<uintptr_t>> MultiScan(const char* moduleName, const Patterns* patterns);
 
+#ifdef _DEBUG
 template <typename T = uintptr_t>
 T Absolute(const char* moduleName, int relative)
 {
     auto info = Memory::ModuleInfo();
     return (Memory::TryGetModule(moduleName, &info)) ? (T)(info.base + relative) : (T)0;
 }
+#endif
 template <typename T = void*>
 T GetSymbolAddress(void* moduleHandle, const char* symbolName)
 {

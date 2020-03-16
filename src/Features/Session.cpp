@@ -207,16 +207,22 @@ void Session::Changed(int state)
 
 // HUD
 
-HUD_ELEMENT(session, "0", "Draws current session tick.\n", HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
+HUD_ELEMENT(session, "0",
+    "Draws current session tick.\n",
+    HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
 {
     auto tick = (session->isRunning) ? session->GetTick() : 0;
     ctx->DrawElement("session: %i (%.3f)", tick, engine->ToTime(tick));
 }
-HUD_ELEMENT(last_session, "0", "Draws value of latest completed session.\n", HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
+HUD_ELEMENT(last_session, "0",
+    "Draws value of latest completed session.\n",
+    HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
 {
     ctx->DrawElement("last session: %i (%.3f)", session->lastSession, engine->ToTime(session->lastSession));
 }
-HUD_ELEMENT(sum, "0", "Draws summary value of sessions.\n", HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
+HUD_ELEMENT(sum, "0",
+    "Draws summary value of sessions.\n",
+    HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
 {
     if (summary->isRunning && sar_sum_during_session.GetBool()) {
         auto tick = (session->isRunning) ? session->GetTick() : 0;
@@ -226,11 +232,15 @@ HUD_ELEMENT(sum, "0", "Draws summary value of sessions.\n", HudType_InGame | Hud
         ctx->DrawElement("sum: %i (%.3f)", summary->totalTicks, engine->ToTime(summary->totalTicks));
     }
 }
-HUD_ELEMENT(frame, "0", "Draws current frame count.\n", HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
+HUD_ELEMENT(frame, "0",
+    "Draws current frame count.\n",
+    HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
 {
     ctx->DrawElement("frame: %i", session->currentFrame);
 }
-HUD_ELEMENT(last_frame, "0", "Draws last saved frame value.\n", HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
+HUD_ELEMENT(last_frame, "0",
+    "Draws last saved frame value.\n",
+    HudType_InGame | HudType_Paused | HudType_Menu | HudType_LoadingScreen)
 {
     ctx->DrawElement("last frame: %i", session->lastFrame);
 }

@@ -20,16 +20,18 @@ public:
     Variable();
     Variable(int version);
     Variable(const char* name);
-    Variable(const char* name, const char* value, const char* helpstr, int flags = FCVAR_NEVER_AS_STRING,
-        int version = SourceGame_Unknown);
-    Variable(const char* name, const char* value, float min, const char* helpstr, int flags = FCVAR_NEVER_AS_STRING,
-        int version = SourceGame_Unknown);
-    Variable(const char* name, const char* value, float min, float max, const char* helpstr, int flags = FCVAR_NEVER_AS_STRING,
-        int version = SourceGame_Unknown);
+    Variable(const char* name, const char* value, const char* helpstr, int version = SourceGame_Unknown,
+        int flags = FCVAR_NEVER_AS_STRING);
+    Variable(const char* name, const char* value, float min, const char* helpstr, int version = SourceGame_Unknown,
+        int flags = FCVAR_NEVER_AS_STRING);
+    Variable(const char* name, const char* value, float min, float max, const char* helpstr, int version = SourceGame_Unknown,
+        int flags = FCVAR_NEVER_AS_STRING);
 
+private:
     void Create(const char* name, const char* value, int flags = 0, const char* helpstr = "", bool hasmin = false, float min = 0,
         bool hasmax = false, float max = 0);
 
+public:
     inline bool IsCommand() override { return false; }
     void Register() override;
     void Unregister() override;

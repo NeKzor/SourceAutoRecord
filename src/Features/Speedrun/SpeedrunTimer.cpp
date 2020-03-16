@@ -56,7 +56,6 @@ SpeedrunTimer::SpeedrunTimer()
     this->pubInterface = std::make_unique<TimerInterface>();
     this->result = std::make_unique<TimerResult>();
     this->pb = std::make_unique<TimerResult>();
-
 }
 bool SpeedrunTimer::IsActive()
 {

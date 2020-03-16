@@ -51,7 +51,7 @@ void CommandBase::UnregisterAll()
 Command::Command(const char* name)
     : CommandBase(SourceGame_Unknown)
 {
-    this->ptr = reinterpret_cast<ConCommand*>(tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), name));
+    this->ptr = tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), name);
     if (!this->ptr) {
         throw std::runtime_error("command " + std::string(name) + " not found");
     }
@@ -109,6 +109,8 @@ CommandHook::CommandHook(const char* target, _CommandCallback* original, _Comman
     : target(target)
     , original(original)
     , detour(detour)
+    , isRegistered(false)
+    , isHooked(false)
 {
 }
 void CommandHook::Register(Module* mod)

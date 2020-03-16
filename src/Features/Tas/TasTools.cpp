@@ -273,7 +273,9 @@ CON_COMMAND(sar_tas_setang, "sar_tas_setang <x> <y> [z] [speed] : Sets {x, y, z}
 
 // HUD
 
-HUD_ELEMENT2(velocity_angle, "0", "Draws velocity angles.\n", HudType_InGame | HudType_Paused | HudType_LoadingScreen)
+HUD_ELEMENT2(velocity_angle, "0",
+    "Draws velocity angles.\n",
+    HudType_InGame | HudType_Paused | HudType_LoadingScreen)
 {
     auto player = server->GetPlayer(ctx->slot + 1);
     if (player) {
@@ -283,7 +285,9 @@ HUD_ELEMENT2(velocity_angle, "0", "Draws velocity angles.\n", HudType_InGame | H
         ctx->DrawElement("vel ang: -");
     }
 }
-HUD_ELEMENT_MODE2(acceleration, "0", 0, 2, "Draws instant acceleration.\n", HudType_InGame | HudType_Paused | HudType_LoadingScreen)
+HUD_ELEMENT_MODE2(acceleration, "0", 0, 2,
+    "Draws instant acceleration.\n",
+    HudType_InGame | HudType_Paused | HudType_LoadingScreen)
 {
     auto player = server->GetPlayer(ctx->slot + 1);
     if (player) {
@@ -297,7 +301,8 @@ HUD_ELEMENT_MODE2(acceleration, "0", 0, 2, "Draws instant acceleration.\n", HudT
         ctx->DrawElement("accel: -");
     }
 }
-HUD_ELEMENT2(player_info, "0", "Draws player state defined with sar_tas_set_prop.\n", HudType_InGame | HudType_Paused | HudType_LoadingScreen)
+HUD_ELEMENT2(player_info, "0", "Draws player state defined with sar_tas_set_prop.\n",
+    HudType_InGame | HudType_Paused | HudType_LoadingScreen)
 {
     auto player = server->GetPlayer(ctx->slot + 1);
     auto info = tasTools->GetPlayerInfo(player);

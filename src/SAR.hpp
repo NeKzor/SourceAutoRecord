@@ -40,7 +40,7 @@ public:
     bool Init();
     void HookAll();
     void UnhookAll();
-    bool Cleanup();
+    void Cleanup();
     bool GetPlugin();
 
     static void* pluginVtable[20];

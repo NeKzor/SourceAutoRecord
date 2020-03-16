@@ -6,11 +6,14 @@
 #include "Modules/InputSystem.hpp"
 
 #include "Command.hpp"
+#include "Game.hpp"
 #include "Variable.hpp"
 
-Variable sar_save_flag("sar_save_flag", "#SAVE#", "Echo message when using sar_bind_save.\n"
-                                                  "Default is \"#SAVE#\", a SourceRuns standard.\n"
-                                                  "Keep this empty if no echo message should be binded.\n",
+Variable sar_save_flag("sar_save_flag", "#SAVE#",
+    "Echo message when using sar_bind_save.\n"
+    "Default is \"#SAVE#\", a SourceRuns standard.\n"
+    "Keep this empty if no echo message should be binded.\n",
+    SourceGame_Unknown,
     0);
 
 Rebinder* rebinder;

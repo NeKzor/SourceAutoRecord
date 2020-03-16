@@ -141,7 +141,7 @@ void SAR::UnhookAll()
         }
     }
 }
-bool SAR::Cleanup()
+void SAR::Cleanup()
 {
     if (this->modules) {
         this->UnhookAll();
@@ -163,8 +163,6 @@ bool SAR::Cleanup()
     sdelete(this->game);
     sdelete(tier1);
     sdelete(console);
-
-    return false;
 }
 bool SAR::GetPlugin()
 {

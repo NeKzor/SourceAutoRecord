@@ -180,7 +180,7 @@ std::vector<uintptr_t> Memory::MultiScan(const char* moduleName, const char* pat
         auto end = start + info.size;
         auto addr = uintptr_t();
         while (true) {
-            auto addr = Memory::FindAddress(start, end, pattern);
+            addr = Memory::FindAddress(start, end, pattern);
             if (addr) {
                 result.push_back(addr + offset);
                 start = addr + length;

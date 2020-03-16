@@ -84,9 +84,7 @@ bool Interface::Unhook(int index)
     return false;
 }
 
-// NEW API
-
-void Interface::Hook(_Hook* hook, int index)
+void Interface::Hook(VHook* hook, int index)
 {
     if (this->IsHookable()) {
         throw std::runtime_error("interface is not hookable");
