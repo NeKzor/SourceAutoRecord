@@ -1,27 +1,42 @@
 #pragma once
+#include "Modules/Module.hpp"
+
+#include <functional>
+#include <map>
+#include <vector>
+
 #include "Utils/Memory.hpp"
+#include "Utils/Platform.hpp"
+
+class Module;
 
 class Interface {
 public:
-    uintptr_t** baseclass;
-    uintptr_t* vtable;
-    int vtableSize;
+    uintptr_t** baseclass = nullptr;
+    uintptr_t* vtable = nullptr;
+    int vtableSize = 0;
 
 private:
-    bool isHooked;
-    std::unique_ptr<uintptr_t[]> copy;
+    bool isHooked = false;
+    uintptr_t* copy = nullptr;
+    std::map<int, struct VHook*> hooks = std::map<int, struct VHook*>();
 
 public:
-    Interface();
-    Interface(void* baseclass, bool copyVtable = true, bool autoHook = true);
+    Interface(void* baseclass);
+    Interface(uintptr_t baseclass);
     ~Interface();
 
-    void CopyVtable();
+private:
+    void AllocVtable();
+
+public:
     void EnableHooks();
     void DisableHooks();
 
+    inline bool IsHookable() { return this->copy != nullptr; }
+
     template <typename T = uintptr_t>
-    T Original(int index, bool readJmp = false)
+    T Original(int index, bool readJmp = false) const
     {
         if (readJmp) {
             auto source = this->vtable[index] + 1;
@@ -33,39 +48,47 @@ public:
     template <typename T = uintptr_t>
     T Hooked(int index)
     {
-        return (T)this->copy[index + 1];
+        return IsHookable() ? (T)this->copy[index + 1] : (T) nullptr;
     }
     template <typename T = uintptr_t>
     T Current(int index)
     {
         return (T)(*this->baseclass)[index];
     }
-    template <typename T = uintptr_t, typename U = void*>
-    bool Hook(T detour, U& original, int index)
-    {
-        if (index >= 0 && index < this->vtableSize) {
-            this->copy[index + 1] = reinterpret_cast<uintptr_t>(detour);
-            original = this->Original<U>(index);
-            return true;
-        }
-        return false;
-    }
 
     bool Unhook(int index);
 
-    inline void* ThisPtr()
+    inline void* ThisPtr() const
     {
         return reinterpret_cast<void*>(this->baseclass);
     }
 
-    static Interface* Create(void* ptr, bool copyVtable = true, bool autoHook = true);
-    static Interface* Create(const char* filename, const char* interfaceSymbol, bool copyVtable = true, bool autoHook = true);
-    static void Delete(Interface* ptr);
-    static void* GetPtr(const char* filename, const char* interfaceSymbol);
+    void Hook(VHook* hook, int index);
+
+    inline uintptr_t ThisUPtr()
+    {
+        return reinterpret_cast<uintptr_t>(this->baseclass);
+    }
+
+    static Interface* CreateNew(void* ptr);
+    static Interface* CreateNew(uintptr_t ptr);
+    static Interface* CreateNew(const Module* mod, const char* interfaceSymbol);
+
+    static Interface* Hookable(Module* mod, void* ptr);
+    static Interface* Hookable(Module* mod, uintptr_t ptr);
+    static Interface* Hookable(Module* mod, const char* interfaceSymbol);
+
+    static void Temp(void* ptr, std::function<void(const Interface* temp)> callback);
+    static void Temp(uintptr_t ptr, std::function<void(const Interface* temp)> callback);
+    static void Temp(const Module* mod, const char* interfaceSymbol, std::function<void(const Interface* temp)> callback);
+
+    static void Destroy(Interface* ptr);
+
+    static void* This(const Module* mod, const char* interfaceSymbol);
 
     template <typename T = void*>
-    static T Get(const char* filename, const char* interfaceSymbol)
+    static T This(const Module* mod, const char* interfaceSymbol)
     {
-        return (T)Interface::GetPtr(filename, interfaceSymbol);
+        return (T)Interface::This(mod, interfaceSymbol);
     }
 };

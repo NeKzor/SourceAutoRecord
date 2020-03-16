@@ -7,11 +7,22 @@
 
 #include "Variable.hpp"
 
-Variable sar_sr_hud("sar_sr_hud", "0", 0, "Draws speedrun timer.\n");
-Variable sar_sr_hud_x("sar_sr_hud_x", "0", 0, "X offset of speedrun timer HUD.\n");
-Variable sar_sr_hud_y("sar_sr_hud_y", "100", 0, "Y offset of speedrun timer HUD.\n");
-Variable sar_sr_hud_font_color("sar_sr_hud_font_color", "255 255 255 255", "RGBA font color of speedrun timer HUD.\n", 0);
-Variable sar_sr_hud_font_index("sar_sr_hud_font_index", "70", 0, "Font index of speedrun timer HUD.\n");
+Variable sar_sr_hud("sar_sr_hud", "0", 0,
+    "Draws speedrun timer.\n",
+    SourceGame_SupportsS3);
+Variable sar_sr_hud_x("sar_sr_hud_x", "0", 0,
+    "X offset of speedrun timer HUD.\n",
+    SourceGame_SupportsS3);
+Variable sar_sr_hud_y("sar_sr_hud_y", "100", 0,
+    "Y offset of speedrun timer HUD.\n",
+    SourceGame_SupportsS3);
+Variable sar_sr_hud_font_color("sar_sr_hud_font_color", "255 255 255 255",
+    "RGBA font color of speedrun timer HUD.\n",
+    SourceGame_SupportsS3,
+    0);
+Variable sar_sr_hud_font_index("sar_sr_hud_font_index", "70", 0,
+    "Font index of speedrun timer HUD.\n",
+    SourceGame_SupportsS3);
 
 SpeedrunHud speedrunHud;
 

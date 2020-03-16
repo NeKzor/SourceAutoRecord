@@ -4,11 +4,13 @@
 #include <cstring>
 #include <vector>
 
+#include "Modules/Module.hpp"
+
 #include "Game.hpp"
 
-class Command {
-private:
-    ConCommand* ptr;
+class CommandBase {
+protected:
+    ConCommandBase* ptr;
 
 public:
     int version;
@@ -16,31 +18,56 @@ public:
     bool isReference;
 
 public:
-    static std::vector<Command*>& GetList();
+    static std::vector<CommandBase*>& GetList();
 
 public:
-    Command();
-    ~Command();
-    Command(const char* name);
-    Command(const char* pName, _CommandCallback callback, const char* pHelpString, int flags = 0,
-        _CommandCompletionCallback completionFunc = nullptr);
+    CommandBase(int version);
+    ~CommandBase();
 
-    ConCommand* ThisPtr();
+    virtual bool IsCommand() = 0;
+    virtual void Register() = 0;
+    virtual void Unregister() = 0;
 
-    void UniqueFor(int version);
-    void Register();
-    void Unregister();
+    inline ConCommandBase* ThisPtr() { return this->ptr; }
 
-    bool operator!();
+    inline bool operator!() { return this->ptr == nullptr; }
 
     static int RegisterAll();
     static void UnregisterAll();
-    static Command* Find(const char* name);
+};
 
-    static bool Hook(const char* name, _CommandCallback detour, _CommandCallback& original);
-    static bool Unhook(const char* name, _CommandCallback original);
+class Command : public CommandBase {
+public:
+    Command(const char* name);
+    Command(const char* pName, _CommandCallback callback, const char* pHelpString, int version = SourceGame_Unknown,
+        int flags = 0, _CommandCompletionCallback completionFunc = nullptr);
+
+    bool IsCommand() override { return true; }
+    void Register() override;
+    void Unregister() override;
+
+    inline ConCommand* ThisPtr() { return reinterpret_cast<ConCommand*>(this->ptr); }
+
     static bool ActivateAutoCompleteFile(const char* name, _CommandCompletionCallback callback);
     static bool DectivateAutoCompleteFile(const char* name);
+};
+
+class CommandHook {
+public:
+    const char* target;
+    _CommandCallback* original;
+    _CommandCallback detour;
+
+private:
+    bool isRegistered;
+    bool isHooked;
+
+public:
+    CommandHook(const char* target, _CommandCallback* original, _CommandCallback detour);
+    void Register(Module* mod);
+    void Unregister();
+    void Hook();
+    void Unhook();
 };
 
 #define CON_COMMAND(name, description)                           \
@@ -48,14 +75,29 @@ public:
     Command name = Command(#name, name##_callback, description); \
     void name##_callback(const CCommand& args)
 
-#define CON_COMMAND_F(name, description, flags)                         \
-    void name##_callback(const CCommand& args);                         \
-    Command name = Command(#name, name##_callback, description, flags); \
+#define CON_COMMAND_F(name, description, flags)                                             \
+    void name##_callback(const CCommand& args);                                             \
+    Command name = Command(#name, name##_callback, description, SourceGame_Unknown, flags); \
     void name##_callback(const CCommand& args)
 
-#define CON_COMMAND_F_COMPLETION(name, description, flags, completion)              \
-    void name##_callback(const CCommand& args);                                     \
-    Command name = Command(#name, name##_callback, description, flags, completion); \
+#define CON_COMMAND_F_COMPLETION(name, description, flags, completion)                                  \
+    void name##_callback(const CCommand& args);                                                         \
+    Command name = Command(#name, name##_callback, description, SourceGame_Unknown, flags, completion); \
+    void name##_callback(const CCommand& args)
+
+#define CON_COMMAND_U(name, description, version)                         \
+    void name##_callback(const CCommand& args);                           \
+    Command name = Command(#name, name##_callback, description, version); \
+    void name##_callback(const CCommand& args)
+
+#define CON_COMMAND_FU(name, description, flags, version)                        \
+    void name##_callback(const CCommand& args);                                  \
+    Command name = Command(#name, name##_callback, description, version, flags); \
+    void name##_callback(const CCommand& args)
+
+#define CON_COMMAND_FU_COMPLETION(name, description, flags, completion, version)             \
+    void name##_callback(const CCommand& args);                                              \
+    Command name = Command(#name, name##_callback, description, version, flags, completion); \
     void name##_callback(const CCommand& args)
 
 #define DECL_DECLARE_AUTOCOMPLETION_FUNCTION(command) \
@@ -76,11 +118,9 @@ public:
     DECLARE_AUTOCOMPLETION_FUNCTION(name, subdirectory, extension)                      \
     CON_COMMAND_F_COMPLETION(name, description, flags, AUTOCOMPLETION_FUNCTION(name))
 
-#define DECL_DETOUR_COMMAND(name)            \
-    static _CommandCallback name##_callback; \
-    static void name##_callback_hook(const CCommand& args)
-#define DETOUR_COMMAND(name) \
-    void name##_callback_hook(const CCommand& args)
+#define CON_COMMAND_AUTOCOMPLETEFILE_U(name, description, flags, subdirectory, extension, version) \
+    DECLARE_AUTOCOMPLETION_FUNCTION(name, subdirectory, extension)                                 \
+    CON_COMMAND_FU_COMPLETION(name, description, flags, AUTOCOMPLETION_FUNCTION(name), version)
 
 #define DECL_COMMAND_COMPLETION(command)                \
     DECL_DECLARE_AUTOCOMPLETION_FUNCTION(command)       \
@@ -133,3 +173,9 @@ public:
 #define CON_COMMAND_COMPLETION(name, description, completion) \
     DECL_AUTO_COMMAND_COMPLETION(name, completion)            \
     CON_COMMAND_F_COMPLETION(name, description, 0, name##_CompletionFunc)
+
+#define DETOUR_COMMAND(name)                                                  \
+    _CommandCallback name##_callback;                                         \
+    void name##_callback_detour(const CCommand& args);                        \
+    CommandHook name##_hook(#name, &name##_callback, name##_callback_detour); \
+    void name##_callback_detour(const CCommand& args)

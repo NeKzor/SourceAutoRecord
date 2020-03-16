@@ -27,12 +27,11 @@ Timer::Timer()
     , avg(new TimerAverage())
     , cps(new TimerCheckPoints())
 {
-    this->hasLoaded = this->avg && this->cps;
 }
 Timer::~Timer()
 {
-    SAFE_DELETE(this->avg)
-    SAFE_DELETE(this->cps)
+    sdelete(this->avg)
+        sdelete(this->cps)
 }
 void Timer::Start(int engineTick)
 {
@@ -179,17 +178,23 @@ CON_COMMAND(sar_cps_result, "Prints result of timer checkpoints.\n")
 
 // HUD
 
-HUD_ELEMENT(timer, "0", "Draws current value of timer.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT(timer, "0",
+    "Draws current value of timer.\n",
+    HudType_InGame | HudType_Paused)
 {
     auto tick = (!timer->isPaused) ? timer->GetTick(engine->GetTick()) : timer->totalTicks;
     auto time = engine->ToTime(tick);
     ctx->DrawElement("timer: %i (%.3f)", tick, time);
 }
-HUD_ELEMENT(avg, "0", "Draws calculated average of timer.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT(avg, "0",
+    "Draws calculated average of timer.\n",
+    HudType_InGame | HudType_Paused)
 {
     ctx->DrawElement("avg: %i (%.3f)", timer->avg->averageTicks, timer->avg->averageTime);
 }
-HUD_ELEMENT(cps, "0", "Draws latest checkpoint of timer.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT(cps, "0",
+    "Draws latest checkpoint of timer.\n",
+    HudType_InGame | HudType_Paused)
 {
     ctx->DrawElement("last cp: %i (%.3f)", timer->cps->latestTick, timer->cps->latestTime);
 }

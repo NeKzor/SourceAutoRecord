@@ -23,7 +23,6 @@ Config* config;
 Config::Config()
     : filePath("/cfg/_sar_cvars.cfg")
 {
-    this->hasLoaded = true;
 }
 bool Config::Save()
 {

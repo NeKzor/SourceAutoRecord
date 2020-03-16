@@ -17,8 +17,6 @@ Teleporter::Teleporter()
     for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
         this->locations.push_back(new TeleportLocation());
     }
-
-    this->hasLoaded = true;
 }
 Teleporter::~Teleporter()
 {

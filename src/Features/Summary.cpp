@@ -5,7 +5,6 @@
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
 
-
 #include "Command.hpp"
 #include "Variable.hpp"
 
@@ -18,7 +17,6 @@ Summary::Summary()
     , items()
     , totalTicks(0)
 {
-    this->hasLoaded = true;
 }
 void Summary::Start()
 {

@@ -1,7 +1,13 @@
 #include "WorkshopList.hpp"
 
 #include <cstring>
+#if _WIN32
+#include <filesystem>
+#define fs std::filesystem
+#else
 #include <experimental/filesystem>
+#define fs std::experimental::filesystem
+#endif
 #include <stdlib.h>
 
 #include "Modules/Engine.hpp"
@@ -15,7 +21,6 @@ WorkshopList::WorkshopList()
     : maps()
     , path(std::string(engine->GetGameDirectory()) + std::string("/maps/workshop"))
 {
-    this->hasLoaded = true;
 }
 int WorkshopList::Update()
 {
@@ -26,10 +31,10 @@ int WorkshopList::Update()
     auto index = path.length() + 1;
 
     // Scan through all directories and find the map file
-    for (auto& dir : std::experimental::filesystem::recursive_directory_iterator(path)) {
-        if (dir.status().type() == std::experimental::filesystem::file_type::directory) {
+    for (auto& dir : fs::recursive_directory_iterator(path)) {
+        if (dir.status().type() == fs::file_type::directory) {
             auto curdir = dir.path().string();
-            for (auto& dirdir : std::experimental::filesystem::directory_iterator(curdir)) {
+            for (auto& dirdir : fs::directory_iterator(curdir)) {
                 auto file = dirdir.path().string();
                 if (Utils::EndsWith(file, std::string(".bsp"))) {
                     auto map = file.substr(index);
@@ -71,10 +76,10 @@ DECL_COMMAND_COMPLETION(sar_workshop)
 
 // Commands
 
-CON_COMMAND_F_COMPLETION(sar_workshop, "Same as \"map\" command but lists workshop maps.\n"
-                                       "Usage: sar_workshop <file> [ss/changelevel]\n",
-    0,
-    sar_workshop_CompletionFunc)
+CON_COMMAND_FU_COMPLETION(sar_workshop,
+    "Same as \"map\" command but lists workshop maps.\n"
+    "Usage: sar_workshop <file> [ss/changelevel]\n",
+    0, sar_workshop_CompletionFunc, SourceGame_Portal2 | SourceGame_ApertureTag)
 {
     if (args.ArgC() < 2) {
         return console->Print(sar_workshop.ThisPtr()->m_pszHelpString);
@@ -92,11 +97,11 @@ CON_COMMAND_F_COMPLETION(sar_workshop, "Same as \"map\" command but lists worksh
 
     engine->ExecuteCommand((command + std::string(" workshop/") + std::string(args[1])).c_str());
 }
-CON_COMMAND(sar_workshop_update, "Updates the workshop map list.\n")
+CON_COMMAND_U(sar_workshop_update, "Updates the workshop map list.\n", SourceGame_Portal2 | SourceGame_ApertureTag)
 {
     console->Print("Added or removed %i map(s) to or from the list.\n", workshop->Update());
 }
-CON_COMMAND(sar_workshop_list, "Prints all workshop maps.\n")
+CON_COMMAND_U(sar_workshop_list, "Prints all workshop maps.\n", SourceGame_Portal2 | SourceGame_ApertureTag)
 {
     if (workshop->maps.empty()) {
         workshop->Update();

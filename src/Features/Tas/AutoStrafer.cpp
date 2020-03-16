@@ -24,8 +24,6 @@ AutoStrafer::AutoStrafer()
     for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
         this->states.push_back(new StrafeState());
     }
-
-    this->hasLoaded = true;
 }
 AutoStrafer::~AutoStrafer()
 {
@@ -155,12 +153,14 @@ float AutoStrafer::GetStrafeAngle(const StrafeState* strafe, void* pPlayer, cons
 void IN_AutoStrafeDown(const CCommand& args) { client->KeyDown(&autoStrafer->in_autostrafe, (args.ArgC() > 1) ? args[1] : nullptr); }
 void IN_AutoStrafeUp(const CCommand& args) { client->KeyUp(&autoStrafer->in_autostrafe, (args.ArgC() > 1) ? args[1] : nullptr); }
 
-Command startautostrafe("+autostrafe", IN_AutoStrafeDown, "Auto-strafe button.\n");
-Command endautostrafe("-autostrafe", IN_AutoStrafeUp, "Auto-strafe button.\n");
+Command startautostrafe("+autostrafe", IN_AutoStrafeDown, "Auto-strafe button.\n", SourceGame_Portal2Engine);
+Command endautostrafe("-autostrafe", IN_AutoStrafeUp, "Auto-strafe button.\n", SourceGame_Portal2Engine);
 
-CON_COMMAND(sar_tas_strafe, "sar_tas_strafe <type> <direction> : Automatic strafing.\n"
-                            "Type: 0 = off, 1 = straight, 2 = turning and keeping velocity, 3 = turning with velocity gain.\n"
-                            "Direction: -1 = left, 1 = right.\n")
+CON_COMMAND_U(sar_tas_strafe,
+    "sar_tas_strafe <type> <direction> : Automatic strafing.\n"
+    "Type: 0 = off, 1 = straight, 2 = turning and keeping velocity, 3 = turning with velocity gain.\n"
+    "Direction: -1 = left, 1 = right.\n",
+    SourceGame_Portal2Engine)
 {
     IGNORE_DEMO_PLAYER();
 
@@ -180,11 +180,13 @@ CON_COMMAND(sar_tas_strafe, "sar_tas_strafe <type> <direction> : Automatic straf
     autoStrafer->states[nSlot]->type = type;
     autoStrafer->states[nSlot]->direction = direction;
 }
-CON_COMMAND(sar_tas_strafe_vectorial, "sar_tas_strafe_vectorial <type>: Change type of vectorial strafing.\n"
-                                      "0 = Auto-strafer calculates perfect viewangle,\n"
-                                      "1 = Auto-strafer calculates perfect forward-side movement,\n"
-                                      "2 = Auto-strafer calculates perfect forward-side movement, "
-                                      "while setting the viewangle toward current velocity, to make strafing visually visible.\n")
+CON_COMMAND_U(sar_tas_strafe_vectorial,
+    "sar_tas_strafe_vectorial <type>: Change type of vectorial strafing.\n"
+    "0 = Auto-strafer calculates perfect viewangle,\n"
+    "1 = Auto-strafer calculates perfect forward-side movement,\n"
+    "2 = Auto-strafer calculates perfect forward-side movement, "
+    "while setting the viewangle toward current velocity, to make strafing visually visible.\n",
+    SourceGame_Portal2Engine)
 {
     IGNORE_DEMO_PLAYER();
 

@@ -3,10 +3,12 @@
 
 #include "Utils/SDK.hpp"
 
-class Variable {
-private:
-    ConVar* ptr;
+#include "Command.hpp"
+#include "Game.hpp"
+#include "Offsets.hpp"
 
+class Variable : public CommandBase {
+private:
     int originalFlags;
 
     union {
@@ -15,41 +17,50 @@ private:
     };
 
 public:
-    int version;
-    bool isRegistered;
-    bool isReference;
-
-public:
-    static std::vector<Variable*>& GetList();
-
-public:
     Variable();
-    ~Variable();
+    Variable(int version);
     Variable(const char* name);
-    Variable(const char* name, const char* value, const char* helpstr, int flags = FCVAR_NEVER_AS_STRING);
-    Variable(const char* name, const char* value, float min, const char* helpstr, int flags = FCVAR_NEVER_AS_STRING);
-    Variable(const char* name, const char* value, float min, float max, const char* helpstr, int flags = FCVAR_NEVER_AS_STRING);
+    Variable(const char* name, const char* value, const char* helpstr, int version = SourceGame_Unknown,
+        int flags = FCVAR_NEVER_AS_STRING);
+    Variable(const char* name, const char* value, float min, const char* helpstr, int version = SourceGame_Unknown,
+        int flags = FCVAR_NEVER_AS_STRING);
+    Variable(const char* name, const char* value, float min, float max, const char* helpstr, int version = SourceGame_Unknown,
+        int flags = FCVAR_NEVER_AS_STRING);
 
+private:
     void Create(const char* name, const char* value, int flags = 0, const char* helpstr = "", bool hasmin = false, float min = 0,
         bool hasmax = false, float max = 0);
-    void Realloc();
 
-    ConVar* ThisPtr();
-    ConVar2* ThisPtr2();
+public:
+    inline bool IsCommand() override { return false; }
+    void Register() override;
+    void Unregister() override;
 
-    bool GetBool();
-    int GetInt();
-    float GetFloat();
-    const char* GetString();
-    const int GetFlags();
+    inline ConVar* ThisPtr() { return reinterpret_cast<ConVar*>(this->ptr); }
+    inline ConVar2* ThisPtr2() { return reinterpret_cast<ConVar2*>(this->ptr); }
 
-    void SetValue(const char* value);
-    void SetValue(float value);
-    void SetValue(int value);
+    inline bool GetBool() { return !!GetInt(); }
+    inline int GetInt() { return this->ThisPtr()->m_nValue; }
+    inline float GetFloat() { return this->ThisPtr()->m_fValue; }
+    inline const char* GetString() { return this->ThisPtr()->m_pszString; }
+    inline const int GetFlags() { return this->ThisPtr()->m_nFlags; }
 
-    void SetFlags(int value);
-    void AddFlag(int value);
-    void RemoveFlag(int value);
+    inline void SetValue(const char* value)
+    {
+        Memory::VMT<_InternalSetValue>(this->ptr, Offsets::InternalSetValue)(this->ptr, value);
+    }
+    inline void SetValue(float value)
+    {
+        Memory::VMT<_InternalSetFloatValue>(this->ptr, Offsets::InternalSetFloatValue)(this->ptr, value);
+    }
+    inline void SetValue(int value)
+    {
+        Memory::VMT<_InternalSetIntValue>(this->ptr, Offsets::InternalSetIntValue)(this->ptr, value);
+    }
+
+    inline void SetFlags(int value) { this->ptr->m_nFlags = value; }
+    inline void AddFlag(int value) { this->SetFlags(this->GetFlags() | value); }
+    inline void RemoveFlag(int value) { this->SetFlags(this->GetFlags() & ~(value)); }
 
     void Unlock(bool asCheat = true);
     void Lock();
@@ -57,13 +68,12 @@ public:
     void DisableChange();
     void EnableChange();
 
-    void UniqueFor(int version);
-    void Register();
-    void Unregister();
-
-    bool operator!();
-
-    static int RegisterAll();
-    static void UnregisterAll();
-    static Variable* Find(const char* name);
+    static Variable FromString(const char* name, const char* value, const char* helpstr,
+        int version = SourceGame_Unknown);
+    static Variable FromBoolean(const char* name, const char* value, const char* helpstr,
+        int version = SourceGame_Unknown);
+    static Variable FromFloat(const char* name, const char* value, float min, const char* helpstr,
+        int version = SourceGame_Unknown);
+    static Variable FromFloatRange(const char* name, const char* value, float min, float max, const char* helpstr,
+        int version = SourceGame_Unknown);
 };

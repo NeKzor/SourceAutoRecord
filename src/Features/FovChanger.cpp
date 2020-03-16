@@ -11,7 +11,6 @@ FovChanger* fovChanger;
 FovChanger::FovChanger()
     : defaultFov(0)
 {
-    this->hasLoaded = true;
 }
 void FovChanger::SetFov(const int fov)
 {

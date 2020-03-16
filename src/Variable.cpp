@@ -8,127 +8,82 @@
 #include "Offsets.hpp"
 #include "SAR.hpp"
 
-std::vector<Variable*>& Variable::GetList()
-{
-    static std::vector<Variable*> list;
-    return list;
-}
-
 Variable::Variable()
-    : ptr(nullptr)
+    : Variable(SourceGame_Unknown)
+{
+}
+Variable::Variable(int version)
+    : CommandBase(version)
     , originalFlags(0)
     , originalFnChangeCallback(nullptr)
-    , version(SourceGame_Unknown)
-    , isRegistered(false)
-    , isReference(false)
 {
-}
-Variable::~Variable()
-{
-    if (!this->isReference) {
-        SAFE_DELETE(this->ptr)
-    }
 }
 Variable::Variable(const char* name)
-    : Variable()
+    : Variable(SourceGame_Unknown)
 {
-    this->ptr = reinterpret_cast<ConVar*>(tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), name));
+    this->ptr = tier1->FindCommandBase(tier1->g_pCVar->ThisPtr(), name);
     this->isReference = true;
 }
 // Boolean or String
-Variable::Variable(const char* name, const char* value, const char* helpstr, int flags)
-    : Variable()
+Variable::Variable(const char* name, const char* value, const char* helpstr, int version, int flags)
+    : Variable(version)
 {
     if (flags != 0)
-        Create(name, value, flags, helpstr, true, 0, true, 1);
+        this->Create(name, value, flags, helpstr, true, 0, true, 1);
     else
-        Create(name, value, flags, helpstr);
+        this->Create(name, value, flags, helpstr);
 }
 // Float
-Variable::Variable(const char* name, const char* value, float min, const char* helpstr, int flags)
-    : Variable()
+Variable::Variable(const char* name, const char* value, float min, const char* helpstr, int version, int flags)
+    : Variable(version)
 {
-    Create(name, value, flags, helpstr, true, min);
+    this->Create(name, value, flags, helpstr, true, min);
 }
 // Float
-Variable::Variable(const char* name, const char* value, float min, float max, const char* helpstr, int flags)
-    : Variable()
+Variable::Variable(const char* name, const char* value, float min, float max, const char* helpstr, int version, int flags)
+    : Variable(version)
 {
-    Create(name, value, flags, helpstr, true, min, true, max);
+    this->Create(name, value, flags, helpstr, true, min, true, max);
 }
 void Variable::Create(const char* name, const char* value, int flags, const char* helpstr, bool hasmin, float min, bool hasmax, float max)
 {
-    this->ptr = new ConVar(name, value, flags, helpstr, hasmin, min, hasmax, max);
+    this->ptr = new ConVar2(name, value, flags, helpstr, hasmin, min, hasmax, max);
 
-    Variable::GetList().push_back(this);
+    CommandBase::GetList().push_back(this);
 }
-void Variable::Realloc()
+void Variable::Register()
 {
-    if (sar.game->Is(SourceGame_Portal2Engine)) {
-        auto newptr = new ConVar2(
-            this->ptr->m_pszName,
-            this->ptr->m_pszDefaultValue,
-            this->ptr->m_nFlags,
-            this->ptr->m_pszHelpString,
-            this->ptr->m_bHasMin,
-            this->ptr->m_fMinVal,
-            this->ptr->m_bHasMax,
-            this->ptr->m_fMaxVal);
-        delete this->ptr;
-        this->ptr = reinterpret_cast<ConVar*>(newptr);
+    if (!this->isRegistered && !this->isReference && this->ptr) {
+        this->isRegistered = true;
+
+        auto ptr = this->ThisPtr();
+        ptr->ConCommandBase_VTable = tier1->ConVar_VTable;
+        ptr->ConVar_VTable = tier1->ConVar_VTable2;
+
+        tier1->Create(ptr,
+            ptr->m_pszName,
+            ptr->m_pszDefaultValue,
+            ptr->m_nFlags,
+            ptr->m_pszHelpString,
+            ptr->m_bHasMin,
+            ptr->m_fMinVal,
+            ptr->m_bHasMax,
+            ptr->m_fMaxVal,
+            nullptr);
     }
 }
-ConVar* Variable::ThisPtr()
+void Variable::Unregister()
 {
-    return this->ptr;
-}
-ConVar2* Variable::ThisPtr2()
-{
-    return reinterpret_cast<ConVar2*>(this->ptr);
-}
-bool Variable::GetBool()
-{
-    return !!GetInt();
-}
-int Variable::GetInt()
-{
-    return this->ptr->m_nValue;
-}
-float Variable::GetFloat()
-{
-    return this->ptr->m_fValue;
-}
-const char* Variable::GetString()
-{
-    return this->ptr->m_pszString;
-}
-const int Variable::GetFlags()
-{
-    return this->ptr->m_nFlags;
-}
-void Variable::SetValue(const char* value)
-{
-    Memory::VMT<_InternalSetValue>(this->ptr, Offsets::InternalSetValue)(this->ptr, value);
-}
-void Variable::SetValue(float value)
-{
-    Memory::VMT<_InternalSetFloatValue>(this->ptr, Offsets::InternalSetFloatValue)(this->ptr, value);
-}
-void Variable::SetValue(int value)
-{
-    Memory::VMT<_InternalSetIntValue>(this->ptr, Offsets::InternalSetIntValue)(this->ptr, value);
-}
-void Variable::SetFlags(int value)
-{
-    this->ptr->m_nFlags = value;
-}
-void Variable::AddFlag(int value)
-{
-    this->SetFlags(this->GetFlags() | value);
-}
-void Variable::RemoveFlag(int value)
-{
-    this->SetFlags(this->GetFlags() & ~(value));
+    if (this->isRegistered && !this->isReference && this->ptr) {
+        this->isRegistered = false;
+        tier1->UnregisterConCommand(tier1->g_pCVar->ThisPtr(), this->ptr);
+#ifdef _WIN32
+        tier1->Dtor(this->ThisPtr(), 0);
+#else
+        tier1->Dtor(this->ThisPtr());
+#endif
+        sdelete(this->ptr)
+    }
 }
 void Variable::Unlock(bool asCheat)
 {
@@ -148,18 +103,20 @@ void Variable::Lock()
 {
     if (this->ptr) {
         this->SetFlags(this->originalFlags);
-        this->SetValue(this->ptr->m_pszDefaultValue);
+        this->SetValue(this->ThisPtr()->m_pszDefaultValue);
     }
 }
 void Variable::DisableChange()
 {
     if (this->ptr) {
         if (sar.game->Is(SourceGame_Portal2Engine)) {
-            this->originalSize = ((ConVar2*)this->ptr)->m_fnChangeCallback.m_Size;
-            ((ConVar2*)this->ptr)->m_fnChangeCallback.m_Size = 0;
+            auto ptr = this->ThisPtr2();
+            this->originalSize = ptr->m_fnChangeCallback.m_Size;
+            ptr->m_fnChangeCallback.m_Size = 0;
         } else if (sar.game->Is(SourceGame_HalfLife2Engine)) {
-            this->originalFnChangeCallback = this->ptr->m_fnChangeCallback;
-            this->ptr->m_fnChangeCallback = nullptr;
+            auto ptr = ThisPtr();
+            this->originalFnChangeCallback = ptr->m_fnChangeCallback;
+            ptr->m_fnChangeCallback = nullptr;
         }
     }
 }
@@ -167,76 +124,25 @@ void Variable::EnableChange()
 {
     if (this->ptr) {
         if (sar.game->Is(SourceGame_Portal2Engine)) {
-            ((ConVar2*)this->ptr)->m_fnChangeCallback.m_Size = this->originalSize;
+            this->ThisPtr2()->m_fnChangeCallback.m_Size = this->originalSize;
         } else if (sar.game->Is(SourceGame_HalfLife2Engine)) {
-            this->ptr->m_fnChangeCallback = this->originalFnChangeCallback;
+            this->ThisPtr()->m_fnChangeCallback = this->originalFnChangeCallback;
         }
     }
 }
-void Variable::UniqueFor(int version)
+Variable Variable::FromString(const char* name, const char* value, const char* helpstr, int version)
 {
-    this->version = version;
+    return Variable(name, value, helpstr, 0, version);
 }
-void Variable::Register()
+Variable Variable::FromBoolean(const char* name, const char* value, const char* helpstr, int version)
 {
-    if (!this->isRegistered && !this->isReference && this->ptr) {
-        this->isRegistered = true;
-        this->Realloc();
-        this->ptr->ConCommandBase_VTable = tier1->ConVar_VTable;
-        this->ptr->ConVar_VTable = tier1->ConVar_VTable2;
-        tier1->Create(this->ptr,
-            this->ptr->m_pszName,
-            this->ptr->m_pszDefaultValue,
-            this->ptr->m_nFlags,
-            this->ptr->m_pszHelpString,
-            this->ptr->m_bHasMin,
-            this->ptr->m_fMinVal,
-            this->ptr->m_bHasMax,
-            this->ptr->m_fMaxVal,
-            nullptr);
-    }
+    return Variable(name, value, helpstr, FCVAR_NEVER_AS_STRING, version);
 }
-void Variable::Unregister()
+Variable Variable::FromFloat(const char* name, const char* value, float min, const char* helpstr, int version)
 {
-    if (this->isRegistered && !this->isReference && this->ptr) {
-        this->isRegistered = false;
-        tier1->UnregisterConCommand(tier1->g_pCVar->ThisPtr(), this->ptr);
-#ifdef _WIN32
-        tier1->Dtor(this->ptr, 0);
-#else
-        tier1->Dtor(this->ptr);
-#endif
-        SAFE_DELETE(this->ptr)
-    }
+    return Variable(name, value, min, helpstr, FCVAR_NEVER_AS_STRING, version);
 }
-bool Variable::operator!()
+Variable Variable::FromFloatRange(const char* name, const char* value, float min, float max, const char* helpstr, int version)
 {
-    return this->ptr == nullptr;
-}
-int Variable::RegisterAll()
-{
-    auto result = 0;
-    for (const auto& var : Variable::GetList()) {
-        if (var->version != SourceGame_Unknown && !sar.game->Is(var->version)) {
-            continue;
-        }
-        var->Register();
-        ++result;
-    }
-    return result;
-}
-void Variable::UnregisterAll()
-{
-    for (const auto& var : Variable::GetList()) {
-        var->Unregister();
-    }
-}
-Variable* Variable::Find(const char* name)
-{
-    for (const auto& var : Variable::GetList()) {
-        if (!std::strcmp(var->ThisPtr()->m_pszName, name)) {
-            return var;
-        }
-    }
-    return nullptr;
+    return Variable(name, value, min, max, helpstr, FCVAR_NEVER_AS_STRING, version);
 }

@@ -1,22 +1,35 @@
 #pragma once
 #include <vector>
 
-#define DECL_M(name, type) type name(void* entity)
-#define MDECL(name, type, offset)                                             \
-    type name(void* entity)                                                   \
-    {                                                                         \
-        return *reinterpret_cast<type*>((uintptr_t)entity + Offsets::offset); \
-    }
+#include "Interface.hpp"
+
+#define ENTPROP(name, type, offset) \
+    inline type name(void* entity) { return *reinterpret_cast<type*>((uintptr_t)entity + Offsets::offset); }
+
+class Interface;
+class CommandHook;
 
 class Module {
-public:
-    bool hasLoaded = false;
+private:
+    bool isLoaded = false;
+
+protected:
+    bool isHookable = false;
 
 public:
+    const char* filename = nullptr;
+    std::vector<Interface*> interfaces = std::vector<Interface*>();
+    std::vector<CommandHook*> cmdHooks = std::vector<CommandHook*>();
+
+public:
+    Module(const char* filename);
+    inline bool Loaded() { return this->isLoaded; }
+    inline bool CanHook() { return this->isHookable; }
     virtual ~Module() = default;
-    virtual bool Init() = 0;
+    virtual void Init() = 0;
     virtual void Shutdown() = 0;
-    virtual const char* Name() = 0;
+    virtual bool Load() final;
+    virtual bool Unload() final;
 };
 
 class Modules {
@@ -36,8 +49,7 @@ public:
     {
         this->list.erase(*modulePtr);
     }
-    void InitAll();
-    void ShutdownAll();
-    void DeleteAll();
+    void LoadAll();
+    void UnloadAll();
     ~Modules();
 };

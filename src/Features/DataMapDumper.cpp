@@ -15,6 +15,7 @@
 #include "Modules/Server.hpp"
 
 #include "Utils/Memory.hpp"
+#include "Utils/Platform.hpp"
 #include "Utils/SDK.hpp"
 
 #include "SAR.hpp"
@@ -38,7 +39,6 @@ DataMapDumper::DataMapDumper()
     , serverResult()
     , clientResult()
 {
-    this->hasLoaded = true;
 }
 void DataMapDumper::Dump(bool dumpServer)
 {
@@ -82,7 +82,7 @@ void DataMapDumper::Dump(bool dumpServer)
             }
             map = map->baseMap;
         }
-        file.seekp(-1, std::ios_base::_Seekcur);
+        file.seekp(-1, SEEK_DIR_CUR);
         file << "]}";
     };
     std::function<void(datamap_t2 * map)> DumpMap2;
@@ -115,14 +115,14 @@ void DataMapDumper::Dump(bool dumpServer)
             }
             map = map->baseMap;
         }
-        file.seekp(-1, std::ios_base::_Seekcur);
+        file.seekp(-1, SEEK_DIR_CUR);
         file << "]}";
     };
 
     auto results = (dumpServer) ? &this->serverResult : &this->clientResult;
     if (results->empty()) {
         auto hl2 = sar.game->Is(SourceGame_HalfLife2Engine);
-        auto moduleName = (dumpServer) ? server->Name() : client->Name();
+        auto moduleName = (dumpServer) ? server->filename : client->filename;
 
         *results = Memory::MultiScan(moduleName, &DATAMAP_PATTERNS);
         for (auto const& result : *results) {
@@ -139,7 +139,7 @@ void DataMapDumper::Dump(bool dumpServer)
         }
     }
 
-    file.seekp(-1, std::ios_base::_Seekcur);
+    file.seekp(-1, SEEK_DIR_CUR);
     file << "]}";
     file.close();
 

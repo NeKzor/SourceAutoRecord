@@ -46,9 +46,13 @@ public:
     void DrawRect(Color clr, int x0, int y0, int x1, int y1);
     void DrawRectAndCenterTxt(Color clr, int x0, int y0, int x1, int y1, HFont font, Color fontClr, const char* fmt, ...);
 
-    bool Init() override;
+    Surface()
+        : Module(MODULE("vguimatsurface"))
+    {
+    }
+
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("vguimatsurface"); }
 };
 
 extern Surface* surface;

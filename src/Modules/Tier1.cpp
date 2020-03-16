@@ -1,64 +1,60 @@
 #include "Tier1.hpp"
 
+#include <stdexcept>
+
 #include "Game.hpp"
 #include "Interface.hpp"
 #include "Offsets.hpp"
 #include "SAR.hpp"
 #include "Utils.hpp"
 
-bool Tier1::Init()
+void Tier1::Init()
 {
-    this->g_pCVar = Interface::Create(this->Name(), "VEngineCvar0", false);
-    if (this->g_pCVar) {
-        this->RegisterConCommand = this->g_pCVar->Original<_RegisterConCommand>(Offsets::RegisterConCommand);
-        this->UnregisterConCommand = this->g_pCVar->Original<_UnregisterConCommand>(Offsets::UnregisterConCommand);
-        this->FindCommandBase = this->g_pCVar->Original<_FindCommandBase>(Offsets::FindCommandBase);
+    this->g_pCVar = Interface::CreateNew(this, "VEngineCvar0");
 
-        this->m_pConCommandList = reinterpret_cast<ConCommandBase*>((uintptr_t)this->g_pCVar->ThisPtr() + Offsets::m_pConCommandList);
+    this->RegisterConCommand = this->g_pCVar->Original<_RegisterConCommand>(Offsets::RegisterConCommand);
+    this->UnregisterConCommand = this->g_pCVar->Original<_UnregisterConCommand>(Offsets::UnregisterConCommand);
+    this->FindCommandBase = this->g_pCVar->Original<_FindCommandBase>(Offsets::FindCommandBase);
 
-        auto listdemo = reinterpret_cast<ConCommand*>(this->FindCommandBase(this->g_pCVar->ThisPtr(), "listdemo"));
-        if (listdemo) {
-            this->ConCommand_VTable = listdemo->ConCommandBase_VTable;
+    this->m_pConCommandList = reinterpret_cast<ConCommandBase*>((uintptr_t)this->g_pCVar->ThisPtr() + Offsets::m_pConCommandList);
 
-            if (listdemo->m_fnCompletionCallback) {
-                auto callback = (uintptr_t)listdemo->m_fnCompletionCallback + Offsets::AutoCompletionFunc;
-                this->AutoCompletionFunc = Memory::Read<_AutoCompletionFunc>(callback);
-            }
-        }
-
-        auto sv_lan = reinterpret_cast<ConVar*>(this->FindCommandBase(this->g_pCVar->ThisPtr(), "sv_lan"));
-        if (sv_lan) {
-            this->ConVar_VTable = sv_lan->ConCommandBase_VTable;
-            this->ConVar_VTable2 = sv_lan->ConVar_VTable;
-
-            auto vtable =
-#ifdef _WIN32
-            sar.game->Is(SourceGame_HalfLife2Engine)
-                ? &this->ConVar_VTable
-                : &this->ConVar_VTable2;
-#else
-                &this->ConVar_VTable;
-#endif
-
-            this->Dtor = Memory::VMT<_Dtor>(vtable, Offsets::Dtor);
-            this->Create = Memory::VMT<_Create>(vtable, Offsets::Create);
-        }
-
-        if (sar.game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
-            this->InstallGlobalChangeCallback = this->g_pCVar->Original<_InstallGlobalChangeCallback>(Offsets::InstallGlobalChangeCallback);
-            this->RemoveGlobalChangeCallback = this->g_pCVar->Original<_RemoveGlobalChangeCallback>(Offsets::RemoveGlobalChangeCallback);
-        }
+    auto listdemo = reinterpret_cast<ConCommand*>(this->FindCommandBase(this->g_pCVar->ThisPtr(), "listdemo"));
+    if (!listdemo) {
+        throw std::runtime_error("listdemo command not found");
     }
 
-    return this->hasLoaded = this->g_pCVar
-        && this->ConCommand_VTable
-        && this->ConVar_VTable
-        && this->ConVar_VTable2
-        && this->AutoCompletionFunc;
+    this->ConCommand_VTable = listdemo->ConCommandBase_VTable;
+    auto callback = (uintptr_t)listdemo->m_fnCompletionCallback + Offsets::AutoCompletionFunc;
+    this->AutoCompletionFunc = Memory::Read<_AutoCompletionFunc>(callback);
+
+    auto sv_lan = reinterpret_cast<ConVar*>(this->FindCommandBase(this->g_pCVar->ThisPtr(), "sv_lan"));
+    if (!sv_lan) {
+        throw std::runtime_error("sv_lan convar not found");
+    }
+
+    this->ConVar_VTable = sv_lan->ConCommandBase_VTable;
+    this->ConVar_VTable2 = sv_lan->ConVar_VTable;
+
+    auto vtable =
+#ifdef _WIN32
+        sar.game->Is(SourceGame_HalfLife2Engine)
+        ? &this->ConVar_VTable
+        : &this->ConVar_VTable2;
+#else
+        &this->ConVar_VTable;
+#endif
+
+    this->Dtor = Memory::VMT<_Dtor>(vtable, Offsets::Dtor);
+    this->Create = Memory::VMT<_Create>(vtable, Offsets::Create);
+
+    if (sar.game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
+        this->InstallGlobalChangeCallback = this->g_pCVar->Original<_InstallGlobalChangeCallback>(Offsets::InstallGlobalChangeCallback);
+        this->RemoveGlobalChangeCallback = this->g_pCVar->Original<_RemoveGlobalChangeCallback>(Offsets::RemoveGlobalChangeCallback);
+    }
 }
 void Tier1::Shutdown()
 {
-    Interface::Delete(this->g_pCVar);
+    Interface::Destroy(this->g_pCVar);
 }
 
 Tier1* tier1;

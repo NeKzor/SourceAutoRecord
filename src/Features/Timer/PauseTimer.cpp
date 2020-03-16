@@ -10,7 +10,6 @@ PauseTimer::PauseTimer()
     : isActive(false)
     , ticks(0)
 {
-    this->hasLoaded = true;
 }
 void PauseTimer::Start()
 {
@@ -36,7 +35,9 @@ int PauseTimer::GetTotal()
 
 // HUD
 
-HUD_ELEMENT(pause_timer, "0", "Draws current value of pause timer.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT(pause_timer, "0",
+    "Draws current value of pause timer.\n",
+    HudType_InGame | HudType_Paused)
 {
     auto tick = pauseTimer->GetTotal();
     auto time = engine->ToTime(tick);

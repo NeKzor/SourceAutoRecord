@@ -31,8 +31,6 @@ Stats::Stats()
     for (auto i = 0; i < Offsets::MAX_SPLITSCREEN_PLAYERS; ++i) {
         this->playerStats.push_back(new PlayerStats());
     }
-
-    this->hasLoaded = true;
 }
 Stats::~Stats()
 {
@@ -113,12 +111,18 @@ CON_COMMAND(sar_stats_reset, "Resets all saved stats.\n")
 
 // HUD
 
-HUD_ELEMENT2(jumps, "0", "Draws total jump count.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT2(jumps, "0",
+    "Draws total jump count.\n",
+    HudType_InGame | HudType_Paused)
 {
     auto stat = stats->Get(ctx->slot);
     ctx->DrawElement("jumps: %i", stat->jumps->total);
 }
-HUD_ELEMENT3(portals, "0", "Draws total portal count.\n", HudType_InGame | HudType_Paused, true, SourceGame_Portal2Game | SourceGame_Portal)
+HUD_ELEMENT3(portals, "0",
+    "Draws total portal count.\n",
+    HudType_InGame | HudType_Paused,
+    true,
+    SourceGame_Portal2Game | SourceGame_Portal)
 {
     auto player = server->GetPlayer(ctx->slot + 1);
     if (player) {
@@ -127,22 +131,30 @@ HUD_ELEMENT3(portals, "0", "Draws total portal count.\n", HudType_InGame | HudTy
         ctx->DrawElement("portals: -");
     }
 }
-HUD_ELEMENT2(steps, "0", "Draws total step count.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT2(steps, "0",
+    "Draws total step count.\n",
+    HudType_InGame | HudType_Paused)
 {
     auto stat = stats->Get(ctx->slot);
     ctx->DrawElement("steps: %i", stat->steps->total);
 }
-HUD_ELEMENT2(jump, "0", "Draws current jump distance.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT2(jump, "0",
+    "Draws current jump distance.\n",
+    HudType_InGame | HudType_Paused)
 {
     auto stat = stats->Get(ctx->slot);
     ctx->DrawElement("jump: %.3f", stat->jumps->distance);
 }
-HUD_ELEMENT2(jump_peak, "0", "Draws longest jump distance.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT2(jump_peak, "0",
+    "Draws longest jump distance.\n",
+    HudType_InGame | HudType_Paused)
 {
     auto stat = stats->Get(ctx->slot);
     ctx->DrawElement("jump peak: %.3f", stat->jumps->distancePeak);
 }
-HUD_ELEMENT2(velocity_peak, "0", "Draws last saved velocity peak.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT2(velocity_peak, "0",
+    "Draws last saved velocity peak.\n",
+    HudType_InGame | HudType_Paused)
 {
     auto stat = stats->Get(ctx->slot);
     ctx->DrawElement("vel peak: %.3f", stat->velocity->peak);

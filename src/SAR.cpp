@@ -12,126 +12,158 @@
 #include "Variable.hpp"
 
 SAR sar;
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR(SAR, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, sar);
+InterfaceReg __sar([]() -> void* { return &sar; }, INTERFACEVERSION_ISERVERPLUGINCALLBACKS);
 
 SAR::SAR()
-    : modules(new Modules())
+    : vtable(pluginVtable)
+    , modules(new Modules())
     , features(new Features())
     , cheats(new Cheats())
     , plugin(new Plugin())
     , game(Game::CreateNew())
 {
 }
-
-bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
+bool SAR::Init()
 {
     console = new Console();
-    if (!console->Init())
+    if (!console->Load()) {
         return false;
+    }
 
-    if (this->game) {
-        this->game->LoadOffsets();
-
-        tier1 = new Tier1();
-        if (tier1->Init()) {
-            this->features->AddFeature<Config>(&config);
-            this->features->AddFeature<Cvars>(&cvars);
-            this->features->AddFeature<Rebinder>(&rebinder);
-            this->game->Is(SourceGame_INFRA)
-                ? this->features->AddFeature<InfraSession>(reinterpret_cast<InfraSession**>(&session))
-                : this->features->AddFeature<Session>(&session);
-            this->features->AddFeature<StepCounter>(&stepCounter);
-            this->features->AddFeature<Summary>(&summary);
-            this->features->AddFeature<Teleporter>(&teleporter);
-            this->features->AddFeature<Tracer>(&tracer);
-            this->features->AddFeature<SpeedrunTimer>(&speedrun);
-            this->features->AddFeature<Stats>(&stats);
-            this->features->AddFeature<CommandQueuer>(&cmdQueuer);
-            this->features->AddFeature<ReplayRecorder>(&replayRecorder1);
-            this->features->AddFeature<ReplayRecorder>(&replayRecorder2);
-            this->features->AddFeature<ReplayPlayer>(&replayPlayer1);
-            this->features->AddFeature<ReplayPlayer>(&replayPlayer2);
-            this->features->AddFeature<ReplayProvider>(&replayProvider);
-            this->features->AddFeature<Timer>(&timer);
-            this->features->AddFeature<EntityInspector>(&inspector);
-            this->features->AddFeature<ClassDumper>(&classDumper);
-            this->features->AddFeature<EntityList>(&entityList);
-            this->features->AddFeature<OffsetFinder>(&offsetFinder);
-            this->features->AddFeature<AutoStrafer>(&autoStrafer);
-            this->features->AddFeature<PauseTimer>(&pauseTimer);
-            this->features->AddFeature<DataMapDumper>(&dataMapDumper);
-            this->features->AddFeature<FovChanger>(&fovChanger);
-
-            this->modules->AddModule<InputSystem>(&inputSystem);
-            this->modules->AddModule<Scheme>(&scheme);
-            this->modules->AddModule<Surface>(&surface);
-            this->modules->AddModule<VGui>(&vgui);
-            this->modules->AddModule<Engine>(&engine);
-            this->modules->AddModule<Client>(&client);
-            this->modules->AddModule<Server>(&server);
-            this->modules->InitAll();
-
-            if (engine && engine->hasLoaded) {
-                engine->demoplayer->Init();
-                engine->demorecorder->Init();
-
-                this->cheats->Init();
-
-                this->features->AddFeature<TasTools>(&tasTools);
-
-                if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
-                    this->features->AddFeature<Listener>(&listener);
-                    this->features->AddFeature<WorkshopList>(&workshop);
-                    this->features->AddFeature<Imitator>(&imitator);
-                }
-
-                if (listener) {
-                    listener->Init();
-                }
-
-                speedrun->LoadRules(this->game);
-
-                config->Load();
-
-                this->SearchPlugin();
-
-                console->PrintActive("Loaded SourceAutoRecord, Version %s\n", SAR_VERSION);
-                return true;
-            } else {
-                console->Warning("SAR: Failed to load engine module!\n");
-            }
-        } else {
-            console->Warning("SAR: Failed to load tier1 module!\n");
-        }
-    } else {
+    if (!this->game) {
         console->Warning("SAR: Game not supported!\n");
+        return false;
     }
 
-    console->Warning("SAR: Failed to load SourceAutoRecord!\n");
-
-    if (sar.cheats) {
-        sar.cheats->Shutdown();
-    }
-    if (sar.features) {
-        sar.features->DeleteAll();
+    if (game->Is(SourceGame_Portal2Engine)) {
+        this->vtable = pluginVtable2;
     }
 
-    if (sar.modules) {
-        sar.modules->ShutdownAll();
+    this->game->LoadOffsets();
+
+    try {
+        tier1 = new Tier1();
+        tier1->Load();
+
+        this->features->AddFeature<>(&config);
+        this->features->AddFeature<>(&cvars);
+        this->features->AddFeature<>(&rebinder);
+        this->game->Is(SourceGame_INFRA)
+            ? this->features->AddFeature<>(reinterpret_cast<InfraSession**>(&session))
+            : this->features->AddFeature<>(&session);
+        this->features->AddFeature<>(&stepCounter);
+        this->features->AddFeature<>(&summary);
+        this->features->AddFeature<>(&teleporter);
+        this->features->AddFeature<>(&tracer);
+        this->features->AddFeature<>(&speedrun);
+        this->features->AddFeature<>(&stats);
+        this->features->AddFeature<>(&cmdQueuer);
+        this->features->AddFeature<>(&replayRecorder1);
+        this->features->AddFeature<>(&replayRecorder2);
+        this->features->AddFeature<>(&replayPlayer1);
+        this->features->AddFeature<>(&replayPlayer2);
+        this->features->AddFeature<>(&replayProvider);
+        this->features->AddFeature<>(&timer);
+        this->features->AddFeature<>(&inspector);
+        this->features->AddFeature<>(&classDumper);
+        this->features->AddFeature<>(&entityList);
+        this->features->AddFeature<>(&offsetFinder);
+        this->features->AddFeature<>(&autoStrafer);
+        this->features->AddFeature<>(&pauseTimer);
+        this->features->AddFeature<>(&dataMapDumper);
+        this->features->AddFeature<>(&fovChanger);
+
+        this->modules->AddModule<>(&inputSystem);
+        this->modules->AddModule<>(&scheme);
+        this->modules->AddModule<>(&surface);
+        this->modules->AddModule<>(&vgui);
+        this->modules->AddModule<>(&engine);
+        this->modules->AddModule<>(&demoplayer);
+        this->modules->AddModule<>(&demorecorder);
+        this->modules->AddModule<>(&client);
+        this->modules->AddModule<>(&server);
+
+        this->modules->LoadAll();
+
+        this->cheats->Init();
+
+        this->features->AddFeature<>(&tasTools);
+
+        if (this->game->Is(SourceGame_Portal2 | SourceGame_ApertureTag)) {
+            this->features->AddFeature<>(&listener);
+            this->features->AddFeature<>(&workshop);
+            this->features->AddFeature<>(&imitator);
+        }
+
+        if (listener) {
+            listener->Init();
+        }
+
+        speedrun->LoadRules(this->game);
+
+        config->Load();
+
+        this->HookAll();
+
+        console->PrintActive("Loaded SourceAutoRecord, Version %s\n", SAR_VERSION);
+    } catch (std::exception& ex) {
+        console->Warning("SAR: %s\n", ex.what());
+        return false;
     }
 
-    SAFE_DELETE(sar.features)
-    SAFE_DELETE(sar.cheats)
-    SAFE_DELETE(sar.modules)
-    SAFE_DELETE(sar.plugin)
-    SAFE_DELETE(sar.game)
-    SAFE_DELETE(tier1)
-    SAFE_DELETE(console)
-    return false;
+    return true;
 }
+void SAR::HookAll()
+{
+    for (auto& mod : this->modules->list) {
+        if (mod->CanHook()) {
+            for (auto& interfaceHook : mod->interfaces) {
+                interfaceHook->EnableHooks();
+            }
 
-// SAR has to disable itself in the plugin list or the game might crash because of missing callbacks
-// This is a race condition though
+            for (auto& cmdHook : mod->cmdHooks) {
+                cmdHook->Hook();
+            }
+        } else if (!mod->interfaces.empty()) {
+            console->Warning("SAR: Unable to hook functions in non-hookable module %s\n", mod->filename);
+        }
+    }
+}
+void SAR::UnhookAll()
+{
+    for (auto& mod : this->modules->list) {
+        for (auto& interfaceHook : mod->interfaces) {
+            interfaceHook->DisableHooks();
+        }
+
+        for (auto& cmdHook : mod->cmdHooks) {
+            cmdHook->Unhook();
+        }
+    }
+}
+void SAR::Cleanup()
+{
+    if (this->modules) {
+        this->UnhookAll();
+    }
+    if (this->cheats) {
+        this->cheats->Shutdown();
+    }
+    if (this->features) {
+        this->features->DeleteAll();
+    }
+    if (this->modules) {
+        this->modules->UnloadAll();
+    }
+
+    sdelete(this->features);
+    sdelete(this->cheats);
+    sdelete(this->modules);
+    sdelete(this->plugin);
+    sdelete(this->game);
+    sdelete(tier1);
+    sdelete(console);
+}
 bool SAR::GetPlugin()
 {
     auto s_ServerPlugin = reinterpret_cast<uintptr_t>(engine->s_ServerPlugin->ThisPtr());
@@ -149,29 +181,17 @@ bool SAR::GetPlugin()
     }
     return false;
 }
-void SAR::SearchPlugin()
-{
-    this->findPluginThread = std::thread([this]() {
-        GO_THE_FUCK_TO_SLEEP(1000);
-        if (this->GetPlugin()) {
-            this->plugin->ptr->m_bDisable = true;
-        } else {
-            console->DevWarning("SAR: Failed to find SAR in the plugin list!\nTry again with \"plugin_load\".\n");
-        }
-    });
-    this->findPluginThread.detach();
-}
 
 CON_COMMAND(sar_session, "Prints the current tick of the server since it has loaded.\n")
 {
     auto tick = session->GetTick();
     console->Print("Session Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
-    if (*engine->demorecorder->m_bRecording) {
-        tick = engine->demorecorder->GetTick();
+    if (*demorecorder->m_bRecording) {
+        tick = demorecorder->GetTick();
         console->Print("Demo Recorder Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
     }
-    if (engine->demoplayer->IsPlaying()) {
-        tick = engine->demoplayer->GetTick();
+    if (demoplayer->IsPlaying()) {
+        tick = demoplayer->GetTick();
         console->Print("Demo Player Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
     }
 }
@@ -240,6 +260,8 @@ CON_COMMAND(sar_rename, "Changes your name. Usage: sar_rename <name>\n")
 }
 CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloads the module.\n")
 {
+    sar.UnhookAll();
+
     if (sar.cheats) {
         sar.cheats->Shutdown();
     }
@@ -254,84 +276,134 @@ CON_COMMAND(sar_exit, "Removes all function hooks, registered commands and unloa
     }
 
     if (sar.modules) {
-        sar.modules->ShutdownAll();
-    }    
+        sar.modules->UnloadAll();
+    }
 
-    SAFE_DELETE(sar.features)
-    SAFE_DELETE(sar.cheats)
-    SAFE_DELETE(sar.modules)
-    SAFE_DELETE(sar.plugin)
-    SAFE_DELETE(sar.game)
+    sdelete(sar.features);
+    sdelete(sar.cheats);
+    sdelete(sar.modules);
+    sdelete(sar.plugin);
+    sdelete(sar.game);
 
     console->Print("Cya :)\n");
 
-    SAFE_DELETE(tier1)
-    SAFE_DELETE(console)
+    sdelete(tier1);
+    sdelete(console);
 }
 
-#pragma region Unused callbacks
-void SAR::Unload()
+VFUNC(bool, Load, CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
+{
+    return sar.Init();
+}
+VFUNC(void, Unload)
+{
+    sar.Cleanup();
+}
+VFUNC(void, Pause)
 {
 }
-void SAR::Pause()
+VFUNC(void, UnPause)
 {
 }
-void SAR::UnPause()
-{
-}
-const char* SAR::GetPluginDescription()
+VFUNC(const char*, GetPluginDescription)
 {
     return SAR_PLUGIN_SIGNATURE;
 }
-void SAR::LevelInit(char const* pMapName)
+VFUNC(void, LevelInit, char const* pMapName)
 {
 }
-void SAR::ServerActivate(void* pEdictList, int edictCount, int clientMax)
+VFUNC(void, ServerActivate, void* pEdictList, int edictCount, int clientMax)
 {
 }
-void SAR::GameFrame(bool simulating)
+VFUNC(void, GameFrame, bool simulating)
 {
 }
-void SAR::LevelShutdown()
+VFUNC(void, LevelShutdown)
 {
 }
-void SAR::ClientFullyConnect(void* pEdict)
+VFUNC(void, ClientFullyConnect, void* pEdict)
 {
 }
-void SAR::ClientActive(void* pEntity)
+VFUNC(void, ClientActive, void* pEntity)
 {
 }
-void SAR::ClientDisconnect(void* pEntity)
+VFUNC(void, ClientDisconnect, void* pEntity)
 {
 }
-void SAR::ClientPutInServer(void* pEntity, char const* playername)
+VFUNC(void, ClientPutInServer, void* pEntity, char const* playername)
 {
 }
-void SAR::SetCommandClient(int index)
+VFUNC(void, SetCommandClient, int index)
 {
 }
-void SAR::ClientSettingsChanged(void* pEdict)
+VFUNC(void, ClientSettingsChanged, void* pEdict)
 {
 }
-int SAR::ClientConnect(bool* bAllowConnect, void* pEntity, const char* pszName, const char* pszAddress, char* reject, int maxrejectlen)
-{
-    return 0;
-}
-int SAR::ClientCommand(void* pEntity, const void*& args)
+VFUNC(int, ClientConnect, bool* bAllowConnect, void* pEntity, const char* pszName, const char* pszAddress, char* reject, int maxrejectlen)
 {
     return 0;
 }
-int SAR::NetworkIDValidated(const char* pszUserName, const char* pszNetworkID)
+VFUNC(int, ClientCommand, void* pEntity, const void*& args)
 {
     return 0;
 }
-void SAR::OnQueryCvarValueFinished(int iCookie, void* pPlayerEntity, int eStatus, const char* pCvarName, const char* pCvarValue)
+VFUNC(int, NetworkIDValidated, const char* pszUserName, const char* pszNetworkID)
+{
+    return 0;
+}
+VFUNC(void, OnQueryCvarValueFinished, int iCookie, void* pPlayerEntity, int eStatus, const char* pCvarName, const char* pCvarValue)
 {
 }
-void SAR::OnEdictAllocated(void* edict)
+VFUNC(void, OnEdictAllocated, void* edict)
 {
 }
-void SAR::OnEdictFreed(const void* edict)
+VFUNC(void, OnEdictFreed, const void* edict)
 {
 }
-#pragma endregion
+
+void* SAR::pluginVtable[20] = {
+    Load,
+    Unload,
+    Pause,
+    UnPause,
+    GetPluginDescription,
+    LevelInit,
+    ServerActivate,
+    GameFrame,
+    LevelShutdown,
+    ClientActive,
+    ClientDisconnect,
+    ClientPutInServer,
+    SetCommandClient,
+    ClientSettingsChanged,
+    ClientConnect,
+    ClientCommand,
+    NetworkIDValidated,
+    OnQueryCvarValueFinished,
+    OnEdictAllocated,
+    OnEdictFreed,
+};
+
+void* SAR::pluginVtable2[21] = {
+    Load,
+    Unload,
+    Pause,
+    UnPause,
+    GetPluginDescription,
+    LevelInit,
+    ServerActivate,
+    GameFrame,
+    LevelShutdown,
+    ClientFullyConnect,
+    ClientActive,
+    ClientDisconnect,
+    ClientPutInServer,
+    SetCommandClient,
+    ClientSettingsChanged,
+    ClientConnect,
+    ClientCommand,
+    NetworkIDValidated,
+    OnQueryCvarValueFinished,
+    OnEdictAllocated,
+    OnEdictFreed,
+};

@@ -4,6 +4,10 @@ Features::Features()
     : list()
 {
 }
+Features::~Features()
+{
+    this->DeleteAll();
+}
 void Features::DeleteAll()
 {
     for (auto& feature : this->list) {
@@ -12,8 +16,4 @@ void Features::DeleteAll()
         }
     }
     this->list.clear();
-}
-Features::~Features()
-{
-    this->DeleteAll();
 }

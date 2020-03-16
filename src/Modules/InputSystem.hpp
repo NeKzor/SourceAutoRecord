@@ -22,12 +22,14 @@ public:
 public:
     int GetButton(const char* pString);
 
-    // CInputSystem::SleepUntilInput
-    DECL_DETOUR(SleepUntilInput, int nMaxSleepTimeMS);
+    InputSystem()
+        : Module(MODULE("inputsystem"))
+    {
+        this->isHookable = true;
+    }
 
-    bool Init() override;
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("inputsystem"); }
 };
 
 extern InputSystem* inputSystem;

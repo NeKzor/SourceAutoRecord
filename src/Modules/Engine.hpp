@@ -63,9 +63,6 @@ public:
     _ClientCommand ClientCommand = nullptr;
     _GetLocalClient GetLocalClient = nullptr;
 
-    EngineDemoPlayer* demoplayer = nullptr;
-    EngineDemoRecorder* demorecorder = nullptr;
-
     int* tickcount = nullptr;
     double* net_time = nullptr;
     float* interval_per_tick = nullptr;
@@ -73,8 +70,6 @@ public:
     bool* m_bLoadgame = nullptr;
     CHostState* hoststate = nullptr;
     void* s_CommandBuffer = nullptr;
-    bool* m_bWaitEnabled = nullptr;
-    bool* m_bWaitEnabled2 = nullptr;
 
     bool overlayActivated = false;
 
@@ -90,48 +85,14 @@ public:
     int PointToScreen(const Vector& point, Vector& screen);
     void SafeUnload(const char* postCommand = nullptr);
 
-    // CClientState::Disconnect
-    DECL_DETOUR(Disconnect, bool bShowMainMenu);
-#ifdef _WIN32
-    DECL_DETOUR(Disconnect2, int unk1, int unk2, int unk3);
-    DECL_DETOUR_COMMAND(connect);
-#else
-    DECL_DETOUR(Disconnect2, int unk, bool bShowMainMenu);
-#endif
+    Engine()
+        : Module(MODULE("engine"))
+    {
+        this->isHookable = true;
+    }
 
-    // CClientState::SetSignonState
-    DECL_DETOUR(SetSignonState, int state, int count, void* unk);
-    DECL_DETOUR(SetSignonState2, int state, int count);
-
-    // CEngine::Frame
-    DECL_DETOUR(Frame);
-
-    // CSteam3Client::OnGameOverlayActivated
-    DECL_DETOUR_B(OnGameOverlayActivated, GameOverlayActivated_t* pGameOverlayActivated);
-
-    DECL_DETOUR_COMMAND(plugin_load);
-    DECL_DETOUR_COMMAND(plugin_unload);
-    DECL_DETOUR_COMMAND(exit);
-    DECL_DETOUR_COMMAND(quit);
-    DECL_DETOUR_COMMAND(help);
-    DECL_DETOUR_COMMAND(gameui_activate);
-
-#ifdef _WIN32
-    using _ReadCustomData = int(__fastcall*)(void* thisptr, int edx, void* unk1, void* unk2);
-    static _ReadCustomData ReadCustomData;
-
-    // CDemoSmootherPanel::ParseSmoothingInfo
-    static uintptr_t ParseSmoothingInfo_Skip;
-    static uintptr_t ParseSmoothingInfo_Default;
-    static uintptr_t ParseSmoothingInfo_Continue;
-    DECL_DETOUR_MID_MH(ParseSmoothingInfo_Mid);
-
-    Memory::Patch* demoSmootherPatch = nullptr;
-#endif
-
-    bool Init() override;
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("engine"); }
 };
 
 extern Engine* engine;
@@ -141,7 +102,9 @@ extern Variable net_showmsg;
 
 #define TIME_TO_TICKS(dt) ((int)(0.5f + (float)(dt) / *engine->interval_per_tick))
 #define GET_SLOT() engine->GetLocalPlayerIndex() - 1
-#define IGNORE_DEMO_PLAYER() if (engine->demoplayer->IsPlaying()) return;
+#define IGNORE_DEMO_PLAYER()     \
+    if (demoplayer->IsPlaying()) \
+        return;
 
 #ifdef _WIN32
 #define GET_ACTIVE_SPLITSCREEN_SLOT() engine->GetActiveSplitScreenPlayerSlot()

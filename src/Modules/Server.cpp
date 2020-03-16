@@ -42,33 +42,6 @@ Variable sar_record_at("sar_record_at", "0", 0, "Start recording a demo at the t
 Variable sar_record_at_demo_name("sar_record_at_demo_name", "chamber", "Name of the demo automatically recorded.\n", 0);
 Variable sar_record_at_increment("sar_record_at_increment", "0", "Increment automatically the demo name.\n");
 
-REDECL(Server::CheckJumpButton);
-REDECL(Server::CheckJumpButtonBase);
-REDECL(Server::PlayerMove);
-REDECL(Server::FinishGravity);
-REDECL(Server::AirMove);
-REDECL(Server::AirMoveBase);
-REDECL(Server::GameFrame);
-REDECL(Server::ProcessMovement);
-#ifdef _WIN32
-REDECL(Server::AirMove_Skip);
-REDECL(Server::AirMove_Continue);
-REDECL(Server::AirMove_Mid);
-REDECL(Server::AirMove_Mid_Trampoline);
-#endif
-
-MDECL(Server::GetPortals, int, iNumPortalsPlaced);
-MDECL(Server::GetAbsOrigin, Vector, S_m_vecAbsOrigin);
-MDECL(Server::GetAbsAngles, QAngle, S_m_angAbsRotation);
-MDECL(Server::GetLocalVelocity, Vector, S_m_vecVelocity);
-MDECL(Server::GetFlags, int, m_fFlags);
-MDECL(Server::GetEFlags, int, m_iEFlags);
-MDECL(Server::GetMaxSpeed, float, m_flMaxspeed);
-MDECL(Server::GetGravity, float, m_flGravity);
-MDECL(Server::GetViewOffset, Vector, S_m_vecViewOffset);
-MDECL(Server::GetEntityName, char*, m_iName);
-MDECL(Server::GetEntityClassName, char*, m_iClassName);
-
 void* Server::GetPlayer(int index)
 {
     return this->UTIL_PlayerByIndex(index);
@@ -94,7 +67,7 @@ int Server::GetSplitScreenPlayerSlot(void* entity)
 }
 
 // CGameMovement::CheckJumpButton
-DETOUR_T(bool, Server::CheckJumpButton)
+DETOUR_BT(bool, CheckJumpButton)
 {
     auto jumped = false;
 
@@ -110,15 +83,15 @@ DETOUR_T(bool, Server::CheckJumpButton)
 
         server->callFromCheckJumpButton = true;
         jumped = (sar_duckjump.isRegistered && sar_duckjump.GetBool())
-            ? Server::CheckJumpButtonBase(thisptr)
-            : Server::CheckJumpButton(thisptr);
+            ? CheckJumpButtonBase(thisptr)
+            : CheckJumpButton(thisptr);
         server->callFromCheckJumpButton = false;
 
         if (jumped) {
             server->jumpedLastTime = true;
         }
     } else {
-        jumped = Server::CheckJumpButton(thisptr);
+        jumped = CheckJumpButton(thisptr);
     }
 
     if (jumped) {
@@ -133,7 +106,7 @@ DETOUR_T(bool, Server::CheckJumpButton)
 }
 
 // CGameMovement::PlayerMove
-DETOUR(Server::PlayerMove)
+DETOUR(PlayerMove)
 {
     auto player = *reinterpret_cast<void**>((uintptr_t)thisptr + Offsets::player);
     auto mv = *reinterpret_cast<const CHLMoveData**>((uintptr_t)thisptr + Offsets::mv);
@@ -166,22 +139,22 @@ DETOUR(Server::PlayerMove)
     stat->velocity->Save(server->GetLocalVelocity(player), sar_stats_velocity_peak_xy.GetBool());
     inspector->Record();
 
-    return Server::PlayerMove(thisptr);
+    return PlayerMove(thisptr);
 }
 
 // CGameMovement::ProcessMovement
-DETOUR(Server::ProcessMovement, void* pPlayer, CMoveData* pMove)
+DETOUR(ProcessMovement, void* pPlayer, CMoveData* pMove)
 {
     if (sv_cheats.GetBool()) {
         autoStrafer->Strafe(pPlayer, pMove);
         tasTools->SetAngles(pPlayer);
     }
 
-    return Server::ProcessMovement(thisptr, pPlayer, pMove);
+    return ProcessMovement(thisptr, pPlayer, pMove);
 }
 
 // CGameMovement::FinishGravity
-DETOUR(Server::FinishGravity)
+DETOUR(FinishGravity)
 {
     if (server->callFromCheckJumpButton) {
         if (sar_duckjump.GetBool()) {
@@ -232,49 +205,24 @@ DETOUR(Server::FinishGravity)
         }
     }
 
-    return Server::FinishGravity(thisptr);
+    return FinishGravity(thisptr);
 }
 
 // CGameMovement::AirMove
-DETOUR_B(Server::AirMove)
+DETOUR_B(AirMove)
 {
     if (sar_aircontrol.GetInt() >= 2 && server->AllowsMovementChanges()) {
-        return Server::AirMoveBase(thisptr);
+        return AirMoveBase(thisptr);
     }
 
-    return Server::AirMove(thisptr);
+    return AirMove(thisptr);
 }
-#ifdef _WIN32
-DETOUR_MID_MH(Server::AirMove_Mid)
-{
-    __asm {
-        pushad
-        pushfd
-    }
-
-    if (sar_aircontrol.GetBool() && server->AllowsMovementChanges())
-    {
-        __asm {
-            popfd
-            popad
-            jmp Server::AirMove_Skip
-        }
-    }
-
-    __asm {
-        popfd
-        popad
-        movss xmm2, dword ptr[eax + 0x40]
-        jmp Server::AirMove_Continue
-    }
-}
-#endif
 
 // CServerGameDLL::GameFrame
 #ifdef _WIN32
-DETOUR_STD(void, Server::GameFrame, bool simulating)
+DETOUR_STD(void, GameFrame, bool simulating)
 #else
-DETOUR(Server::GameFrame, bool simulating)
+DETOUR(GameFrame, bool simulating)
 #endif
 {
     if (simulating && sar_record_at.GetFloat() > 0 && sar_record_at.GetFloat() == session->GetTick()) {
@@ -292,9 +240,9 @@ DETOUR(Server::GameFrame, bool simulating)
     }
 
 #ifdef _WIN32
-    Server::GameFrame(simulating);
+    GameFrame(simulating);
 #else
-    auto result = Server::GameFrame(thisptr, simulating);
+    auto result = GameFrame(thisptr, simulating);
 #endif
 
     if (sar_pause.GetBool()) {
@@ -338,60 +286,41 @@ DETOUR(Server::GameFrame, bool simulating)
 #endif
 }
 
-bool Server::Init()
+void Server::Init()
 {
-    this->g_GameMovement = Interface::Create(this->Name(), "GameMovement0");
-    this->g_ServerGameDLL = Interface::Create(this->Name(), "ServerGameDLL0");
+    this->g_GameMovement = Interface::Hookable(this, "GameMovement0");
+    this->g_ServerGameDLL = Interface::Hookable(this, "ServerGameDLL0");
 
-    if (this->g_GameMovement) {
-        this->g_GameMovement->Hook(Server::CheckJumpButton_Hook, Server::CheckJumpButton, Offsets::CheckJumpButton);
-        this->g_GameMovement->Hook(Server::PlayerMove_Hook, Server::PlayerMove, Offsets::PlayerMove);
+    this->g_GameMovement->Hook(&hkCheckJumpButton, Offsets::CheckJumpButton);
+    this->g_GameMovement->Hook(&hkPlayerMove, Offsets::PlayerMove);
 
-        if (sar.game->Is(SourceGame_Portal2Engine)) {
-            this->g_GameMovement->Hook(Server::ProcessMovement_Hook, Server::ProcessMovement, Offsets::ProcessMovement);
-            this->g_GameMovement->Hook(Server::FinishGravity_Hook, Server::FinishGravity, Offsets::FinishGravity);
-            this->g_GameMovement->Hook(Server::AirMove_Hook, Server::AirMove, Offsets::AirMove);
+    if (sar.game->Is(SourceGame_Portal2Engine)) {
+        this->g_GameMovement->Hook(&hkProcessMovement, Offsets::ProcessMovement);
+        this->g_GameMovement->Hook(&hkFinishGravity, Offsets::FinishGravity);
+        this->g_GameMovement->Hook(&hkAirMove, Offsets::AirMove);
 
-            auto ctor = this->g_GameMovement->Original(0);
-            auto baseCtor = Memory::Read(ctor + Offsets::AirMove_Offset1);
-            auto baseOffset = Memory::Deref<uintptr_t>(baseCtor + Offsets::AirMove_Offset2);
-            Memory::Deref<_AirMove>(baseOffset + Offsets::AirMove * sizeof(uintptr_t*), &Server::AirMoveBase);
+        auto ctor = this->g_GameMovement->Original(0);
+        auto baseCtor = Memory::Read(ctor + Offsets::AirMove_Offset1);
+        auto baseOffset = Memory::Deref<uintptr_t>(baseCtor + Offsets::AirMove_Offset2);
+        Memory::Deref<_AirMove>(baseOffset + Offsets::AirMove * sizeof(uintptr_t), &AirMoveBase);
 
-            Memory::Deref<_CheckJumpButton>(baseOffset + Offsets::CheckJumpButton * sizeof(uintptr_t*), &Server::CheckJumpButtonBase);
-
-#ifdef _WIN32
-            if (!sar.game->Is(SourceGame_INFRA)) {
-                auto airMoveMid = this->g_GameMovement->Original(Offsets::AirMove) + AirMove_Mid_Offset;
-                if (Memory::FindAddress(airMoveMid, airMoveMid + 5, AirMove_Signature) == airMoveMid) {
-                    MH_HOOK_MID(this->AirMove_Mid, airMoveMid);
-                    this->AirMove_Continue = airMoveMid + AirMove_Continue_Offset;
-                    this->AirMove_Skip = airMoveMid + AirMove_Skip_Offset;
-                    console->DevMsg("SAR: Verified sar_aircontrol 1!\n");
-                } else {
-                    console->Warning("SAR: Failed to enable sar_aircontrol 1 style!\n");
-                }
-            }
-#endif
-        }
+        Memory::Deref<_CheckJumpButton>(baseOffset + Offsets::CheckJumpButton * sizeof(uintptr_t), &CheckJumpButtonBase);
     }
 
-    if (auto g_ServerTools = Interface::Create(this->Name(), "VSERVERTOOLS0")) {
+    Interface::Temp(this, "VSERVERTOOLS0", [this](const Interface* g_ServerTools) {
         auto GetIServerEntity = g_ServerTools->Original(Offsets::GetIServerEntity);
         Memory::Deref(GetIServerEntity + Offsets::m_EntPtrArray, &this->m_EntPtrArray);
-        Interface::Delete(g_ServerTools);
-    }
+    });
 
-    if (this->g_ServerGameDLL) {
-        auto Think = this->g_ServerGameDLL->Original(Offsets::Think);
-        Memory::Read<_UTIL_PlayerByIndex>(Think + Offsets::UTIL_PlayerByIndex, &this->UTIL_PlayerByIndex);
-        Memory::DerefDeref<CGlobalVars*>((uintptr_t)this->UTIL_PlayerByIndex + Offsets::gpGlobals, &this->gpGlobals);
+    auto Think = this->g_ServerGameDLL->Original(Offsets::Think);
+    Memory::Read<_UTIL_PlayerByIndex>(Think + Offsets::UTIL_PlayerByIndex, &this->UTIL_PlayerByIndex);
+    Memory::DerefDeref<CGlobalVars*>((uintptr_t)this->UTIL_PlayerByIndex + Offsets::gpGlobals, &this->gpGlobals);
 
-        this->GetAllServerClasses = this->g_ServerGameDLL->Original<_GetAllServerClasses>(Offsets::GetAllServerClasses);
-        this->IsRestoring = this->g_ServerGameDLL->Original<_IsRestoring>(Offsets::IsRestoring);
+    this->GetAllServerClasses = this->g_ServerGameDLL->Original<_GetAllServerClasses>(Offsets::GetAllServerClasses);
+    this->IsRestoring = this->g_ServerGameDLL->Original<_IsRestoring>(Offsets::IsRestoring);
 
-        if (sar.game->Is(SourceGame_Portal2Game | SourceGame_Portal)) {
-            this->g_ServerGameDLL->Hook(Server::GameFrame_Hook, Server::GameFrame, Offsets::GameFrame);
-        }
+    if (sar.game->Is(SourceGame_Portal2Game | SourceGame_Portal)) {
+        this->g_ServerGameDLL->Hook(&hkGameFrame, Offsets::GameFrame);
     }
 
     offsetFinder->ServerSide("CBasePlayer", "m_nWaterLevel", &Offsets::m_nWaterLevel);
@@ -421,16 +350,11 @@ bool Server::Init()
     sv_stopspeed = Variable("sv_stopspeed");
     sv_maxvelocity = Variable("sv_maxvelocity");
     sv_gravity = Variable("sv_gravity");
-
-    return this->hasLoaded = this->g_GameMovement && this->g_ServerGameDLL;
 }
 void Server::Shutdown()
 {
-#if _WIN32
-    MH_UNHOOK(this->AirMove_Mid);
-#endif
-    Interface::Delete(this->g_GameMovement);
-    Interface::Delete(this->g_ServerGameDLL);
+    Interface::Destroy(this->g_GameMovement);
+    Interface::Destroy(this->g_ServerGameDLL);
 }
 
 Server* server;

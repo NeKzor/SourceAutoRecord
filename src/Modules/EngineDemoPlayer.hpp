@@ -22,10 +22,14 @@ public:
     int GetTick();
     bool IsPlaying();
 
-    // CDemoRecorder::StartPlayback
-    DECL_DETOUR(StartPlayback, const char* filename, bool bAsTimeDemo);
+    EngineDemoPlayer()
+        : Module(MODULE("engine"))
+    {
+        this->isHookable = true;
+    }
 
-    bool Init() override;
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE("engine"); }
 };
+
+extern EngineDemoPlayer* demoplayer;

@@ -10,37 +10,58 @@
 
 #include "Variable.hpp"
 
-Variable sar_ihud("sar_ihud", "0", 0, "Draws movement inputs of client.\n"
-                                      "0 = Default,\n"
-                                      "1 = forward;back;moveleft;moveright,\n"
-                                      "2 = 1 + duck;jump;use,\n"
-                                      "3 = 2 + attack;attack2,\n"
-                                      "4 = 3 + speed;reload.\n");
-Variable sar_ihud_x("sar_ihud_x", "0", 0, "X offset of input HUD.\n");
-Variable sar_ihud_y("sar_ihud_y", "0", 0, "Y offset of input HUD.\n");
-Variable sar_ihud_button_padding("sar_ihud_button_padding", "2", 0, "Padding between buttons of input HUD.\n");
-Variable sar_ihud_button_size("sar_ihud_button_size", "60", 0, "Button size of input HUD.\n");
-Variable sar_ihud_button_color("sar_ihud_button_color", "0 0 0 255", "RGBA button color of input HUD.\n", 0);
-Variable sar_ihud_font_color("sar_ihud_font_color", "255 255 255 255", "RGBA font color of input HUD.\n", 0);
-Variable sar_ihud_font_index("sar_ihud_font_index", "1", 0, "Font index of input HUD.\n");
-Variable sar_ihud_layout("sar_ihud_layout", "WASDCSELRSR", "Layout of input HUD.\n"
-                                                           "Labels are in this order:\n"
-                                                           "forward,\n"
-                                                           "moveleft,\n"
-                                                           "back,\n"
-                                                           "moveright,\n"
-                                                           "duck,\n"
-                                                           "jump,\n"
-                                                           "use,\n"
-                                                           "attack,\n"
-                                                           "attack2,\n"
-                                                           "speed,\n"
-                                                           "reload.\n"
-                                                           "Pass an empty string to disable drawing labels completely.\n",
+Variable sar_ihud("sar_ihud", "0", 0,
+    "Draws movement inputs of client.\n"
+    "0 = Default,\n"
+    "1 = forward;back;moveleft;moveright,\n"
+    "2 = 1 + duck;jump;use,\n"
+    "3 = 2 + attack;attack2,\n"
+    "4 = 3 + speed;reload.\n");
+Variable sar_ihud_x("sar_ihud_x", "0", 0,
+    "X offset of input HUD.\n");
+Variable sar_ihud_y("sar_ihud_y", "0", 0,
+    "Y offset of input HUD.\n");
+Variable sar_ihud_button_padding("sar_ihud_button_padding", "2", 0,
+    "Padding between buttons of input HUD.\n");
+Variable sar_ihud_button_size("sar_ihud_button_size", "60", 0,
+    "Button size of input HUD.\n");
+Variable sar_ihud_button_color("sar_ihud_button_color", "0 0 0 255",
+    "RGBA button color of input HUD.\n",
+    SourceGame_Unknown,
     0);
-Variable sar_ihud_shadow("sar_ihud_shadow", "1", "Draws button shadows of input HUD.\n");
-Variable sar_ihud_shadow_color("sar_ihud_shadow_color", "0 0 0 64", "RGBA button shadow color of input HUD.\n", 0);
-Variable sar_ihud_shadow_font_color("sar_ihud_shadow_font_color", "255 255 255 64", "RGBA button shadow font color of input HUD.\n", 0);
+Variable sar_ihud_font_color("sar_ihud_font_color", "255 255 255 255",
+    "RGBA font color of input HUD.\n",
+    SourceGame_Unknown,
+    0);
+Variable sar_ihud_font_index("sar_ihud_font_index", "1", 0,
+    "Font index of input HUD.\n");
+Variable sar_ihud_layout("sar_ihud_layout", "WASDCSELRSR",
+    "Layout of input HUD.\n"
+    "Labels are in this order:\n"
+    "forward,\n"
+    "moveleft,\n"
+    "back,\n"
+    "moveright,\n"
+    "duck,\n"
+    "jump,\n"
+    "use,\n"
+    "attack,\n"
+    "attack2,\n"
+    "speed,\n"
+    "reload.\n"
+    "Pass an empty string to disable drawing labels completely.\n",
+    SourceGame_Unknown,
+    0);
+Variable sar_ihud_shadow("sar_ihud_shadow", "1",
+    "Draws button shadows of input HUD.\n");
+Variable sar_ihud_shadow_color("sar_ihud_shadow_color", "0 0 0 64",
+    "RGBA button shadow color of input HUD.\n",
+    SourceGame_Unknown,
+    0);
+Variable sar_ihud_shadow_font_color("sar_ihud_shadow_font_color", "255 255 255 64",
+    "RGBA button shadow font color of input HUD.\n",
+    SourceGame_Unknown,
+    0);
 
 const int row0 = 0;
 const int row1 = 1;
@@ -61,7 +82,7 @@ InputHud inputHud2;
 
 InputHud::InputHud()
     : Hud(HudType_InGame, true, SourceGame_Portal2Engine)
-    , buttonBits { 0, 0 }
+    , buttonBits{ 0, 0 }
 {
 }
 void InputHud::SetButtonBits(int slot, int buttonBits)
@@ -78,17 +99,17 @@ void InputHud::Paint(int slot)
 
     auto button = this->buttonBits[slot];
 
-    auto mvForward =button & IN_FORWARD;
-    auto mvBack =button & IN_BACK;
-    auto mvLeft =button & IN_MOVELEFT;
-    auto mvRight =button & IN_MOVERIGHT;
-    auto mvJump =button & IN_JUMP;
-    auto mvDuck =button & IN_DUCK;
-    auto mvUse =button & IN_USE;
-    auto mvAttack =button & IN_ATTACK;
-    auto mvAttack2 =button & IN_ATTACK2;
-    auto mvReload =button & IN_RELOAD;
-    auto mvSpeed =button & IN_SPEED;
+    auto mvForward = button & IN_FORWARD;
+    auto mvBack = button & IN_BACK;
+    auto mvLeft = button & IN_MOVELEFT;
+    auto mvRight = button & IN_MOVERIGHT;
+    auto mvJump = button & IN_JUMP;
+    auto mvDuck = button & IN_DUCK;
+    auto mvUse = button & IN_USE;
+    auto mvAttack = button & IN_ATTACK;
+    auto mvAttack2 = button & IN_ATTACK2;
+    auto mvReload = button & IN_RELOAD;
+    auto mvSpeed = button & IN_SPEED;
 
     auto xOffset = sar_ihud_x.GetInt();
     auto yOffset = sar_ihud_y.GetInt();

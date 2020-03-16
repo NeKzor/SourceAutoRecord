@@ -26,8 +26,3 @@ extern Variable hide_gun_when_holding;
 extern Command startbhop;
 extern Command endbhop;
 extern Command sar_anti_anti_cheat;
-extern Command sar_togglewait;
-
-extern DECL_DECLARE_AUTOCOMPLETION_FUNCTION(map);
-extern DECL_DECLARE_AUTOCOMPLETION_FUNCTION(changelevel);
-extern DECL_DECLARE_AUTOCOMPLETION_FUNCTION(changelevel2);

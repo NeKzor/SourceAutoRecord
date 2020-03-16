@@ -47,9 +47,13 @@ public:
         this->ColorMsg(SAR_PRINT_ACTIVE_COLOR, fmt, args...);
     }
 
-    bool Init() override;
+    Console()
+        : Module(MODULE(TIER0))
+    {
+    }
+
+    void Init() override;
     void Shutdown() override;
-    const char* Name() override { return MODULE(TIER0); }
 };
 
 extern Console* console;

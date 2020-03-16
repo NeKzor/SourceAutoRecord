@@ -14,7 +14,6 @@ EntityList* entityList;
 
 EntityList::EntityList()
 {
-    this->hasLoaded = true;
 }
 CEntInfo* EntityList::GetEntityInfoByIndex(int index)
 {

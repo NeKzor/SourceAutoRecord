@@ -57,29 +57,26 @@ void Surface::DrawRectAndCenterTxt(Color clr, int x0, int y0, int x1, int y1, HF
 
     this->DrawTxt(font, xc - (tw / 2), yc - (th / 2), fontClr, data);
 }
-bool Surface::Init()
+void Surface::Init()
 {
-    this->matsurface = Interface::Create(this->Name(), "VGUI_Surface0", false);
-    if (this->matsurface) {
-        this->DrawSetColor = matsurface->Original<_DrawSetColor>(Offsets::DrawSetColor);
-        this->DrawFilledRect = matsurface->Original<_DrawFilledRect>(Offsets::DrawFilledRect);
-        this->DrawLine = matsurface->Original<_DrawLine>(Offsets::DrawLine);
-        this->DrawSetTextFont = matsurface->Original<_DrawSetTextFont>(Offsets::DrawSetTextFont);
-        this->DrawSetTextColor = matsurface->Original<_DrawSetTextColor>(Offsets::DrawSetTextColor);
-        this->GetFontTall = matsurface->Original<_GetFontTall>(Offsets::GetFontTall);
-        this->DrawColoredText = matsurface->Original<_DrawColoredText>(Offsets::DrawColoredText);
-        this->DrawTextLen = matsurface->Original<_DrawTextLen>(Offsets::DrawTextLen);
+    this->matsurface = Interface::CreateNew(this, "VGUI_Surface0");
 
-        auto PaintTraverseEx = matsurface->Original(Offsets::PaintTraverseEx);
-        this->StartDrawing = Memory::Read<_StartDrawing>(PaintTraverseEx + Offsets::StartDrawing);
-        this->FinishDrawing = Memory::Read<_FinishDrawing>(PaintTraverseEx + Offsets::FinishDrawing);
-    }
+    this->DrawSetColor = matsurface->Original<_DrawSetColor>(Offsets::DrawSetColor);
+    this->DrawFilledRect = matsurface->Original<_DrawFilledRect>(Offsets::DrawFilledRect);
+    this->DrawLine = matsurface->Original<_DrawLine>(Offsets::DrawLine);
+    this->DrawSetTextFont = matsurface->Original<_DrawSetTextFont>(Offsets::DrawSetTextFont);
+    this->DrawSetTextColor = matsurface->Original<_DrawSetTextColor>(Offsets::DrawSetTextColor);
+    this->GetFontTall = matsurface->Original<_GetFontTall>(Offsets::GetFontTall);
+    this->DrawColoredText = matsurface->Original<_DrawColoredText>(Offsets::DrawColoredText);
+    this->DrawTextLen = matsurface->Original<_DrawTextLen>(Offsets::DrawTextLen);
 
-    return this->hasLoaded = this->matsurface;
+    auto PaintTraverseEx = matsurface->Original(Offsets::PaintTraverseEx);
+    this->StartDrawing = Memory::Read<_StartDrawing>(PaintTraverseEx + Offsets::StartDrawing);
+    this->FinishDrawing = Memory::Read<_FinishDrawing>(PaintTraverseEx + Offsets::FinishDrawing);
 }
 void Surface::Shutdown()
 {
-    Interface::Delete(this->matsurface);
+    Interface::Destroy(this->matsurface);
 }
 
 Surface* surface;

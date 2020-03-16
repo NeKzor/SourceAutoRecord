@@ -22,14 +22,14 @@ Variable sar_replay_viewmode("sar_replay_viewmode", "0", 0,
     "Fallback mode of replay system.\n"
     "0 = Default,\n"
     "1 = Automatically records first view and plays second view after a load,\n"
-    "2 = Automatically records second view and plays first view after a load.\n");
+    "2 = Automatically records second view and plays first view after a load.\n",
+    SourceGame_Portal2 | SourceGame_ApertureTag);
 
 ReplayProvider* replayProvider;
 
 ReplayProvider::ReplayProvider()
     : replays()
 {
-    this->hasLoaded = true;
 }
 ReplayProvider::~ReplayProvider()
 {

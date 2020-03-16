@@ -13,7 +13,6 @@ OffsetFinder* offsetFinder;
 
 OffsetFinder::OffsetFinder()
 {
-    this->hasLoaded = true;
 }
 void OffsetFinder::ServerSide(const char* className, const char* propName, int* offset)
 {

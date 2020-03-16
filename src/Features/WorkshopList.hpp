@@ -13,7 +13,6 @@ public:
 
 public:
     WorkshopList();
-    std::string Path();
     int Update();
 };
 

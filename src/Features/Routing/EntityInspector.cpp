@@ -29,7 +29,6 @@ EntityInspector::EntityInspector()
     , latest()
     , data()
 {
-    this->hasLoaded = true;
 }
 void EntityInspector::Start()
 {
@@ -172,7 +171,9 @@ CON_COMMAND(sar_inspection_index, "Sets entity index for inspection.\n")
 
 // HUD
 
-HUD_ELEMENT(inspection, "0", "Draws entity inspection data.\n", HudType_InGame | HudType_Paused)
+HUD_ELEMENT(inspection, "0",
+    "Draws entity inspection data.\n",
+    HudType_InGame | HudType_Paused)
 {
     ctx->DrawElement(inspector->IsRunning() ? "inspection (recording)" : "inspection");
 

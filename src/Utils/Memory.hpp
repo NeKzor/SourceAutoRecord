@@ -19,8 +19,6 @@ struct ModuleInfo {
     char path[MAX_PATH];
 };
 
-extern std::vector<ModuleInfo> moduleList;
-
 bool TryGetModule(const char* moduleName, ModuleInfo* info);
 const char* GetModulePath(const char* moduleName);
 void* GetModuleHandleByName(const char* moduleName);
@@ -31,20 +29,6 @@ uintptr_t FindAddress(const uintptr_t start, const uintptr_t end, const char* ta
 uintptr_t Scan(const char* moduleName, const char* pattern, int offset = 0);
 std::vector<uintptr_t> MultiScan(const char* moduleName, const char* pattern, int offset = 0);
 
-#ifdef _WIN32
-class Patch {
-private:
-    uintptr_t location;
-    unsigned char* original;
-    size_t size;
-
-public:
-    ~Patch();
-    bool Execute(uintptr_t location, unsigned char* bytes);
-    bool Restore();
-};
-#endif
-
 struct Pattern {
     const char* signature;
     std::vector<int> offsets;
@@ -53,18 +37,21 @@ struct Pattern {
 typedef std::vector<int> Offset;
 typedef std::vector<const Pattern*> Patterns;
 
-#define PATTERN(name, sig, ...) Memory::Pattern name { sig, Memory::Offset({ __VA_ARGS__ }) }
+#define PATTERN(name, sig, ...) \
+    Memory::Pattern name { sig, Memory::Offset({ __VA_ARGS__ }) }
 #define PATTERNS(name, ...) Memory::Patterns name({ __VA_ARGS__ })
 
 std::vector<uintptr_t> Scan(const char* moduleName, const Pattern* pattern);
 std::vector<std::vector<uintptr_t>> MultiScan(const char* moduleName, const Patterns* patterns);
 
+#ifdef _DEBUG
 template <typename T = uintptr_t>
 T Absolute(const char* moduleName, int relative)
 {
     auto info = Memory::ModuleInfo();
     return (Memory::TryGetModule(moduleName, &info)) ? (T)(info.base + relative) : (T)0;
 }
+#endif
 template <typename T = void*>
 T GetSymbolAddress(void* moduleHandle, const char* symbolName)
 {
