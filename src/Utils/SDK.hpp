@@ -2,6 +2,7 @@
 #pragma warning(suppress : 26495)
 #include <cmath>
 #include <cstdint>
+#include <algorithm>
 
 #ifdef _WIN32
 #define __rescalll __thiscall
@@ -229,7 +230,7 @@ public:
     void Compact();
     void SetGrowSize(int size) { m_Memory.SetGrowSize(size); }
     int NumAllocated() const;
-    void Sort(int(__cdecl* pfnCompare)(const T*, const T*));
+    void Sort(int(__rescalll* pfnCompare)(const T*, const T*));
 
 public:
     //CUtlVector(CUtlVector const& vec) { Assert(0); }
@@ -349,9 +350,9 @@ void CUtlVector<T, A>::GrowVector(int num)
     ResetDbgInfo();
 }
 template <typename T, class A>
-void CUtlVector<T, A>::Sort(int(__cdecl* pfnCompare)(const T*, const T*))
+void CUtlVector<T, A>::Sort(int(__rescalll* pfnCompare)(const T*, const T*))
 {
-    typedef int(__cdecl * QSortCompareFunc_t)(const void*, const void*);
+    typedef int(__rescalll * QSortCompareFunc_t)(const void*, const void*);
     if (Count() <= 1)
         return;
 
@@ -363,7 +364,7 @@ void CUtlVector<T, A>::Sort(int(__cdecl* pfnCompare)(const T*, const T*))
         for (int i = m_Size - 1; i >= 0; --i) {
             for (int j = 1; j <= i; ++j) {
                 if (pfnCompare(&Element(j - 1), &Element(j)) < 0) {
-                    swap(Element(j - 1), Element(j));
+                    std::swap(Element(j - 1), Element(j));
                 }
             }
         }
@@ -496,8 +497,8 @@ template <typename T, class A>
 void CUtlVector<T, A>::Swap(CUtlVector<T, A>& vec)
 {
     m_Memory.Swap(vec.m_Memory);
-    swap(m_Size, vec.m_Size);
-    swap(m_pElements, vec.m_pElements);
+    std::swap(m_Size, vec.m_Size);
+    std::swap(m_pElements, vec.m_pElements);
 }
 template <typename T, class A>
 int CUtlVector<T, A>::AddVectorToTail(CUtlVector const& src)
@@ -676,9 +677,9 @@ void CUtlMemory<T, I>::Init(int nGrowSize /*= 0*/, int nInitSize /*= 0*/)
 template <class T, class I>
 void CUtlMemory<T, I>::Swap(CUtlMemory<T, I>& mem)
 {
-    swap(m_nGrowSize, mem.m_nGrowSize);
-    swap(m_pMemory, mem.m_pMemory);
-    swap(m_nAllocationCount, mem.m_nAllocationCount);
+    std::swap(m_nGrowSize, mem.m_nGrowSize);
+    std::swap(m_pMemory, mem.m_pMemory);
+    std::swap(m_nAllocationCount, mem.m_nAllocationCount);
 }
 template <class T, class I>
 void CUtlMemory<T, I>::ConvertToGrowableMemory(int nGrowSize)
