@@ -34,6 +34,7 @@ int JoyStickApplyMovement;
 
 // ClientModeShared
 int CreateMove;
+int OverrideView;
 
 // ConVar
 int Dtor;
@@ -56,6 +57,9 @@ int DrawTextLen;
 // CInputSystem
 int StringToButtonCode;
 int SleepUntilInput;
+int IsButtonDown;
+int GetCursorPosition;
+int SetCursorPosition;
 
 // CInput
 int GetButtonBits;
@@ -119,10 +123,13 @@ int m_pSurfaceData;
 int iNumPortalsPlaced;
 
 // IEngineVGuiInternal
+int IsGameUIVisible;
 int Paint;
 
 // CEngineTool
 int GetCurrentMap;
+int HostFrameTime;
+int ClientTime;
 
 // CSchemeManager
 int GetIScheme;

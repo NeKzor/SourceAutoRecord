@@ -34,6 +34,7 @@ extern int JoyStickApplyMovement;
 
 // ClientModeShared
 extern int CreateMove;
+extern int OverrideView;
 
 // ConVar
 extern int Dtor;
@@ -56,6 +57,9 @@ extern int DrawTextLen;
 // CInputSystem
 extern int StringToButtonCode;
 extern int SleepUntilInput;
+extern int IsButtonDown;
+extern int GetCursorPosition;
+extern int SetCursorPosition;
 
 // CInput
 extern int GetButtonBits;
@@ -119,10 +123,13 @@ extern int m_pSurfaceData;
 extern int iNumPortalsPlaced;
 
 // IEngineVGuiInternal
+extern int IsGameUIVisible;
 extern int Paint;
 
 // CEngineTool
 extern int GetCurrentMap;
+extern int HostFrameTime;
+extern int ClientTime;
 
 // CSchemeManager
 extern int GetIScheme;
